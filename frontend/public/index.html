@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViralTrack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0e0b14;--surface:#16121f;--card:#1c1726;--card-h:#231d2f;
+      --bdr:#2a2235;--bdr-f:#8b5cf6;
+      --t1:#f0edf5;--t2:#9b93a8;--t3:#6b6279;
+      --ac:#8b5cf6;--ac-s:rgba(139,92,246,.15);--ac-g:rgba(139,92,246,.3);
+      --gr:#22c55e;--gr-s:rgba(34,197,94,.15);
+      --pk:#ec4899;--pk-s:rgba(236,72,153,.15);
+      --yl:#eab308;--yl-s:rgba(234,179,8,.12);
+      --bl:#3b82f6;--bl-s:rgba(59,130,246,.15);
+      --r:12px;--rs:8px;--sw:220px
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;display:flex;-webkit-font-smoothing:antialiased}
+    .sb{width:var(--sw);min-height:100vh;background:var(--surface);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+    .sb-logo{padding:28px 24px 32px;font-family:'Space Mono',monospace;font-size:20px;font-weight:700;letter-spacing:-.5px}
+    .sb-nav{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 12px}
+    .ni{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--rs);color:var(--t2);cursor:pointer;transition:.15s;font-size:14px;font-weight:500;border:none;background:none;width:100%;text-align:left}
+    .ni:hover{background:var(--ac-s);color:var(--t1)}
+    .ni.on{background:var(--ac);color:#fff;box-shadow:0 4px 16px var(--ac-g)}
+    .ni svg{width:20px;height:20px;flex-shrink:0}
+    .sb-foot{padding:20px;border-top:1px solid var(--bdr);display:flex;align-items:center;gap:12px}
+    .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--pk));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:#fff}
+    .ui{line-height:1.3}.un{font-size:13px;font-weight:600}.up{font-size:11px;color:var(--ac)}
+    .mn{margin-left:var(--sw);flex:1;min-height:100vh;padding:40px 48px;max-width:1200px}
+    .pt{font-size:28px;font-weight:700;margin-bottom:4px;letter-spacing:-.5px}
+    .ps{font-size:14px;color:var(--t2);margin-bottom:32px}
+    .pg{display:none}.pg.on{display:block;animation:fi .2s ease}
+    @keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .cd{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:24px}
+    .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .sc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:20px}
+    .si{width:40px;height:40px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+    .si.pu{background:var(--ac-s);color:var(--ac)}.si.gn{background:var(--gr-s);color:var(--gr)}.si.pi{background:var(--pk-s);color:var(--pk)}
+    .sl{font-size:13px;color:var(--t2);margin-bottom:4px}.sv{font-size:28px;font-weight:700;letter-spacing:-1px}.sch{font-size:12px;color:var(--gr);margin-top:4px}
+    .ul{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+    .uz{border:2px dashed var(--bdr);border-radius:var(--r);padding:60px 40px;text-align:center;cursor:pointer;transition:.2s}
+    .uz:hover,.uz.dg{border-color:var(--ac);background:var(--ac-s)}.uz.hf{border-color:var(--gr);background:var(--gr-s)}
+    .uzi{width:64px;height:64px;border-radius:50%;background:var(--ac-s);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+    .uzi svg{width:28px;height:28px;color:var(--ac)}
+    .uzt{font-size:16px;font-weight:600;margin-bottom:6px}.uzs{font-size:13px;color:var(--t2);margin-bottom:20px}
+    .ub{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rs);color:var(--t1);font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
+    .ub:hover{background:var(--card-h);border-color:var(--ac)}
+    .spl{display:flex;align-items:center;gap:8px;color:var(--ac);font-size:13px;margin-top:12px;cursor:pointer;justify-content:center}
+    .spi{margin-top:12px;display:none;padding:10px 16px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);color:var(--t1);width:100%;font-size:13px;font-family:inherit}
+    .spi:focus{outline:none;border-color:var(--ac)}.spi.vis{display:block}
+    .uff{font-size:12px;color:var(--t3);margin-top:16px;line-height:1.6}
+    .fa{display:none;align-items:center;gap:10px;margin-top:16px;padding:10px 16px;background:var(--gr-s);border-radius:var(--rs);font-size:13px;color:var(--gr)}.fa.vis{display:flex}
+    .fg{margin-bottom:20px}.fl{display:block;font-size:12px;color:var(--t2);margin-bottom:6px;font-weight:500}
+    .fi,.fs{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);color:var(--t1);font-size:14px;font-family:inherit;transition:border-color .15s}
+    .fi::placeholder{color:var(--t3)}.fi:focus,.fs:focus{outline:none;border-color:var(--ac)}
+    .fs{cursor:pointer;appearance:none}.fs option{background:var(--card)}
+    .cr{display:flex;align-items:center;gap:10px;font-size:14px;margin:20px 0;cursor:pointer}
+    .cr input[type=checkbox]{width:18px;height:18px;accent-color:var(--ac)}
+    .br{display:flex;gap:12px;margin-top:24px}
+    .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 28px;border-radius:var(--rs);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:.15s}
+    .bp{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;box-shadow:0 4px 20px var(--ac-g)}
+    .bp:hover{transform:translateY(-1px);box-shadow:0 6px 24px var(--ac-g)}
+    .bs{background:transparent;border:1px solid var(--bdr);color:var(--t1)}.bs:hover{border-color:var(--ac);background:var(--ac-s)}
+    .bd{position:absolute;top:0;right:0;background:transparent;border:1px solid var(--bdr);color:var(--t1);padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer}.bd:hover{border-color:var(--ac)}
+    .th{display:flex;align-items:center;gap:20px;padding:24px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:20px}
+    .ti{width:56px;height:56px;border-radius:var(--r);background:linear-gradient(135deg,#7c3aed,#ec4899);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .ti svg{width:24px;height:24px;color:#fff}
+    .tm{flex:1}.tn{font-size:20px;font-weight:700}.ta{font-size:14px;color:var(--t2);margin-top:2px}
+    .bg{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .bg-g{background:var(--gr-s);color:var(--gr)}.bg-p{background:var(--ac-s);color:var(--ac)}.bg-b{background:var(--bl-s);color:var(--bl)}
+    .wf{flex:1;max-width:280px;height:40px;display:flex;align-items:center;gap:2px}
+    .wb{width:3px;background:var(--ac);border-radius:2px;opacity:.5}
+    .ag{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .ac{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:20px}
+    .al{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:12px;color:var(--t2)}
+    .al svg{width:16px;height:16px}
+    .ab{font-size:32px;font-weight:700;letter-spacing:-1px}.ad{font-size:12px;color:var(--t2);margin-top:4px}
+    .mt{display:flex;flex-wrap:wrap;gap:6px}.mg{padding:4px 10px;background:var(--ac-s);color:var(--ac);border-radius:20px;font-size:12px;font-weight:500}
+    .eb{width:100%;height:6px;background:var(--bg);border-radius:3px;margin-bottom:8px;overflow:hidden}
+    .ef{height:100%;background:linear-gradient(90deg,var(--ac),var(--gr));border-radius:3px;transition:width .8s ease}
+    .sh{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .sic{width:36px;height:36px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center}
+    .sic.pu{background:var(--ac-s);color:var(--ac)}.sic.pi{background:var(--pk-s);color:var(--pk)}.sic.bl{background:var(--bl-s);color:var(--bl)}
+    .stl{font-size:18px;font-weight:700}.sts{font-size:13px;color:var(--t2)}
+    .vg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .vc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+    .vp{height:160px;background:linear-gradient(135deg,#1a1025,#2d1f42);display:flex;align-items:center;justify-content:center;position:relative}
+    .vpi{width:48px;height:48px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center}
+    .vbs{position:absolute;top:12px;left:12px;display:flex;flex-wrap:wrap;gap:6px}
+    .vb{padding:3px 8px;background:rgba(0,0,0,.6);border-radius:4px;font-size:11px;font-weight:500;backdrop-filter:blur(8px)}.vb.hl{background:var(--ac)}
+    .vby{padding:16px}.vtl{font-size:16px;font-weight:600;margin-bottom:8px}
+    .vcl{font-size:11px;color:var(--t3);margin-bottom:2px}.vct{font-size:13px;margin-bottom:8px}
+    .vht{font-size:12px;color:var(--ac);word-break:break-all}
+    .vdl{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border-top:1px solid var(--bdr);color:var(--t1);font-size:13px;font-weight:500;cursor:pointer;transition:.15s}.vdl:hover{background:var(--ac-s)}
+    .dg2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .dc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:20px}
+    .dh{display:flex;align-items:start;justify-content:space-between;margin-bottom:4px}
+    .dtl{font-size:16px;font-weight:600}.dv{font-size:13px;color:var(--pk);display:flex;align-items:center;gap:4px}
+    .dm{display:flex;gap:8px;margin-bottom:12px}.dmt{font-size:11px;padding:3px 8px;border-radius:4px;background:var(--ac-s);color:var(--ac)}
+    .dd{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:12px}
+    .dhl{font-size:12px;font-weight:600;margin-bottom:6px}
+    .ds{list-style:disc;padding-left:16px;margin-bottom:12px}.ds li{font-size:12px;color:var(--t2);line-height:1.8}
+    .dhtl{font-size:11px;color:var(--t3);margin-bottom:2px}.dhts{font-size:12px;color:var(--ac);word-break:break-all}
+    .tb{padding:16px 20px;border-radius:var(--rs);font-size:13px;line-height:1.6;margin-bottom:24px;display:flex;align-items:start;gap:10px}
+    .tb.yl{background:var(--yl-s);color:var(--yl);border:1px solid rgba(234,179,8,.15)}
+    .tb.pu{background:var(--ac-s);color:#c4b5fd;border:1px solid rgba(139,92,246,.15)}
+    .tb.bl{background:var(--bl-s);color:#93c5fd;border:1px solid rgba(59,130,246,.15)}
+    .aug{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+    .auc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:24px}
+    .aut{font-size:18px;font-weight:700;margin-bottom:16px}
+    .aur{margin-bottom:10px;font-size:14px;line-height:1.5}.aur span{color:var(--t2)}
+    .ib{margin-top:16px;padding:16px;background:var(--ac-s);border-radius:var(--rs);border-left:3px solid var(--ac)}
+    .il{font-size:13px;font-weight:600;color:var(--ac);margin-bottom:4px}.it{font-size:13px;color:var(--t2);line-height:1.5}
+    .ra{padding:14px 16px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);margin-bottom:8px}
+    .rn{font-size:15px;font-weight:600}.rg{font-size:11px;color:var(--t3)}.rd{font-size:13px;color:var(--t2);margin-top:2px}
+    .ri{display:flex;align-items:center;gap:16px;padding:20px 24px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:12px;cursor:pointer;transition:.15s}.ri:hover{border-color:var(--ac)}
+    .ric{width:44px;height:44px;border-radius:var(--rs);background:var(--ac-s);display:flex;align-items:center;justify-content:center;color:var(--ac)}
+    .rim{flex:1}.rit{font-size:15px;font-weight:600}.ris{font-size:12px;color:var(--t2);margin-top:2px}
+    .ria{display:flex;align-items:center;gap:12px}
+    .stc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:24px;margin-bottom:24px}
+    .stt{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;margin-bottom:20px}
+    .tr{display:flex;align-items:center;justify-content:space-between;padding:12px 0}.tr+.tr{border-top:1px solid var(--bdr)}
+    .trl{font-size:14px;font-weight:500}.trd{font-size:12px;color:var(--t2)}
+    .tg{position:relative;width:44px;height:24px;background:var(--bdr);border-radius:12px;cursor:pointer;transition:.2s;flex-shrink:0}.tg.on{background:var(--ac)}
+    .tg::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s}.tg.on::after{transform:translateX(20px)}
+    .pc{font-size:13px;color:var(--t2)}.pn{font-size:18px;font-weight:700}
+    .sp{width:20px;height:20px;border:2px solid var(--bdr);border-top:2px solid var(--ac);border-radius:50%;animation:spn .6s linear infinite}
+    @keyframes spn{to{transform:rotate(360deg)}}
+    .lo{display:none;position:fixed;inset:0;background:rgba(14,11,20,.8);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:16px}.lo.vis{display:flex}.lt{font-size:16px;font-weight:600}
+    .es{text-align:center;padding:80px 40px;color:var(--t3)}.es p{font-size:14px;margin-top:8px}
+    .ph{display:flex;align-items:start;justify-content:space-between;margin-bottom:32px;position:relative}
+    /* PROMO PLAN STYLES */
+    .pp-summary{font-size:15px;color:var(--t2);line-height:1.7;margin-bottom:24px}
+    .week-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:24px;margin-bottom:16px}
+    .week-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .week-num{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
+    .week-title{font-size:16px;font-weight:700}.week-goal{font-size:12px;color:var(--t2)}
+    .task-row{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--bdr);align-items:start}
+    .task-day{font-size:12px;font-weight:600;color:var(--ac);min-width:80px;padding-top:2px}
+    .task-body{flex:1}.task-name{font-size:13px;font-weight:600;margin-bottom:2px}.task-detail{font-size:12px;color:var(--t2);line-height:1.5}
+    .task-platform{font-size:11px;padding:2px 8px;background:var(--ac-s);color:var(--ac);border-radius:4px;margin-left:8px}
+    .pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+    .pp-list{list-style:none;padding:0}.pp-list li{padding:8px 0;border-bottom:1px solid var(--bdr);font-size:13px;color:var(--t2);display:flex;align-items:start;gap:8px}
+    .pp-list li::before{content:'→';color:var(--ac);font-weight:700;flex-shrink:0}
+    .collab-card{padding:14px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);margin-bottom:8px}
+    .collab-type{font-size:13px;font-weight:600;color:var(--ac)}.collab-desc{font-size:13px;color:var(--t2);margin:4px 0}.collab-impact{font-size:12px;color:var(--gr)}
+    .budget-item{padding:10px 14px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+    .budget-tactic{font-size:13px;font-weight:500}.budget-cost{font-size:12px;color:var(--yl);font-weight:600}.budget-result{font-size:11px;color:var(--t3)}
+    @media(max-width:1100px){.ag,.sg{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:768px){.sb{width:60px}.sb-logo,.ni span,.sb-foot .ui{display:none}.ni{justify-content:center;padding:12px}.mn{margin-left:60px;padding:24px}.ul,.vg,.dg2,.aug,.ag,.sg,.pp-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<aside class="sb">
+  <div class="sb-logo">ViralTrack</div>
+  <nav class="sb-nav">
+    <button class="ni on" data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
+    <button class="ni" data-p="new-analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg><span>New Analysis</span></button>
+    <button class="ni" data-p="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Reports</span></button>
+    <button class="ni" data-p="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
+  </nav>
+  <div class="sb-foot"><div class="av" id="uav">AM</div><div class="ui"><div class="un" id="udn">Alex Morgan</div><div class="up" id="upl">Pro Trial</div></div></div>
+</aside>
+<main class="mn">
+  <div class="pg on" id="pg-dashboard"><h1 class="pt">Dashboard</h1><p class="ps">Overview of your music promotion performance</p><div class="sg" id="sg"></div><div class="cd" style="text-align:center;color:var(--t3);padding:48px">More dashboard features coming soon...</div></div>
+  <div class="pg" id="pg-new-analysis"><div class="ph"><div><h1 class="pt">Upload your track</h1><p class="ps">Get an AI-generated promo strategy for your next release</p></div><button class="bd" id="demo-btn">Try demo track</button></div>
+    <div class="ul"><div class="cd" style="padding:0"><div class="uz" id="uz"><div class="uzi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="uzt">Drag and drop your track</div><div class="uzs">MP3, WAV or paste a Spotify link</div><div class="ub" id="ub-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload file</div><div class="spl" id="sp-tog"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Paste Spotify URL</div><input type="text" class="spi" id="sp-url" placeholder="https://open.spotify.com/track/..."><div class="uff">Supported formats: MP3, WAV, Spotify link<br>Max size: 50 MB</div><div class="fa" id="fa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="fn"></span></div></div><input type="file" id="finp" accept=".mp3,.wav,.m4a,.flac,.ogg,.aac" hidden></div>
+    <div><div class="fg"><label class="fl">Track title</label><input class="fi" id="in-t" placeholder="Enter track title"></div><div class="fg"><label class="fl">Artist name</label><input class="fi" id="in-a" placeholder="Enter artist name"></div><div class="fg"><label class="fl">Genre</label><input class="fi" id="in-g" placeholder="e.g., Pop, Hip-hop, Electronic"></div><div class="fg"><label class="fl">Similar artists</label><input class="fi" id="in-s" placeholder="e.g., Taylor Swift, Billie Eilish"></div><div class="fg"><label class="fl">Main goal for this release</label><select class="fs" id="in-gl"><option value="">Select your main goal</option><option>Grow fanbase</option><option>Get playlist placements</option><option>Promote a tour</option><option>Build brand deals</option><option>Go viral on TikTok</option></select></div><label class="cr"><input type="checkbox" id="in-tk" checked>I want content ideas for TikTok and Reels</label><div class="br"><button class="bt bp" id="btn-az"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Analyze track</button><button class="bt bs" id="btn-dr">Save draft</button></div></div></div>
+  </div>
+  <div class="pg" id="pg-analysis"></div>
+  <div class="pg" id="pg-promo"></div>
+  <div class="pg" id="pg-reports"><h1 class="pt">Reports</h1><p class="ps">Access all your previous analyses and promo plans</p><div id="rlist"></div></div>
+  <div class="pg" id="pg-settings"><h1 class="pt" style="margin-bottom:24px">Settings</h1><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</div><div class="tr"><div><div class="trl">Email notifications</div><div class="trd">Receive updates about your analyses</div></div><div class="tg on" id="tg-em" data-k="email_notifications"></div></div><div class="tr"><div><div class="trl">Marketing emails</div><div class="trd">Tips and best practices</div></div><div class="tg" id="tg-mk" data-k="marketing_emails"></div></div></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Subscription</div><p class="pc">Current plan</p><p class="pn" id="st-pl">Pro Trial</p><button class="bt bs" style="margin-top:12px">Upgrade plan</button></div></div>
+</main>
+<div class="lo" id="lo"><div class="sp" style="width:40px;height:40px;border-width:3px"></div><div class="lt" id="lo-text">Analyzing your track...</div></div>
+<script>
+const A='/api';
+const nis=document.querySelectorAll('.ni[data-p]'),pgs=document.querySelectorAll('.pg');
+let selFile=null, currentTrackId=null;
+
+function nav(id){pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));const pg=document.getElementById('pg-'+id),ni=document.querySelector(`[data-p="${id}"]`);if(pg)pg.classList.add('on');if(ni)ni.classList.add('on');if(id==='dashboard')loadDash();if(id==='reports')loadReports();if(id==='settings')loadSettings();}
+nis.forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));
+
+async function loadDash(){try{const d=await(await fetch(A+'/dashboard')).json();document.getElementById('sg').innerHTML=`<div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="sl">Total Tracks Analyzed</div><div class="sv">${d.total_tracks}</div><div class="sch">${d.weekly_tracks}</div></div><div class="sc"><div class="si gn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="sl">Promo Plans Created</div><div class="sv">${d.promo_plans}</div><div class="sch">${d.weekly_promos}</div></div><div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="sl">Total Views</div><div class="sv">${d.total_views}</div><div class="sch">${d.weekly_views}</div></div><div class="sc"><div class="si pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="sl">Engagement Rate</div><div class="sv">${d.engagement_rate}</div><div class="sch">${d.weekly_engagement}</div></div>`}catch(e){}}
+
+const uz=document.getElementById('uz'),finp=document.getElementById('finp');
+document.getElementById('ub-btn').addEventListener('click',e=>{e.stopPropagation();finp.click()});
+uz.addEventListener('click',()=>finp.click());
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('dg')});
+uz.addEventListener('dragleave',()=>uz.classList.remove('dg'));
+uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('dg');if(e.dataTransfer.files.length){selFile=e.dataTransfer.files[0];showF(selFile)}});
+finp.addEventListener('change',()=>{if(finp.files.length){selFile=finp.files[0];showF(selFile)}});
+function showF(f){document.getElementById('fn').textContent=f.name;document.getElementById('fa').classList.add('vis');uz.classList.add('hf')}
+document.getElementById('sp-tog').addEventListener('click',e=>{e.stopPropagation();document.getElementById('sp-url').classList.toggle('vis')});
+
+document.getElementById('btn-az').addEventListener('click',async()=>{const t=document.getElementById('in-t').value.trim(),a=document.getElementById('in-a').value.trim();if(!t||!a)return alert('Skriv inn låttittel og artistnavn.');await submit('uploaded')});
+document.getElementById('btn-dr').addEventListener('click',()=>submit('draft'));
+
+async function submit(st){const fd=new FormData();if(selFile)fd.append('audio',selFile);fd.append('title',document.getElementById('in-t').value.trim());fd.append('artist',document.getElementById('in-a').value.trim());fd.append('genre',document.getElementById('in-g').value.trim());fd.append('similar_artists',document.getElementById('in-s').value.trim());fd.append('spotify_url',document.getElementById('sp-url').value.trim());fd.append('want_tiktok_content',document.getElementById('in-tk').checked?'1':'0');fd.append('main_goal',document.getElementById('in-gl').value);fd.append('status',st);if(st==='draft'){try{await fetch(A+'/tracks',{method:'POST',body:fd});alert('Utkast lagret!')}catch(e){alert('Feil.')}return}showLoad(true,'Analyserer låten din...');try{const trk=await(await fetch(A+'/tracks',{method:'POST',body:fd})).json();const res=await(await fetch(A+'/tracks/'+trk.id+'/analyze',{method:'POST'})).json();showLoad(false);showAn(res.track,res.analysis)}catch(e){showLoad(false);alert('Feil ved analyse.');console.error(e)}}
+
+document.getElementById('demo-btn').addEventListener('click',async()=>{showLoad(true,'Analyserer demo-låt...');try{const{trackId}=await(await fetch(A+'/demo',{method:'POST'})).json();const d=await(await fetch(A+'/tracks/'+trackId)).json();showLoad(false);showAn(d,d.analysis)}catch(e){showLoad(false);alert('Feil.');console.error(e)}});
+
+function showAn(t,an){
+  currentTrackId=t.id;
+  const moods=JSON.parse(an.mood_tags||'[]'),refs=JSON.parse(an.reference_artists||'[]'),vids=JSON.parse(an.video_edits||'[]'),diys=JSON.parse(an.diy_content_ideas||'[]');
+  const bars=Array.from({length:50},()=>`<div class="wb" style="height:${Math.random()*30+5}px"></div>`).join('');
+  const pg=document.getElementById('pg-analysis');
+  pg.innerHTML=`<h1 class="pt">Track Analysis</h1><p class="ps">AI-powered insights about your music</p>
+    <div class="th"><div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="tm"><div class="tn">${t.title}</div><div class="ta">${t.artist}</div><span class="bg bg-g" style="margin-top:6px">Analysis complete</span></div><div class="wf">${bars}</div><button class="bt bp" style="white-space:nowrap" id="btn-gen-promo">📋 Generate promo plan</button></div>
+    <div class="ag"><div class="ac"><div class="al"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Tempo</div><div class="ab">${an.tempo_bpm} BPM</div><div class="ad">${an.tempo_description}</div></div><div class="ac"><div class="al">Mood</div><div class="mt">${moods.map(m=>`<span class="mg">${m}</span>`).join('')}</div></div><div class="ac"><div class="al"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Energy</div><div class="eb"><div class="ef" style="width:${an.energy_percent}%"></div></div><div class="ab">${an.energy_percent}%</div><div class="ad">${an.energy_description}</div></div><div class="ac"><div class="al">Genre fit</div><div style="font-size:16px;font-weight:600;margin-top:8px">${an.genre_fit}</div></div></div>
+    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div><div class="stl">AI-Generated Video Edits</div><div class="sts">Ready-to-post content optimized for virality</div></div></div><div class="vg">${vids.map(v=>`<div class="vc"><div class="vp"><div class="vbs"><span class="vb">${v.duration}</span>${(v.platforms||[]).map(p=>`<span class="vb">${p}</span>`).join('')}<span class="vb hl">${v.timestamp}</span></div><div class="vpi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div></div><div class="vby"><div class="vtl">${v.title}</div><div class="vcl">Caption:</div><div class="vct">${v.caption}</div><div class="vcl">Hashtags:</div><div class="vht">${v.hashtags}</div></div></div>`).join('')}</div><div class="tb yl"><span>💡</span><span><strong>Pro tip:</strong> ${an.pro_tip}</span></div></div>
+    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div><div><div class="stl">DIY Content Ideas</div><div class="sts">Personal content you can create yourself</div></div></div><div class="dg2">${diys.map(d=>`<div class="dc"><div class="dh"><div class="dtl">${d.title}</div><div class="dv">🔥 ${d.virality}%</div></div><div class="dm"><span class="dmt">${d.difficulty}</span><span class="dmt">⏱ ${d.duration}</span></div><div class="dd">${d.description}</div><div class="dhl">How to execute:</div><ul class="ds">${(d.howTo||[]).map(s=>`<li>${s}</li>`).join('')}</ul><div class="dhtl">Suggested hashtags:</div><div class="dhts">${d.hashtags}</div></div>`).join('')}</div><div class="tb pu"><span>🎬</span><span><strong>Creator tip:</strong> ${an.creator_tip}</span></div></div>
+    <div class="aug"><div class="auc"><div class="aut">Likely audience</div><div class="aur"><span>Age:</span> <strong>${an.audience_age}</strong></div><div class="aur"><span>Interests:</span> <strong>${an.audience_interests}</strong></div><div class="aur"><span>Platforms:</span> <strong>${an.audience_platforms}</strong></div><div class="aur"><span>Content angle:</span> <strong>${an.audience_content_angle}</strong></div><div class="ib"><div class="il">Key insight</div><div class="it">${an.audience_key_insight}</div></div></div><div class="auc"><div class="aut">Reference artists</div>${refs.map(a=>`<div class="ra"><div class="rn">${a.name}</div><div class="rg">${a.genre}</div><div class="rd">${a.description}</div></div>`).join('')}</div></div>`;
+  pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
+  document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
+}
+
+// ── PROMO PLAN ──────────────────────────────────────────
+async function genPromo(trackId, track){
+  showLoad(true,'Genererer promo-plan... (dette tar ca 15 sek)');
+  try{
+    const res=await(await fetch(A+'/tracks/'+trackId+'/promo-plan',{method:'POST'})).json();
+    showLoad(false);
+    if(res.plan) showPromoPlan(track, res.plan);
+    else alert('Kunne ikke generere promo-plan. Sjekk Terminal for feil.');
+  }catch(e){showLoad(false);alert('Feil ved generering.');console.error(e)}
+}
+
+function showPromoPlan(track, plan){
+  const pg=document.getElementById('pg-promo');
+  pg.innerHTML=`<h1 class="pt">${plan.plan_title || track.title+' — Promo Plan'}</h1><p class="ps">AI-generated launch strategy</p>
+    <div class="pp-summary">${plan.plan_summary||''}</div>
+
+    ${plan.target_audience?`<div class="cd" style="margin-bottom:24px"><div class="sh"><div class="sic bl"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="stl">Target Audience</div></div></div><div class="aur"><span>Description:</span> <strong>${plan.target_audience.description||''}</strong></div><div class="aur"><span>Best platforms:</span> <strong>${(plan.target_audience.best_platforms||[]).join(', ')}</strong></div><div class="aur"><span>Best posting times:</span> <strong>${plan.target_audience.best_posting_times||''}</strong></div><div class="aur"><span>Content style:</span> <strong>${plan.target_audience.content_style||''}</strong></div></div>`:''}
+
+    <div class="sh" style="margin-top:8px"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stl">4-Week Launch Plan</div><div class="sts">Konkrete oppgaver dag for dag</div></div></div>
+
+    ${(plan.weeks||[]).map(w=>`<div class="week-card"><div class="week-header"><div class="week-num">${w.week_number}</div><div><div class="week-title">${w.title||'Uke '+w.week_number}</div><div class="week-goal">${w.goal||''}</div></div></div>${(w.tasks||[]).map(t=>`<div class="task-row"><div class="task-day">${t.day||''}</div><div class="task-body"><div class="task-name">${t.task||''}<span class="task-platform">${t.platform||''}</span></div><div class="task-detail">${t.details||''}</div></div></div>`).join('')}</div>`).join('')}
+
+    <div class="pp-grid">
+      ${plan.playlist_strategy?`<div class="cd"><div class="stl" style="margin-bottom:16px">🎧 Playlist Strategy</div><div class="dd">${plan.playlist_strategy.approach||''}</div><div class="dhl" style="margin-top:12px">Target playlists:</div><ul class="pp-list">${(plan.playlist_strategy.target_playlists||[]).map(p=>`<li>${p}</li>`).join('')}</ul>${plan.playlist_strategy.pitch_tips?`<div class="tb bl" style="margin-top:12px;margin-bottom:0"><span>💡</span><span>${plan.playlist_strategy.pitch_tips}</span></div>`:''}</div>`:''}
+
+      ${plan.collaboration_ideas?`<div class="cd"><div class="stl" style="margin-bottom:16px">🤝 Collaboration Ideas</div>${(plan.collaboration_ideas||[]).map(c=>`<div class="collab-card"><div class="collab-type">${c.type||''}</div><div class="collab-desc">${c.description||''}</div><div class="collab-impact">→ ${c.expected_impact||''}</div></div>`).join('')}</div>`:''}
+    </div>
+
+    ${plan.budget_tips?`<div class="pp-grid"><div class="cd"><div class="stl" style="margin-bottom:16px">💰 Free Tactics</div><ul class="pp-list">${(plan.budget_tips.free_tactics||[]).map(t=>`<li>${t}</li>`).join('')}</ul></div><div class="cd"><div class="stl" style="margin-bottom:16px">💳 Paid Options</div>${(plan.budget_tips.paid_options||[]).map(p=>`<div class="budget-item"><div><div class="budget-tactic">${p.tactic||''}</div><div class="budget-result">${p.expected_result||''}</div></div><div class="budget-cost">${p.estimated_cost||''}</div></div>`).join('')}</div></div>`:''}
+
+    ${plan.key_metrics?`<div class="cd" style="margin-bottom:24px"><div class="stl" style="margin-bottom:12px">📊 Key Metrics to Track</div><div style="display:flex;flex-wrap:wrap;gap:8px">${(plan.key_metrics||[]).map(m=>`<span class="bg bg-p" style="font-size:13px;padding:6px 14px">${m}</span>`).join('')}</div></div>`:''}
+
+    ${plan.common_mistakes?`<div class="tb yl" style="flex-direction:column;gap:8px"><strong>⚠️ Common Mistakes to Avoid</strong><ul class="pp-list" style="margin:0">${(plan.common_mistakes||[]).map(m=>`<li>${m}</li>`).join('')}</ul></div>`:''}
+
+    <div style="text-align:center;margin-top:16px"><button class="bt bs" onclick="currentTrackId && genPromo(currentTrackId, {title:'${(track.title||'').replace(/'/g,"\\'")}',artist:'${(track.artist||'').replace(/'/g,"\\'")}',id:currentTrackId})">🔄 Regenerate plan</button></div>`;
+
+  pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
+}
+
+async function loadReports(){try{const reps=await(await fetch(A+'/reports')).json();const el=document.getElementById('rlist');if(!reps.length){el.innerHTML='<div class="es"><p>No reports yet. Analyze a track to create your first report.</p></div>';return}el.innerHTML=reps.map(r=>`<div class="ri" data-t="${r.track_id}"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="rim"><div class="rit">${r.title}</div><div class="ris">${r.track_artist} · ${new Date(r.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div></div><div class="ria"><span class="bg ${r.type==='promo_plan'?'bg-p':'bg-g'}">${r.type==='promo_plan'?'Promo Plan':'Analysis'}</span></div></div>`).join('');el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{try{const d=await(await fetch(A+'/tracks/'+i.dataset.t)).json();if(d.promo_plan)showPromoPlan(d,d.promo_plan);else if(d.analysis)showAn(d,d.analysis)}catch(e){console.error(e)}}))}catch(e){}}
+
+async function loadSettings(){try{const s=await(await fetch(A+'/settings')).json();document.getElementById('st-n').value=s.user_name||'';document.getElementById('st-e').value=s.user_email||'';document.getElementById('st-pl').textContent=s.plan||'Free';document.getElementById('tg-em').classList.toggle('on',s.email_notifications==='1');document.getElementById('tg-mk').classList.toggle('on',s.marketing_emails==='1')}catch(e){}}
+document.getElementById('btn-sp').addEventListener('click',async()=>{await fetch(A+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_name:document.getElementById('st-n').value,user_email:document.getElementById('st-e').value})});document.getElementById('udn').textContent=document.getElementById('st-n').value;document.getElementById('uav').textContent=document.getElementById('st-n').value.split(' ').map(n=>n[0]).join('').toUpperCase()});
+document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>{t.classList.toggle('on');const k=t.dataset.k;if(k)await fetch(A+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({[k]:t.classList.contains('on')?'1':'0'})})}));
+
+function showLoad(v,msg){document.getElementById('lo').classList.toggle('vis',v);if(msg)document.getElementById('lo-text').textContent=msg}
+loadDash();
+</script>
+</body>
+</html>

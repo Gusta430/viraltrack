@@ -1,0 +1,9 @@
+{
+  "name": "viraltrack",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  }
+}
