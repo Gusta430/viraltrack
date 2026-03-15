@@ -241,8 +241,62 @@
     .mob-nav button.on{color:var(--ac)}
     .mob-nav button:active{background:var(--ac-s)}
   </style>
+  <style>
+    /* AUTH STYLES */
+    .auth-wrap{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+    .auth-wrap.on{display:flex}
+    .auth-box{width:100%;max-width:400px}
+    .auth-logo{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;text-align:center;margin-bottom:8px}
+    .auth-sub{text-align:center;color:var(--t2);font-size:14px;margin-bottom:32px}
+    .auth-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:32px}
+    .auth-title{font-size:20px;font-weight:700;margin-bottom:20px}
+    .auth-err{display:none;padding:10px 14px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:var(--rs);color:#f87171;font-size:13px;margin-bottom:16px}
+    .auth-err.vis{display:block}
+    .auth-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--t2)}
+    .auth-switch a{color:var(--ac);cursor:pointer;text-decoration:none;font-weight:600}
+    .auth-switch a:hover{text-decoration:underline}
+    .app-wrap{display:none}.app-wrap.on{display:flex;min-height:100vh}
+    .logout-btn{margin-top:12px;width:100%;padding:10px;background:none;border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:var(--rs);font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;transition:.15s}
+    .logout-btn:hover{background:rgba(239,68,68,.1)}
+  </style>
 </head>
 <body>
+
+<!-- AUTH SCREEN -->
+<div class="auth-wrap on" id="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">🎵 ViralTrack</div>
+    <div class="auth-sub">AI-powered music promotion</div>
+
+    <!-- LOGIN -->
+    <div id="auth-login">
+      <div class="auth-card">
+        <div class="auth-title">Log in</div>
+        <div class="auth-err" id="login-err"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" id="login-email" type="email" placeholder="you@example.com"></div>
+        <div class="fg"><label class="fl">Password</label><input class="fi" id="login-pass" type="password" placeholder="Your password"></div>
+        <button class="bt bp" style="width:100%" id="btn-login">Log in</button>
+      </div>
+      <div class="auth-switch">Don't have an account? <a id="show-register">Sign up</a></div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="auth-register" style="display:none">
+      <div class="auth-card">
+        <div class="auth-title">Create account</div>
+        <div class="auth-err" id="reg-err"></div>
+        <div class="fg"><label class="fl">Name</label><input class="fi" id="reg-name" placeholder="Your name"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" id="reg-email" type="email" placeholder="you@example.com"></div>
+        <div class="fg"><label class="fl">Password</label><input class="fi" id="reg-pass" type="password" placeholder="Min. 6 characters"></div>
+        <button class="bt bp" style="width:100%" id="btn-register">Create account</button>
+      </div>
+      <div class="auth-switch">Already have an account? <a id="show-login">Log in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP (hidden until logged in) -->
+<div class="app-wrap" id="app-wrap">
 <aside class="sb">
   <div class="sb-logo">ViralTrack</div>
   <nav class="sb-nav">
@@ -262,7 +316,7 @@
   <div class="pg" id="pg-analysis"></div>
   <div class="pg" id="pg-promo"></div>
   <div class="pg" id="pg-reports"><h1 class="pt">Reports</h1><p class="ps">Access all your previous analyses and promo plans</p><div id="rlist"></div></div>
-  <div class="pg" id="pg-settings"><h1 class="pt" style="margin-bottom:24px">Settings</h1><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</div><div class="tr"><div><div class="trl">Email notifications</div><div class="trd">Receive updates about your analyses</div></div><div class="tg on" id="tg-em" data-k="email_notifications"></div></div><div class="tr"><div><div class="trl">Marketing emails</div><div class="trd">Tips and best practices</div></div><div class="tg" id="tg-mk" data-k="marketing_emails"></div></div></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Subscription</div><p class="pc">Current plan</p><p class="pn" id="st-pl">Pro Trial</p><button class="bt bs" style="margin-top:12px">Upgrade plan</button></div></div>
+  <div class="pg" id="pg-settings"><h1 class="pt" style="margin-bottom:24px">Settings</h1><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</div><div class="tr"><div><div class="trl">Email notifications</div><div class="trd">Receive updates about your analyses</div></div><div class="tg on" id="tg-em" data-k="email_notifications"></div></div><div class="tr"><div><div class="trl">Marketing emails</div><div class="trd">Tips and best practices</div></div><div class="tg" id="tg-mk" data-k="marketing_emails"></div></div></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Subscription</div><p class="pc">Current plan</p><p class="pn" id="st-pl">Pro Trial</p><button class="bt bs" style="margin-top:12px">Upgrade plan</button></div><button class="logout-btn" id="btn-logout">Log out</button></div>
 </main>
 <!-- Mobile bottom nav -->
 <nav class="mob-nav" id="mob-nav">
@@ -272,12 +326,102 @@
   <button data-p="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
 </nav>
 
+</div> <!-- end app-wrap -->
+
 <div class="lo" id="lo"><div class="sp" style="width:40px;height:40px;border-width:3px"></div><div class="lt" id="lo-text">Analyzing your track...</div></div>
 <script>
 const A='/api';
+let authToken = localStorage.getItem('vt_token');
+let currentUser = null;
+let selFile=null, currentTrackId=null;
+
+// ── AUTH HELPERS ──
+function authHeaders() { return { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' }; }
+function authFetch(url, opts = {}) {
+  opts.headers = { ...opts.headers, 'Authorization': 'Bearer ' + authToken };
+  return fetch(url, opts);
+}
+
+// ── SHOW/HIDE AUTH vs APP ──
+function showAuth() {
+  document.getElementById('auth-wrap').classList.add('on');
+  document.getElementById('app-wrap').classList.remove('on');
+}
+function showApp(user) {
+  currentUser = user;
+  document.getElementById('auth-wrap').classList.remove('on');
+  document.getElementById('app-wrap').classList.add('on');
+  document.getElementById('udn').textContent = user.name;
+  document.getElementById('uav').textContent = user.name.split(' ').map(n=>n[0]).join('').toUpperCase();
+  document.getElementById('upl').textContent = user.plan || 'Free Trial';
+  loadDash();
+}
+
+// ── CHECK EXISTING SESSION ──
+async function checkAuth() {
+  if (!authToken) return showAuth();
+  try {
+    const res = await fetch(A+'/auth/me', { headers: { 'Authorization': 'Bearer ' + authToken } });
+    if (res.ok) { const user = await res.json(); showApp(user); }
+    else { localStorage.removeItem('vt_token'); authToken = null; showAuth(); }
+  } catch(e) { showAuth(); }
+}
+
+// ── LOGIN ──
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.classList.remove('vis');
+  if (!email || !pass) { errEl.textContent = 'Fill in all fields'; errEl.classList.add('vis'); return; }
+  try {
+    const res = await fetch(A+'/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('vis'); return; }
+    authToken = data.token;
+    localStorage.setItem('vt_token', authToken);
+    showApp(data.user);
+  } catch(e) { errEl.textContent = 'Connection error'; errEl.classList.add('vis'); }
+});
+
+// ── REGISTER ──
+document.getElementById('btn-register').addEventListener('click', async () => {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const errEl = document.getElementById('reg-err');
+  errEl.classList.remove('vis');
+  if (!name || !email || !pass) { errEl.textContent = 'Fill in all fields'; errEl.classList.add('vis'); return; }
+  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.classList.add('vis'); return; }
+  try {
+    const res = await fetch(A+'/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password: pass }) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('vis'); return; }
+    authToken = data.token;
+    localStorage.setItem('vt_token', authToken);
+    showApp(data.user);
+  } catch(e) { errEl.textContent = 'Connection error'; errEl.classList.add('vis'); }
+});
+
+// ── SWITCH LOGIN/REGISTER ──
+document.getElementById('show-register').addEventListener('click', () => { document.getElementById('auth-login').style.display='none'; document.getElementById('auth-register').style.display='block'; });
+document.getElementById('show-login').addEventListener('click', () => { document.getElementById('auth-register').style.display='none'; document.getElementById('auth-login').style.display='block'; });
+
+// ── LOGOUT ──
+document.getElementById('btn-logout').addEventListener('click', async () => {
+  await fetch(A+'/auth/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken } });
+  localStorage.removeItem('vt_token');
+  authToken = null; currentUser = null;
+  showAuth();
+});
+
+// Allow Enter key to submit
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('btn-login').click(); });
+document.getElementById('reg-pass').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('btn-register').click(); });
+
+// ── NAVIGATION ──
 const nis=document.querySelectorAll('.ni[data-p]'),pgs=document.querySelectorAll('.pg');
 const mobNis=document.querySelectorAll('.mob-nav button[data-p]');
-let selFile=null, currentTrackId=null;
 
 function nav(id){
   pgs.forEach(p=>p.classList.remove('on'));
@@ -290,11 +434,12 @@ function nav(id){
 }
 nis.forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));
 mobNis.forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));
-// Set initial active state on mobile nav
 document.querySelector('.mob-nav [data-p="dashboard"]')?.classList.add('on');
 
-async function loadDash(){try{const d=await(await fetch(A+'/dashboard')).json();document.getElementById('sg').innerHTML=`<div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="sl">Total Tracks Analyzed</div><div class="sv">${d.total_tracks}</div><div class="sch">${d.weekly_tracks}</div></div><div class="sc"><div class="si gn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="sl">Promo Plans Created</div><div class="sv">${d.promo_plans}</div><div class="sch">${d.weekly_promos}</div></div><div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="sl">Total Views</div><div class="sv">${d.total_views}</div><div class="sch">${d.weekly_views}</div></div><div class="sc"><div class="si pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="sl">Engagement Rate</div><div class="sv">${d.engagement_rate}</div><div class="sch">${d.weekly_engagement}</div></div>`}catch(e){}}
+// ── DASHBOARD ──
+async function loadDash(){try{const d=await(await authFetch(A+'/dashboard')).json();document.getElementById('sg').innerHTML=`<div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="sl">Total Tracks Analyzed</div><div class="sv">${d.total_tracks}</div><div class="sch">${d.weekly_tracks}</div></div><div class="sc"><div class="si gn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="sl">Promo Plans Created</div><div class="sv">${d.promo_plans}</div><div class="sch">${d.weekly_promos}</div></div><div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="sl">Total Views</div><div class="sv">${d.total_views}</div><div class="sch">${d.weekly_views}</div></div><div class="sc"><div class="si pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="sl">Engagement Rate</div><div class="sv">${d.engagement_rate}</div><div class="sch">${d.weekly_engagement}</div></div>`}catch(e){}}
 
+// ── UPLOAD ──
 const uz=document.getElementById('uz'),finp=document.getElementById('finp');
 document.getElementById('ub-btn').addEventListener('click',e=>{e.stopPropagation();finp.click()});
 uz.addEventListener('click',()=>finp.click());
@@ -308,9 +453,9 @@ document.getElementById('sp-tog').addEventListener('click',e=>{e.stopPropagation
 document.getElementById('btn-az').addEventListener('click',async()=>{const t=document.getElementById('in-t').value.trim(),a=document.getElementById('in-a').value.trim();if(!t||!a)return alert('Skriv inn låttittel og artistnavn.');await submit('uploaded')});
 document.getElementById('btn-dr').addEventListener('click',()=>submit('draft'));
 
-async function submit(st){const fd=new FormData();if(selFile)fd.append('audio',selFile);fd.append('title',document.getElementById('in-t').value.trim());fd.append('artist',document.getElementById('in-a').value.trim());fd.append('genre',document.getElementById('in-g').value.trim());fd.append('similar_artists',document.getElementById('in-s').value.trim());fd.append('spotify_url',document.getElementById('sp-url').value.trim());fd.append('want_tiktok_content',document.getElementById('in-tk').checked?'1':'0');fd.append('main_goal',document.getElementById('in-gl').value);fd.append('status',st);if(st==='draft'){try{await fetch(A+'/tracks',{method:'POST',body:fd});alert('Utkast lagret!')}catch(e){alert('Feil.')}return}showLoad(true,'Analyserer låten din...');try{const trk=await(await fetch(A+'/tracks',{method:'POST',body:fd})).json();const res=await(await fetch(A+'/tracks/'+trk.id+'/analyze',{method:'POST'})).json();showLoad(false);showAn(res.track,res.analysis)}catch(e){showLoad(false);alert('Feil ved analyse.');console.error(e)}}
+async function submit(st){const fd=new FormData();if(selFile)fd.append('audio',selFile);fd.append('title',document.getElementById('in-t').value.trim());fd.append('artist',document.getElementById('in-a').value.trim());fd.append('genre',document.getElementById('in-g').value.trim());fd.append('similar_artists',document.getElementById('in-s').value.trim());fd.append('spotify_url',document.getElementById('sp-url').value.trim());fd.append('want_tiktok_content',document.getElementById('in-tk').checked?'1':'0');fd.append('main_goal',document.getElementById('in-gl').value);fd.append('status',st);if(st==='draft'){try{await authFetch(A+'/tracks',{method:'POST',body:fd});alert('Utkast lagret!')}catch(e){alert('Feil.')}return}showLoad(true,'Analyserer låten din...');try{const trk=await(await authFetch(A+'/tracks',{method:'POST',body:fd})).json();const res=await(await authFetch(A+'/tracks/'+trk.id+'/analyze',{method:'POST'})).json();showLoad(false);showAn(res.track,res.analysis)}catch(e){showLoad(false);alert('Feil ved analyse.');console.error(e)}}
 
-document.getElementById('demo-btn').addEventListener('click',async()=>{showLoad(true,'Analyserer demo-låt...');try{const{trackId}=await(await fetch(A+'/demo',{method:'POST'})).json();const d=await(await fetch(A+'/tracks/'+trackId)).json();showLoad(false);showAn(d,d.analysis)}catch(e){showLoad(false);alert('Feil.');console.error(e)}});
+document.getElementById('demo-btn').addEventListener('click',async()=>{showLoad(true,'Analyserer demo-låt...');try{const{trackId}=await(await authFetch(A+'/demo',{method:'POST'})).json();const d=await(await authFetch(A+'/tracks/'+trackId)).json();showLoad(false);showAn(d,d.analysis)}catch(e){showLoad(false);alert('Feil.');console.error(e)}});
 
 function showAn(t,an){
   currentTrackId=t.id;
@@ -327,53 +472,34 @@ function showAn(t,an){
   document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
 }
 
-// ── PROMO PLAN ──────────────────────────────────────────
-async function genPromo(trackId, track){
-  showLoad(true,'Genererer promo-plan... (dette tar ca 15 sek)');
-  try{
-    const res=await(await fetch(A+'/tracks/'+trackId+'/promo-plan',{method:'POST'})).json();
-    showLoad(false);
-    if(res.plan) showPromoPlan(track, res.plan);
-    else alert('Kunne ikke generere promo-plan. Sjekk Terminal for feil.');
-  }catch(e){showLoad(false);alert('Feil ved generering.');console.error(e)}
-}
+async function genPromo(trackId,track){showLoad(true,'Genererer promo-plan... (ca 15 sek)');try{const res=await(await authFetch(A+'/tracks/'+trackId+'/promo-plan',{method:'POST'})).json();showLoad(false);if(res.plan)showPromoPlan(track,res.plan);else alert('Kunne ikke generere promo-plan.')}catch(e){showLoad(false);alert('Feil.');console.error(e)}}
 
-function showPromoPlan(track, plan){
+function showPromoPlan(track,plan){
   const pg=document.getElementById('pg-promo');
-  pg.innerHTML=`<h1 class="pt">${plan.plan_title || track.title+' — Promo Plan'}</h1><p class="ps">AI-generated launch strategy</p>
+  pg.innerHTML=`<h1 class="pt">${plan.plan_title||track.title+' — Promo Plan'}</h1><p class="ps">AI-generated launch strategy</p>
     <div class="pp-summary">${plan.plan_summary||''}</div>
-
     ${plan.target_audience?`<div class="cd" style="margin-bottom:24px"><div class="sh"><div class="sic bl"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="stl">Target Audience</div></div></div><div class="aur"><span>Description:</span> <strong>${plan.target_audience.description||''}</strong></div><div class="aur"><span>Best platforms:</span> <strong>${(plan.target_audience.best_platforms||[]).join(', ')}</strong></div><div class="aur"><span>Best posting times:</span> <strong>${plan.target_audience.best_posting_times||''}</strong></div><div class="aur"><span>Content style:</span> <strong>${plan.target_audience.content_style||''}</strong></div></div>`:''}
-
     <div class="sh" style="margin-top:8px"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="stl">4-Week Launch Plan</div><div class="sts">Konkrete oppgaver dag for dag</div></div></div>
-
     ${(plan.weeks||[]).map(w=>`<div class="week-card"><div class="week-header"><div class="week-num">${w.week_number}</div><div><div class="week-title">${w.title||'Uke '+w.week_number}</div><div class="week-goal">${w.goal||''}</div></div></div>${(w.tasks||[]).map(t=>`<div class="task-row"><div class="task-day">${t.day||''}</div><div class="task-body"><div class="task-name">${t.task||''}<span class="task-platform">${t.platform||''}</span></div><div class="task-detail">${t.details||''}</div></div></div>`).join('')}</div>`).join('')}
-
-    <div class="pp-grid">
-      ${plan.playlist_strategy?`<div class="cd"><div class="stl" style="margin-bottom:16px">🎧 Playlist Strategy</div><div class="dd">${plan.playlist_strategy.approach||''}</div><div class="dhl" style="margin-top:12px">Target playlists:</div><ul class="pp-list">${(plan.playlist_strategy.target_playlists||[]).map(p=>`<li>${p}</li>`).join('')}</ul>${plan.playlist_strategy.pitch_tips?`<div class="tb bl" style="margin-top:12px;margin-bottom:0"><span>💡</span><span>${plan.playlist_strategy.pitch_tips}</span></div>`:''}</div>`:''}
-
-      ${plan.collaboration_ideas?`<div class="cd"><div class="stl" style="margin-bottom:16px">🤝 Collaboration Ideas</div>${(plan.collaboration_ideas||[]).map(c=>`<div class="collab-card"><div class="collab-type">${c.type||''}</div><div class="collab-desc">${c.description||''}</div><div class="collab-impact">→ ${c.expected_impact||''}</div></div>`).join('')}</div>`:''}
-    </div>
-
+    <div class="pp-grid">${plan.playlist_strategy?`<div class="cd"><div class="stl" style="margin-bottom:16px">🎧 Playlist Strategy</div><div class="dd">${plan.playlist_strategy.approach||''}</div><div class="dhl" style="margin-top:12px">Target playlists:</div><ul class="pp-list">${(plan.playlist_strategy.target_playlists||[]).map(p=>`<li>${p}</li>`).join('')}</ul>${plan.playlist_strategy.pitch_tips?`<div class="tb bl" style="margin-top:12px;margin-bottom:0"><span>💡</span><span>${plan.playlist_strategy.pitch_tips}</span></div>`:''}</div>`:''}${plan.collaboration_ideas?`<div class="cd"><div class="stl" style="margin-bottom:16px">🤝 Collaboration Ideas</div>${(plan.collaboration_ideas||[]).map(c=>`<div class="collab-card"><div class="collab-type">${c.type||''}</div><div class="collab-desc">${c.description||''}</div><div class="collab-impact">→ ${c.expected_impact||''}</div></div>`).join('')}</div>`:''}</div>
     ${plan.budget_tips?`<div class="pp-grid"><div class="cd"><div class="stl" style="margin-bottom:16px">💰 Free Tactics</div><ul class="pp-list">${(plan.budget_tips.free_tactics||[]).map(t=>`<li>${t}</li>`).join('')}</ul></div><div class="cd"><div class="stl" style="margin-bottom:16px">💳 Paid Options</div>${(plan.budget_tips.paid_options||[]).map(p=>`<div class="budget-item"><div><div class="budget-tactic">${p.tactic||''}</div><div class="budget-result">${p.expected_result||''}</div></div><div class="budget-cost">${p.estimated_cost||''}</div></div>`).join('')}</div></div>`:''}
-
     ${plan.key_metrics?`<div class="cd" style="margin-bottom:24px"><div class="stl" style="margin-bottom:12px">📊 Key Metrics to Track</div><div style="display:flex;flex-wrap:wrap;gap:8px">${(plan.key_metrics||[]).map(m=>`<span class="bg bg-p" style="font-size:13px;padding:6px 14px">${m}</span>`).join('')}</div></div>`:''}
-
-    ${plan.common_mistakes?`<div class="tb yl" style="flex-direction:column;gap:8px"><strong>⚠️ Common Mistakes to Avoid</strong><ul class="pp-list" style="margin:0">${(plan.common_mistakes||[]).map(m=>`<li>${m}</li>`).join('')}</ul></div>`:''}
-
-    <div style="text-align:center;margin-top:16px"><button class="bt bs" onclick="currentTrackId && genPromo(currentTrackId, {title:'${(track.title||'').replace(/'/g,"\\'")}',artist:'${(track.artist||'').replace(/'/g,"\\'")}',id:currentTrackId})">🔄 Regenerate plan</button></div>`;
-
+    ${plan.common_mistakes?`<div class="tb yl" style="flex-direction:column;gap:8px"><strong>⚠️ Common Mistakes to Avoid</strong><ul class="pp-list" style="margin:0">${(plan.common_mistakes||[]).map(m=>`<li>${m}</li>`).join('')}</ul></div>`:''}`;
   pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
 }
 
-async function loadReports(){try{const reps=await(await fetch(A+'/reports')).json();const el=document.getElementById('rlist');if(!reps.length){el.innerHTML='<div class="es"><p>No reports yet. Analyze a track to create your first report.</p></div>';return}el.innerHTML=reps.map(r=>`<div class="ri" data-t="${r.track_id}"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="rim"><div class="rit">${r.title}</div><div class="ris">${r.track_artist} · ${new Date(r.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div></div><div class="ria"><span class="bg ${r.type==='promo_plan'?'bg-p':'bg-g'}">${r.type==='promo_plan'?'Promo Plan':'Analysis'}</span></div></div>`).join('');el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{try{const d=await(await fetch(A+'/tracks/'+i.dataset.t)).json();if(d.promo_plan)showPromoPlan(d,d.promo_plan);else if(d.analysis)showAn(d,d.analysis)}catch(e){console.error(e)}}))}catch(e){}}
+// ── REPORTS ──
+async function loadReports(){try{const reps=await(await authFetch(A+'/reports')).json();const el=document.getElementById('rlist');if(!reps.length){el.innerHTML='<div class="es"><p>No reports yet. Analyze a track to create your first report.</p></div>';return}el.innerHTML=reps.map(r=>`<div class="ri" data-t="${r.track_id}"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="rim"><div class="rit">${r.title}</div><div class="ris">${r.track_artist} · ${new Date(r.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div></div><div class="ria"><span class="bg ${r.type==='promo_plan'?'bg-p':'bg-g'}">${r.type==='promo_plan'?'Promo Plan':'Analysis'}</span></div></div>`).join('');el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(d.promo_plan)showPromoPlan(d,d.promo_plan);else if(d.analysis)showAn(d,d.analysis)}catch(e){console.error(e)}}))}catch(e){}}
 
-async function loadSettings(){try{const s=await(await fetch(A+'/settings')).json();document.getElementById('st-n').value=s.user_name||'';document.getElementById('st-e').value=s.user_email||'';document.getElementById('st-pl').textContent=s.plan||'Free';document.getElementById('tg-em').classList.toggle('on',s.email_notifications==='1');document.getElementById('tg-mk').classList.toggle('on',s.marketing_emails==='1')}catch(e){}}
-document.getElementById('btn-sp').addEventListener('click',async()=>{await fetch(A+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_name:document.getElementById('st-n').value,user_email:document.getElementById('st-e').value})});document.getElementById('udn').textContent=document.getElementById('st-n').value;document.getElementById('uav').textContent=document.getElementById('st-n').value.split(' ').map(n=>n[0]).join('').toUpperCase()});
-document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>{t.classList.toggle('on');const k=t.dataset.k;if(k)await fetch(A+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({[k]:t.classList.contains('on')?'1':'0'})})}));
+// ── SETTINGS ──
+async function loadSettings(){try{const s=await(await authFetch(A+'/settings')).json();document.getElementById('st-n').value=s.user_name||'';document.getElementById('st-e').value=s.user_email||'';document.getElementById('st-pl').textContent=s.plan||'Free';document.getElementById('tg-em').classList.toggle('on',s.email_notifications==='1');document.getElementById('tg-mk').classList.toggle('on',s.marketing_emails==='1')}catch(e){}}
+document.getElementById('btn-sp').addEventListener('click',async()=>{await authFetch(A+'/settings',{method:'PUT',headers:authHeaders(),body:JSON.stringify({user_name:document.getElementById('st-n').value,user_email:document.getElementById('st-e').value})});document.getElementById('udn').textContent=document.getElementById('st-n').value;document.getElementById('uav').textContent=document.getElementById('st-n').value.split(' ').map(n=>n[0]).join('').toUpperCase()});
+document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>{t.classList.toggle('on');const k=t.dataset.k;if(k)await authFetch(A+'/settings',{method:'PUT',headers:authHeaders(),body:JSON.stringify({[k]:t.classList.contains('on')?'1':'0'})})}));
 
 function showLoad(v,msg){document.getElementById('lo').classList.toggle('vis',v);if(msg)document.getElementById('lo-text').textContent=msg}
-loadDash();
+
+// ── INIT ──
+checkAuth();
 </script>
 </body>
 </html>
