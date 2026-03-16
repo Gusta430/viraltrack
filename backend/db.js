@@ -57,21 +57,28 @@ async function run(sql, args = []) {
 // ── Initialize tables ──
 async function initDB() {
   console.log('📦 Initializing Turso database...');
+  // Drop and recreate to fix schema issues
+  await run('DROP TABLE IF EXISTS promo_plans');
+  await run('DROP TABLE IF EXISTS reports');
+  await run('DROP TABLE IF EXISTS analyses');
+  await run('DROP TABLE IF EXISTS tracks');
+  await run('DROP TABLE IF EXISTS sessions');
+  await run('DROP TABLE IF EXISTS users');
   await run(`CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL, plan TEXT DEFAULT 'Free Trial',
     email_notifications TEXT DEFAULT '1', marketing_emails TEXT DEFAULT '0',
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
   await run(`CREATE TABLE IF NOT EXISTS sessions (
-    token TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now'))
+    token TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
   await run(`CREATE TABLE IF NOT EXISTS tracks (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL, title TEXT NOT NULL, artist TEXT NOT NULL,
     genre TEXT, similar_artists TEXT, filename TEXT, original_name TEXT, file_size INTEGER,
     spotify_url TEXT, want_tiktok_content INTEGER DEFAULT 0, main_goal TEXT,
-    status TEXT DEFAULT 'uploaded', created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    status TEXT DEFAULT 'uploaded', created_at TEXT DEFAULT (CURRENT_TIMESTAMP),
+    updated_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
   await run(`CREATE TABLE IF NOT EXISTS analyses (
     id TEXT PRIMARY KEY, track_id TEXT NOT NULL, tempo_bpm INTEGER, tempo_description TEXT,
@@ -80,16 +87,16 @@ async function initDB() {
     audience_content_angle TEXT, audience_key_insight TEXT, reference_artists TEXT,
     video_edits TEXT, diy_content_ideas TEXT, pro_tip TEXT, creator_tip TEXT,
     model_used TEXT, status TEXT DEFAULT 'pending', error_message TEXT,
-    created_at TEXT DEFAULT (datetime('now')), completed_at TEXT
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP), completed_at TEXT
   )`);
   await run(`CREATE TABLE IF NOT EXISTS reports (
     id TEXT PRIMARY KEY, track_id TEXT NOT NULL, analysis_id TEXT,
     type TEXT NOT NULL, title TEXT NOT NULL, status TEXT DEFAULT 'complete',
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
   await run(`CREATE TABLE IF NOT EXISTS promo_plans (
     track_id TEXT PRIMARY KEY, plan_json TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
   console.log('✅ Database ready!');
 }
@@ -163,7 +170,7 @@ class Database {
   }
 
   async updateTrack(id, updates) {
-    if (updates.status) await run('UPDATE tracks SET status = ?, updated_at = datetime("now") WHERE id = ?', [updates.status, id]);
+    if (updates.status) await run('UPDATE tracks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [updates.status, id]);
     return this.getTrack(id);
   }
 
