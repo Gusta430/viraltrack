@@ -46,7 +46,20 @@ function parseJSON(text) {
 
 // ── TRACK ANALYSIS ──────────────────────────────────────
 export async function analyzeTrack(track) {
-  const systemPrompt = `Du er en ekspert musikkmarkedsfører. Svar ALLTID med gyldig JSON og INGENTING annet.
+  const systemPrompt = `Du er en ekstremt erfaren musikkmarkedsfører med 15+ års erfaring i musikkindustrien. Du har jobbet med artister fra bedroom pop til trap, og du vet NØYAKTIG hva som skiller generiske råd fra råd som faktisk gir resultater.
+
+REGLER DU MÅ FØLGE:
+- ALDRI gi generiske råd som "post consistently" eller "engage with your audience" — dette vet alle allerede
+- ALDRI foreslå "behind the scenes"-videoer eller "studio session"-klipp med mindre du har en SPESIFIKK, UNIK vinkling på det
+- Alle forslag SKAL være direkte knyttet til denne spesifikke låtens tittel, stemning, eller sjanger
+- Video-ideer skal inneholde KONKRETE scenarier, ikke vage beskrivelser. Beskriv nøyaktig hva som skjer i videoen sekund for sekund
+- Hashtags skal inkludere NISJE-hashtags (under 1M innlegg) som faktisk treffer målgruppen, ikke bare store generiske tags
+- Captions skal ha en hook i første linje som får folk til å stoppe scrollingen
+- DIY-ideer skal være KREATIVE og OVERRASKENDE — ting artisten ikke ville tenkt på selv
+- Reference artists skal ikke bare være de mest åpenbare — inkluder minst 2 mindre kjente artister som har lignende sound men en unik markedsføringsstrategi å lære av
+- Key insight skal være EN spesifikk, kontraintuitiv innsikt — ikke en generisk observasjon
+
+VIKTIG: Svar ALLTID med gyldig JSON og INGENTING annet.
 
 JSON-struktur:
 {
@@ -68,15 +81,26 @@ JSON-struktur:
   "creator_tip": "<tips>"
 }`;
 
-  const userPrompt = `Analyser denne låten og lag promo-strategi:
-Tittel: ${track.title}
+  const userPrompt = `Analyser denne låten og lag en UNIK promo-strategi som denne artisten ikke ville funnet noe annet sted:
+
+Tittel: "${track.title}"
 Artist: ${track.artist}
 ${track.genre ? `Sjanger: ${track.genre}` : ''}
 ${track.similar_artists ? `Lignende artister: ${track.similar_artists}` : ''}
 ${track.main_goal ? `Hovedmål: ${track.main_goal}` : ''}
 ${track.want_tiktok_content ? 'Ønsker TikTok/Reels-innhold.' : ''}
 
-Gi spesifikke råd for denne sjangeren. Estimer BPM, stemning og energi realistisk. Svar KUN med JSON.`;
+TENK GJENNOM DETTE FØR DU SVARER:
+1. Hva er det med TITTELEN "${track.title}" som kan brukes kreativt i markedsføring? Kan tittelen bli en trend, et konsept, eller en hook?
+2. Basert på sjangeren og lignende artister — hva er det SPESIFIKKE soniske landskapet? Ikke bare "indie pop", men hvilken FØLELSE og VISUELL ESTETIKK passer?
+3. Hvilke KONKRETE TikTok-trender akkurat nå kan denne låten passe inn i? Tenk på spesifikke lyder, formater og memes.
+4. Hva gjør artister i denne nisjen FEIL med markedsføring, og hvordan kan vi gjøre det MOTSATTE?
+
+For video-ideer: Beskriv hvert videoklipp som en mini-fortelling. Hva skjer i starten? Hva er "plottwisten" eller øyeblikket som får folk til å se om igjen? Tenk som en kreativ regissør, ikke en markedsfører.
+
+For DIY-ideer: Tenk utenfor boksen. Ingen "film deg selv i studio" med mindre det har en HELT NY TWIST. Hva kan artisten gjøre som er overraskende, morsomt, emosjonelt, eller kontroversiellt (på en god måte)?
+
+Svar KUN med JSON.`;
 
   try {
     console.log('🤖 Analyserer låt...');
@@ -108,7 +132,17 @@ export async function generatePromoPlan(track, analysis) {
   const moods = JSON.parse(analysis.mood_tags || '[]');
   const refs = JSON.parse(analysis.reference_artists || '[]');
 
-  const systemPrompt = `Du er en ekspert musikkmarkedsfører som lager detaljerte, ukesbaserte lanseringsplaner for uavhengige artister. Du vet hva som fungerer på TikTok, Instagram Reels, Spotify og YouTube. Du gir konkrete, handlingsbare planer — ikke vage råd.
+  const systemPrompt = `Du er en elite musikkmarkedsfører som har hjulpet artister gå fra 0 til 100K+ månedlige lyttere. Du lager IKKE generiske lanseringsplaner — du lager skreddersydde, overraskende strategier som er tilpasset denne ene låten.
+
+REGLER:
+- HVER oppgave skal være så spesifikk at artisten kan gjøre den umiddelbart uten å tenke "men hva betyr det egentlig?"
+- IKKE skriv "post engaging content" — skriv NØYAKTIG hva de skal poste, med eksempel på caption og visuell beskrivelse
+- Spilleliste-strategien skal nevne EKTE spillelistenavn som finnes på Spotify, ikke generiske kategorier
+- Samarbeidsideer skal inkludere SPESIFIKKE typer kreatører å kontakte (ikke bare "influencers"), med forslag til hva samarbeidet skal inneholde
+- Budget-tips skal ha REELLE tall basert på hva som faktisk fungerer i ${new Date().getFullYear()}
+- Unngå disse klisjeene: "consistency is key", "engage with your community", "post regularly", "be authentic"
+- Tenk på hva som er KONTRAINTUITIVT — hvilke strategier VIRKER rare men faktisk fungerer?
+- Inkluder minst én "growth hack" som utnytter en plattform-mekanikk de fleste ikke vet om
 
 VIKTIG: Svar ALLTID med gyldig JSON og INGENTING annet.
 
@@ -184,9 +218,9 @@ JSON-struktur:
   "common_mistakes": ["<feil å unngå 1>", "<feil 2>", "<feil 3>"]
 }`;
 
-  const userPrompt = `Lag en detaljert 4-ukers lanseringsplan for denne låten:
+  const userPrompt = `Lag en detaljert 4-ukers lanseringsplan for denne låten som er SÅ SPESIFIKK at artisten kan følge den dag for dag uten å google noe:
 
-Tittel: ${track.title}
+Tittel: "${track.title}"
 Artist: ${track.artist}
 Sjanger: ${track.genre || analysis.genre_fit || 'Ukjent'}
 Lignende artister: ${track.similar_artists || refs.map(r => r.name).join(', ') || 'Ukjent'}
@@ -196,7 +230,14 @@ Energi: ${analysis.energy_percent || 50}%
 Tempo: ${analysis.tempo_bpm || 120} BPM
 Målgruppe: ${analysis.audience_age || '18-28'}, ${analysis.audience_platforms || 'TikTok, Spotify'}
 
-Planen skal være realistisk for en uavhengig artist uten stort budsjett. Fokuser på organisk vekst, TikTok/Reels-strategi, spillelisteplassering, og smart bruk av sosiale medier. Gi KONKRETE oppgaver per dag/uke.
+TENK PÅ DETTE:
+- Hvordan kan låttittelen "${track.title}" bli en hashtag, trend, eller konsept som folk bruker?
+- Hvilke SPESIFIKKE Spotify-spillelister (nevn ekte navn) passer denne låtens stemning og sjanger?
+- Hva er den SMARTESTE rekkefølgen å rulle ut innhold? Ikke bare "tease → release → promote"
+- Hvilke uventede plattformer eller communities kan denne musikken treffe?
+- Hva bør artisten IKKE gjøre som de fleste nye artister gjør feil?
+
+For hver dag-oppgave: Gi en komplett oppskrift. Ikke bare "lag en TikTok" — beskriv konseptet, hook-en, og den visuelle stilen.
 
 Svar KUN med JSON.`;
 
