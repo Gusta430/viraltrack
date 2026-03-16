@@ -1,0 +1,383 @@
+{
+  "users": [
+    {
+      "id": "6c0ef615-2c99-48a7-a426-400ebc46a1f9",
+      "name": "André Sjo Gustad",
+      "email": "andre.s.gustad@gmail.com",
+      "password_hash": "82f3f2705aca34dfb1d2711a4cb2dd3d:3c1286d0cdf0044064061d4ed2ac7a8be937f7ad53e2be66bc800af3b86f73941ad78d71c4626a3498dca96d6ea7034c31304f18bdc17fdcbd0eb54b719aebe6",
+      "plan": "Free Trial",
+      "email_notifications": "1",
+      "marketing_emails": "0",
+      "created_at": "2026-03-15T14:16:29.331Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "c41b70e69422d1c4b365dc9aae071ff707f4448d23fe521d10b234734541b2b1",
+      "user_id": "6c0ef615-2c99-48a7-a426-400ebc46a1f9",
+      "created_at": "2026-03-15T14:16:29.367Z"
+    }
+  ],
+  "tracks": [
+    {
+      "id": "9f4b8a60-f723-41d6-b3ee-093ca7d2970c",
+      "user_id": "6c0ef615-2c99-48a7-a426-400ebc46a1f9",
+      "title": "2025Fristil",
+      "artist": "Sigur",
+      "genre": "Rap",
+      "similar_artists": null,
+      "filename": null,
+      "original_name": null,
+      "file_size": null,
+      "spotify_url": "https://open.spotify.com/track/0A5USnDeO3HzeEUmOnnsoC?si=887731391ded417a",
+      "want_tiktok_content": 1,
+      "main_goal": "Grow fanbase",
+      "status": "analyzed",
+      "created_at": "2026-03-15T14:24:02.200Z",
+      "updated_at": "2026-03-15T14:24:23.904Z"
+    },
+    {
+      "id": "e01ae7f8-7fea-4bfe-b546-bea46d4be170",
+      "user_id": "6c0ef615-2c99-48a7-a426-400ebc46a1f9",
+      "title": "2025Fristill",
+      "artist": "Sigur",
+      "genre": null,
+      "similar_artists": null,
+      "filename": null,
+      "original_name": null,
+      "file_size": null,
+      "spotify_url": "https://open.spotify.com/track/0A5USnDeO3HzeEUmOnnsoC?si=ca8dee78f51a4c62",
+      "want_tiktok_content": 1,
+      "main_goal": null,
+      "status": "analyzed",
+      "created_at": "2026-03-15T14:18:08.714Z",
+      "updated_at": "2026-03-15T14:18:09.110Z"
+    }
+  ],
+  "analyses": [
+    {
+      "id": "94d8f6de-f541-4b79-b308-b41210126946",
+      "track_id": "9f4b8a60-f723-41d6-b3ee-093ca7d2970c",
+      "status": "completed",
+      "tempo_bpm": 140,
+      "tempo_description": "Middels-høyt tempo perfekt for rap-flow og TikTok-danser",
+      "mood_tags": "[\"confident\",\"energetic\",\"motivational\"]",
+      "energy_percent": 85,
+      "energy_description": "Høy energi med aggressiv rap-delivery og fengende beat",
+      "genre_fit": "Norsk rap/hip-hop",
+      "audience_age": "16-25 år",
+      "audience_interests": "Rap-kultur, freestyle, urban livsstil, trendy klær, gaming",
+      "audience_platforms": "TikTok, Instagram Reels, Snapchat, YouTube Shorts",
+      "audience_content_angle": "Ekte rap-talent som kan freestyle og lage catchy hooks",
+      "audience_key_insight": "Unge rap-fans elsker autentisitet og freestyle-ferdigheter mer enn polerte produksjoner",
+      "reference_artists": "[{\"name\":\"Keiino\",\"genre\":\"Pop-rap\",\"description\":\"Norsk artist med TikTok-suksess\"},{\"name\":\"Arif\",\"genre\":\"Norsk rap\",\"description\":\"Etablert norsk rapper med ung fanbase\"},{\"name\":\"Cezinando\",\"genre\":\"Alternativ rap\",\"description\":\"Crossover-appeal til bredere publikum\"},{\"name\":\"Kamelen\",\"genre\":\"Freestyle rap\",\"description\":\"Kjent for improviserte rap-ferdigheter\"}]",
+      "video_edits": "[{\"title\":\"Beste bars fra 2025Fristil\",\"caption\":\"Hvilken linje traff hardest? 🔥 #2025Fristil\",\"hashtags\":\"#norskrap #freestyle #bars #sigur #2025\",\"duration\":\"15-30 sek\",\"timestamp\":\"0:30-1:00\",\"platforms\":[\"TikTok\",\"Reels\"]},{\"title\":\"Sigur spitter fire\",\"caption\":\"Når du endelig dropper den perfekte freestylen 💯\",\"hashtags\":\"#rapskills #norskartist #viral #talent\",\"duration\":\"15 sek\",\"timestamp\":\"1:15-1:30\",\"platforms\":[\"TikTok\",\"Reels\"]}]",
+      "diy_content_ideas": "[{\"title\":\"Freestyle challenge med 2025Fristil\",\"difficulty\":\"Easy\",\"duration\":\"30-60 sek\",\"virality\":85,\"description\":\"Be fans om å rappe over samme beat\",\"howTo\":[\"Post original beat\",\"Be fans tagge deg\",\"Del beste submissions\"],\"hashtags\":\"#2025FristilChallenge #freestylefriday #rapbattle\"},{\"title\":\"Behind the scenes studio vibes\",\"difficulty\":\"Easy\",\"duration\":\"15-30 sek\",\"virality\":70,\"description\":\"Vis prosessen bak låten\",\"howTo\":[\"Film i studio\",\"Vis skriving av tekst\",\"Legg til låten som lyd\"],\"hashtags\":\"#behindthescenes #studiolife #rapprocess #sigur\"},{\"title\":\"React til egne bars\",\"difficulty\":\"Medium\",\"duration\":\"30-45 sek\",\"virality\":75,\"description\":\"Reager til dine egne hardeste linjer\",\"howTo\":[\"Spill av beste parts\",\"Vis autentisk reaksjon\",\"Forklar betydningen\"],\"hashtags\":\"#artistreacts #bars #meaning #breakdown\"},{\"title\":\"Rap-tips fra Sigur\",\"difficulty\":\"Medium\",\"duration\":\"45-60 sek\",\"virality\":80,\"description\":\"Lær bort freestyle-teknikker\",\"howTo\":[\"Del concrete tips\",\"Demonstrate teknikker\",\"Oppfordre til øving\"],\"hashtags\":\"#raptips #freestyletips #learn #skills\"}]",
+      "pro_tip": "Rap-artister vokser raskest ved å vise autentisitet og ferdigheter. Fokuser på freestyle-innhold og interaksjon med fans gjennom challenges.",
+      "creator_tip": "Post regelmessig freestyle-innhold, bruk trending beats, og samarbeid med andre norske rap-artister for å bygge community.",
+      "model_used": "claude-sonnet-4-20250514",
+      "completed_at": "2026-03-15T14:24:23.902Z"
+    },
+    {
+      "id": "c27f46a9-a34b-4e1e-a89e-d990600a58c4",
+      "track_id": "e01ae7f8-7fea-4bfe-b546-bea46d4be170",
+      "status": "completed",
+      "tempo_bpm": 124,
+      "tempo_description": "Danceable, mid-energy pace",
+      "mood_tags": "[\"Melancholic\",\"Dreamy\",\"Reflective\"]",
+      "energy_percent": 72,
+      "energy_description": "Strong emotional build",
+      "genre_fit": "Alt-pop / indie electronic",
+      "audience_age": "18-28",
+      "audience_interests": "indie pop, aesthetics, late-night playlists",
+      "audience_platforms": "TikTok, Instagram Reels, Spotify",
+      "audience_content_angle": "relatable lyrics + mood-based visuals",
+      "audience_key_insight": "Analyse feilet: Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+      "reference_artists": "[{\"name\":\"Girl in Red\",\"genre\":\"Indie pop\",\"description\":\"Emotional indie storytelling\"},{\"name\":\"Clairo\",\"genre\":\"Bedroom pop\",\"description\":\"Lo-fi intimate production\"},{\"name\":\"Conan Gray\",\"genre\":\"Pop\",\"description\":\"Relatable lyricism\"},{\"name\":\"beabadoobee\",\"genre\":\"Indie rock\",\"description\":\"Raw nostalgic energy\"}]",
+      "video_edits": "[{\"title\":\"Lyric Highlight\",\"caption\":\"that one line 🎵💔\",\"hashtags\":\"#lyrics #viral\",\"duration\":\"0:15\",\"timestamp\":\"0:45-1:00\",\"platforms\":[\"TikTok\",\"Reels\"]},{\"title\":\"Atmospheric Intro\",\"caption\":\"New track 🌌\",\"hashtags\":\"#newrelease\",\"duration\":\"0:30\",\"timestamp\":\"1:15-1:45\",\"platforms\":[\"TikTok\",\"Reels\"]}]",
+      "diy_content_ideas": "[{\"title\":\"Studio Process\",\"difficulty\":\"Easy\",\"duration\":\"30-60 sec\",\"virality\":85,\"description\":\"Film yourself working.\",\"howTo\":[\"Cameras\",\"Speed up\",\"Authentic\"],\"hashtags\":\"#studiolife\"},{\"title\":\"Before vs. After\",\"difficulty\":\"Medium\",\"duration\":\"15-30 sec\",\"virality\":78,\"description\":\"Split-screen comparison.\",\"howTo\":[\"Two versions\",\"CapCut\",\"Text\"],\"hashtags\":\"#beforeandafter\"},{\"title\":\"Lyric Writing\",\"difficulty\":\"Easy\",\"duration\":\"15-30 sec\",\"virality\":72,\"description\":\"Top-down lyric writing.\",\"howTo\":[\"Overhead\",\"Natural\",\"Close-up\"],\"hashtags\":\"#songwriter\"},{\"title\":\"First Reaction\",\"difficulty\":\"Easy\",\"duration\":\"30-60 sec\",\"virality\":68,\"description\":\"Friends react.\",\"howTo\":[\"Authentic\",\"Timestamps\",\"Anticipation\"],\"hashtags\":\"#reaction\"}]",
+      "pro_tip": "Fallback-data.",
+      "creator_tip": "Sjekk Terminal for feilmelding.",
+      "model_used": "fallback",
+      "completed_at": "2026-03-15T14:18:09.109Z"
+    }
+  ],
+  "reports": [
+    {
+      "id": "a84605f0-b02a-467f-98eb-74072f8d6831",
+      "track_id": "9f4b8a60-f723-41d6-b3ee-093ca7d2970c",
+      "analysis_id": "94d8f6de-f541-4b79-b308-b41210126946",
+      "type": "promo_plan",
+      "title": "2025Fristil - Promo Plan",
+      "status": "complete",
+      "created_at": "2026-03-15T14:26:10.638Z"
+    },
+    {
+      "id": "67c47dc4-3b8a-4e07-9a8a-ae5bc3b7c5bf",
+      "track_id": "9f4b8a60-f723-41d6-b3ee-093ca7d2970c",
+      "analysis_id": "94d8f6de-f541-4b79-b308-b41210126946",
+      "type": "analysis",
+      "title": "2025Fristil - Analysis",
+      "status": "complete",
+      "created_at": "2026-03-15T14:24:23.906Z"
+    },
+    {
+      "id": "50628fdc-91a7-48f5-a62b-1aa958af2e5a",
+      "track_id": "e01ae7f8-7fea-4bfe-b546-bea46d4be170",
+      "analysis_id": "c27f46a9-a34b-4e1e-a89e-d990600a58c4",
+      "type": "analysis",
+      "title": "2025Fristill - Analysis",
+      "status": "complete",
+      "created_at": "2026-03-15T14:18:09.110Z"
+    }
+  ],
+  "promo_plans": [
+    {
+      "track_id": "9f4b8a60-f723-41d6-b3ee-093ca7d2970c",
+      "plan": {
+        "plan_title": "2025Fristil - 4-ukers organisk vekststrategi",
+        "plan_summary": "En komplett lanseringsstrategi som fokuserer på TikTok viral-potensial, Instagram Reels engagement og Spotify-spillelisteplassering. Bruker 140 BPM tempo og motiverende energi til å skape shareable innhold som treffer 16-25 års målgruppen gjennom autentisk storytelling og konsistent posting.",
+        "target_audience": {
+          "description": "Norske ungdommer og unge voksne 16-25 år som er aktive på TikTok og Instagram. Liker norsk rap, motivasjonelt innhold og følger trender. Oppdager musikk gjennom korte videoer og deler innhold som inspirerer dem til selvforbedring og suksess.",
+          "best_platforms": [
+            "TikTok",
+            "Instagram Reels",
+            "YouTube Shorts"
+          ],
+          "best_posting_times": "Hverdager 18-21, helger 12-15 og 20-22",
+          "content_style": "Autentiske behind-the-scenes, motiverende quotes, challenges, remix/dance content, studio-content og personlige historier"
+        },
+        "weeks": [
+          {
+            "week_number": 1,
+            "title": "Teasing og community building",
+            "goal": "Bygge forventning og etablere hashtags før lansering",
+            "tasks": [
+              {
+                "day": "Mandag",
+                "task": "Post studio-teaser med 15-sekund klipp fra refrenget",
+                "platform": "TikTok",
+                "details": "Bruk #2025Fristil #NorskRap #StudioVibes. Vis deg i studio med headphones, lip-sync til catchiest del"
+              },
+              {
+                "day": "Tirsdag",
+                "task": "Del behind-the-scenes fra innspilling",
+                "platform": "Instagram Reels",
+                "details": "30-sekunds Reel med making-of footage, legg til tekst 'NY LÅT KOMMER SNART 🔥' med countdown sticker"
+              },
+              {
+                "day": "Onsdag",
+                "task": "Lag 'Hva er dine mål for 2025?' TikTok",
+                "platform": "TikTok",
+                "details": "Bruk instrumental fra låten i bakgrunnen, spør følgerne om sine mål, start diskusjon i kommentarer"
+              },
+              {
+                "day": "Torsdag",
+                "task": "Post motiverende quote fra låtteksten",
+                "platform": "Instagram Stories + Post",
+                "details": "Grafisk post med sterkeste line fra låten, bruk brand colors, legg til 'Ny musikk fredag 🎵'"
+              },
+              {
+                "day": "Fredag",
+                "task": "Countdown til neste uke",
+                "platform": "TikTok + Instagram",
+                "details": "7-dagers countdown, tease melodien med finger-tapping til beat, bygg spenning"
+              },
+              {
+                "day": "Helg",
+                "task": "Engage med community",
+                "platform": "Alle plattformer",
+                "details": "Svar på alle kommentarer, like og kommentér på andre norske rap-artister, bygg nettverk"
+              }
+            ]
+          },
+          {
+            "week_number": 2,
+            "title": "Lansering og første push",
+            "goal": "Lansere låten og få maksimal reach første dagen",
+            "tasks": [
+              {
+                "day": "Fredag 00:00",
+                "task": "Lansér 2025Fristil på alle plattformer",
+                "platform": "Spotify/Apple Music",
+                "details": "Publisér med optimaliserte metadata, velg 15-sekund highlight for TikTok"
+              },
+              {
+                "day": "Fredag 08:00",
+                "task": "Lag offisiell TikTok med hovedhook",
+                "platform": "TikTok",
+                "details": "15-sekund klipp av refrenget, confident performance, bruk #2025Fristil #NewMusic #NorskRap #Motivasjon"
+              },
+              {
+                "day": "Fredag 12:00",
+                "task": "Post Instagram Reels med lyric video",
+                "platform": "Instagram Reels",
+                "details": "30-sekunds Reels med på-skjerm lyrics, energisk visual, oppfordre til å streame full versjon"
+              },
+              {
+                "day": "Fredag 18:00",
+                "task": "YouTube Shorts med call-to-action",
+                "platform": "YouTube Shorts",
+                "details": "60-sekunds short med best parts, 'Hør full låt på Spotify' i beskrivelse og video"
+              },
+              {
+                "day": "Lørdag",
+                "task": "Takk følgerne og del streaming-tall",
+                "platform": "Instagram Stories",
+                "details": "Stories-serie som takker for support, del real-time Spotify stats hvis positive"
+              },
+              {
+                "day": "Søndag",
+                "task": "Lag 'Reaksjon på egen låt' TikTok",
+                "platform": "TikTok",
+                "details": "Humoristisk 'first time hearing my own song' trend, få følgere til å reagere også"
+              }
+            ]
+          },
+          {
+            "week_number": 3,
+            "title": "Viral push og challenge",
+            "goal": "Skape viral moment og få user-generated content",
+            "tasks": [
+              {
+                "day": "Mandag",
+                "task": "Start #2025FristilChallenge",
+                "platform": "TikTok",
+                "details": "Definer dans/movement til hook, demonstrér selv først, utfordre følgere til å gjøre sin versjon"
+              },
+              {
+                "day": "Tirsdag",
+                "task": "Collabor med lokal TikTok creator",
+                "platform": "TikTok",
+                "details": "Reach out til creators med 5-50k følgere i Norge, tilby å lage duet eller collab video"
+              },
+              {
+                "day": "Onsdag",
+                "task": "Post motivasjonsvideo med låten",
+                "platform": "Instagram Reels",
+                "details": "Trenings-Reel eller morning routine med 2025Fristil soundtrack, inspirerende messaging"
+              },
+              {
+                "day": "Torsdag",
+                "task": "Duet med fans som bruker låten",
+                "platform": "TikTok",
+                "details": "Find brukere som har brukt din sound, lag duets som hyper dem opp, bygg community"
+              },
+              {
+                "day": "Fredag",
+                "task": "Post remix/acoustic versjon snippet",
+                "platform": "Instagram Reels",
+                "details": "15-sekund akustisk versjon eller alternativ beat, test publikums respons på nye versjoner"
+              },
+              {
+                "day": "Helg",
+                "task": "Dokumentér uke 1 resultater",
+                "platform": "YouTube Shorts",
+                "details": "60-sekunds recap av lansering, vis streaming-tall, takk community, tease neste steg"
+              }
+            ]
+          },
+          {
+            "week_number": 4,
+            "title": "Konsolidering og spilleliste-push",
+            "goal": "Sikre langvarig momentum og spillelisteplasseringer",
+            "tasks": [
+              {
+                "day": "Mandag",
+                "task": "Pitch til norske Spotify-kuratorer",
+                "platform": "Spotify for Artists",
+                "details": "Submit til Fresh Finds Norge, Norsk Rap, Motivasjon playlists med personlig pitch om låtens historie"
+              },
+              {
+                "day": "Tirsdag",
+                "task": "Lag 'Making of 2025Fristil' long-form",
+                "platform": "YouTube",
+                "details": "5-10 minutt bak kulissene video, storytelling om prosessen, bygg dypere forbindelse"
+              },
+              {
+                "day": "Onsdag",
+                "task": "Cross-promote med lignende artister",
+                "platform": "Instagram",
+                "details": "Story-mentions av Arif, Cezinando-inspirerte artister, håp på gjensidig support"
+              },
+              {
+                "day": "Torsdag",
+                "task": "Lag variations av original TikTok",
+                "platform": "TikTok",
+                "details": "Ny vinkel på samme sound: outfit change, location change, eller ny dans til samme del"
+              },
+              {
+                "day": "Fredag",
+                "task": "Månedsoppsummering og fremtidsplaner",
+                "platform": "Instagram + TikTok",
+                "details": "Takk community for support, del resultater, tease neste prosjekt eller musikkvideo"
+              },
+              {
+                "day": "Helg",
+                "task": "Planlegg neste måned basert på data",
+                "platform": "Analytics review",
+                "details": "Analysér hvilke posts fungerte best, double down på successful content types"
+              }
+            ]
+          }
+        ],
+        "playlist_strategy": {
+          "approach": "Fokuser på norske og nordiske playlister først, bygg momentum lokalt før international expansion",
+          "target_playlists": [
+            "Fresh Finds Norge",
+            "Norsk Rap",
+            "Motivasjon",
+            "Træning og Trening",
+            "Nordic Vibes"
+          ],
+          "pitch_tips": "Uthev låtens energi og motiverende budskap, nevn 140 BPM som perfekt for trening, sammenlign med Arif/Cezinando stil men med egen vri"
+        },
+        "collaboration_ideas": [
+          {
+            "type": "TikTok duets med micro-influencers",
+            "description": "Partner med fitness-influencers og motivasjonsprofiler 1-10k følgere",
+            "expected_impact": "5-15k organiske views per collab"
+          },
+          {
+            "type": "Cross-promotion med andre norske artister",
+            "description": "Story mentions og comment exchanges med artister i samme sjanger",
+            "expected_impact": "Audience overlap og potensial for nye fans"
+          }
+        ],
+        "budget_tips": {
+          "free_tactics": [
+            "Konsistent daily posting",
+            "Engagement med andre artists' content",
+            "Hashtag research og bruk",
+            "Community building gjennom comments"
+          ],
+          "paid_options": [
+            {
+              "tactic": "TikTok Promote på best performing video",
+              "estimated_cost": "200-500 NOK",
+              "expected_result": "2-5k ekstra views, mulig viral boost"
+            },
+            {
+              "tactic": "Instagram Reels ads til lookalike audience",
+              "estimated_cost": "300-800 NOK",
+              "expected_result": "1-3k nye følgere i målgruppen"
+            }
+          ]
+        },
+        "key_metrics": [
+          "TikTok video views og engagement rate",
+          "Spotify monthly listeners growth",
+          "Instagram Reels reach og saves",
+          "User-generated content med din sound"
+        ],
+        "common_mistakes": [
+          "Poste for sjeldent i kritiske første dager",
+          "Ikke engasjere med community som bruker din musikk",
+          "Fokusere bare på følgere istedenfor engagement",
+          "Ikke analysere hvilke posts fungerer best"
+        ]
+      },
+      "created_at": "2026-03-15T14:26:10.632Z"
+    }
+  ]
+}
