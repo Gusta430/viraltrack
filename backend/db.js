@@ -57,13 +57,6 @@ async function run(sql, args = []) {
 // ── Initialize tables ──
 async function initDB() {
   console.log('📦 Initializing Turso database...');
-  // Drop and recreate to fix schema issues
-  await run('DROP TABLE IF EXISTS promo_plans');
-  await run('DROP TABLE IF EXISTS reports');
-  await run('DROP TABLE IF EXISTS analyses');
-  await run('DROP TABLE IF EXISTS tracks');
-  await run('DROP TABLE IF EXISTS sessions');
-  await run('DROP TABLE IF EXISTS users');
   await run(`CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL, plan TEXT DEFAULT 'Free Trial',
@@ -228,7 +221,7 @@ class Database {
 
   // Dashboard
   async getStats(userId) {
-    const tracks = await execute('SELECT COUNT(*) as c FROM tracks WHERE user_id = ? AND status = "analyzed"', [userId]);
+    const tracks = await execute("SELECT COUNT(*) as c FROM tracks WHERE user_id = ? AND status = 'analyzed'", [userId]);
     const plans = await execute('SELECT COUNT(*) as c FROM promo_plans pp JOIN tracks t ON pp.track_id = t.id WHERE t.user_id = ?', [userId]);
     return {
       total_tracks: parseInt(tracks[0]?.c || 0),
