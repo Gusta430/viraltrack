@@ -240,17 +240,9 @@
     .mob-nav button svg{width:22px;height:22px}
     .mob-nav button.on{color:var(--ac)}
     .mob-nav button:active{background:var(--ac-s)}
+  </style>
 
-    /* VIDEO IN ANALYSIS */
-    .vid-limit{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rs);font-size:13px}
-    .vid-limit .vid-count{font-weight:700;color:var(--ac)}.vid-limit.exhausted{border-color:rgba(234,179,8,.3);background:var(--yl-s)}
-    .vid-limit.exhausted .vid-count{color:var(--yl)}
-
-    /* VIDEO PAGE */
-    .vid-limit{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rs);margin-bottom:20px;font-size:13px}
-    .vid-limit .vid-count{font-weight:700;color:var(--ac)}.vid-limit.exhausted{border-color:rgba(234,179,8,.3);background:var(--yl-s)}
-    .vid-limit.exhausted .vid-count{color:var(--yl)}
-    /* Video generate buttons in cards */
+    /* Video generate buttons in analysis cards */
     .vid-gen-row{border-top:1px solid var(--bdr);padding:12px 16px}
     .vid-gen-btn{font-size:12px!important;padding:10px 16px!important}
   </style>
@@ -329,30 +321,6 @@
   <div class="pg" id="pg-analysis"></div>
   <div class="pg" id="pg-promo"></div>
   <div class="pg" id="pg-reports"><h1 class="pt">Reports</h1><p class="ps">Access all your previous analyses and promo plans</p><div id="rlist"></div></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;margin-bottom:20px"><span style="font-size:12px;color:var(--t3)">Duration: ~6 seconds</span><span style="font-size:12px;color:var(--t3)" id="vid-char-count">0 / 500</span></div>
-        <div class="vid-tips tb pu" style="margin-bottom:20px"><span>💡</span><span><strong>Tips:</strong> Be descriptive about camera angles, lighting, mood and movement. Mention "cinematic", "slow motion", or specific visual styles for best results.</span></div>
-        <button class="bt bp" id="btn-gen-video" style="width:100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Generate Video</button>
-        <div id="vid-progress" style="display:none;margin-top:20px;text-align:center">
-          <div class="sp" style="width:32px;height:32px;border-width:3px;margin:0 auto 12px"></div>
-          <div style="font-size:14px;font-weight:600" id="vid-prog-text">Generating your video...</div>
-          <div style="font-size:12px;color:var(--t3);margin-top:4px">This usually takes 1–3 minutes</div>
-        </div>
-        <div id="vid-result" style="display:none;margin-top:20px">
-          <video id="vid-player" controls playsinline style="width:100%;border-radius:var(--rs);background:#000"></video>
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <a id="vid-download" class="bt bs" style="flex:1;text-align:center;text-decoration:none" download="viraltrack-video.mp4">⬇ Download</a>
-          </div>
-        </div>
-        <div id="vid-error" class="auth-err" style="margin-top:16px"></div>
-      </div>
-      <div>
-        <div class="cd">
-          <div class="stl" style="margin-bottom:16px">Your Videos</div>
-          <div id="vid-history"><div class="es"><p>No videos yet. Generate your first one!</p></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
   <div class="pg" id="pg-settings"><h1 class="pt" style="margin-bottom:24px">Settings</h1><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</div><div class="tr"><div><div class="trl">Email notifications</div><div class="trd">Receive updates about your analyses</div></div><div class="tg on" id="tg-em" data-k="email_notifications"></div></div><div class="tr"><div><div class="trl">Marketing emails</div><div class="trd">Tips and best practices</div></div><div class="tg" id="tg-mk" data-k="marketing_emails"></div></div></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Subscription</div><p class="pc">Current plan</p><p class="pn" id="st-pl">Pro Trial</p><button class="bt bs" style="margin-top:12px">Upgrade plan</button></div><button class="logout-btn" id="btn-logout">Log out</button></div>
 </main>
 <!-- Mobile bottom nav -->
@@ -504,12 +472,9 @@ function showAn(t,an){
     <div class="ag"><div class="ac"><div class="al"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Tempo</div><div class="ab">${an.tempo_bpm} BPM</div><div class="ad">${an.tempo_description}</div></div><div class="ac"><div class="al">Mood</div><div class="mt">${moods.map(m=>`<span class="mg">${m}</span>`).join('')}</div></div><div class="ac"><div class="al"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Energy</div><div class="eb"><div class="ef" style="width:${an.energy_percent}%"></div></div><div class="ab">${an.energy_percent}%</div><div class="ad">${an.energy_description}</div></div><div class="ac"><div class="al">Genre fit</div><div style="font-size:16px;font-weight:600;margin-top:8px">${an.genre_fit}</div></div></div>
     <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div><div class="stl">AI-Generated Video Edits</div><div class="sts">Ready-to-post content optimized for virality</div></div></div><div class="vg">${vids.map((v,vi)=>`<div class="vc"><div class="vp"><div class="vbs"><span class="vb">${v.duration}</span>${(v.platforms||[]).map(p=>`<span class="vb">${p}</span>`).join('')}<span class="vb hl">${v.timestamp}</span></div><div class="vpi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div></div><div class="vby"><div class="vtl">${v.title}</div><div class="vcl">Caption:</div><div class="vct">${v.caption}</div><div class="vcl">Hashtags:</div><div class="vht">${v.hashtags}</div></div><div class="vid-gen-row" id="vid-row-${vi}"><button class="bt bp vid-gen-btn" data-idx="${vi}" style="width:100%;margin-top:0;font-size:12px;padding:10px 16px">🎬 Generate This Video</button><div class="vid-gen-progress" style="display:none;text-align:center;padding:12px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div><div style="font-size:12px;color:var(--t2)">Generating (~1-3 min)...</div></div><div class="vid-gen-result" style="display:none;padding:4px 0 0"><video controls playsinline style="width:100%;border-radius:var(--rs);background:#000"></video><a class="bt bs" style="width:100%;text-align:center;text-decoration:none;margin-top:8px;font-size:12px;display:block" download="viraltrack-promo.mp4">⬇ Download</a></div><div class="vid-gen-error auth-err" style="margin-top:8px;font-size:12px"></div></div></div>`).join('')}</div><div class="tb yl"><span>💡</span><span><strong>Pro tip:</strong> ${an.pro_tip}</span></div></div>
     <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div><div><div class="stl">DIY Content Ideas</div><div class="sts">Personal content you can create yourself</div></div></div><div class="dg2">${diys.map(d=>`<div class="dc"><div class="dh"><div class="dtl">${d.title}</div><div class="dv">🔥 ${d.virality}%</div></div><div class="dm"><span class="dmt">${d.difficulty}</span><span class="dmt">⏱ ${d.duration}</span></div><div class="dd">${d.description}</div><div class="dhl">How to execute:</div><ul class="ds">${(d.howTo||[]).map(s=>`<li>${s}</li>`).join('')}</ul><div class="dhtl">Suggested hashtags:</div><div class="dhts">${d.hashtags}</div></div>`).join('')}</div><div class="tb pu"><span>🎬</span><span><strong>Creator tip:</strong> ${an.creator_tip}</span></div></div>
-    <div class="aug"><div class="auc"><div class="aut">Likely audience</div><div class="aur"><span>Age:</span> <strong>${an.audience_age}</strong></div><div class="aur"><span>Interests:</span> <strong>${an.audience_interests}</strong></div><div class="aur"><span>Platforms:</span> <strong>${an.audience_platforms}</strong></div><div class="aur"><span>Content angle:</span> <strong>${an.audience_content_angle}</strong></div><div class="ib"><div class="il">Key insight</div><div class="it">${an.audience_key_insight}</div></div></div><div class="auc"><div class="aut">Reference artists</div>${refs.map(a=>`<div class="ra"><div class="rn">${a.name}</div><div class="rg">${a.genre}</div><div class="rd">${a.description}</div></div>`).join('')}</div></div>
-    `;
+    <div class="aug"><div class="auc"><div class="aut">Likely audience</div><div class="aur"><span>Age:</span> <strong>${an.audience_age}</strong></div><div class="aur"><span>Interests:</span> <strong>${an.audience_interests}</strong></div><div class="aur"><span>Platforms:</span> <strong>${an.audience_platforms}</strong></div><div class="aur"><span>Content angle:</span> <strong>${an.audience_content_angle}</strong></div><div class="ib"><div class="il">Key insight</div><div class="it">${an.audience_key_insight}</div></div></div><div class="auc"><div class="aut">Reference artists</div>${refs.map(a=>`<div class="ra"><div class="rn">${a.name}</div><div class="rg">${a.genre}</div><div class="rd">${a.description}</div></div>`).join('')}</div></div>`;
   pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
   document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
-
-  // Wire up video generation buttons
   initVideoButtons(t, vids);
 }
 
@@ -539,11 +504,11 @@ document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>
 
 function showLoad(v,msg){document.getElementById('lo').classList.toggle('vis',v);if(msg)document.getElementById('lo-text').textContent=msg}
 
-// ── VIDEO GENERATION (per video card) ──
+
+// ── VIDEO GENERATION (per video card in analysis) ──
 let vidPolling = null;
 
 async function initVideoButtons(track, vids) {
-  // Check daily limit
   let canGenerate = true;
   try {
     const data = await (await authFetch(A + '/videos')).json();
@@ -552,10 +517,10 @@ async function initVideoButtons(track, vids) {
       canGenerate = false;
       document.querySelectorAll('.vid-gen-btn').forEach(b => {
         b.disabled = true; b.style.opacity = '0.5';
-        b.textContent = 'Daily limit reached (resets midnight UTC)';
+        b.textContent = 'Daily limit reached (resets midnight)';
       });
     }
-    // Show any already-completed video that matches
+    // Show already-completed videos
     data.videos.forEach(dv => {
       if (dv.status === 'completed' && dv.video_url) {
         vids.forEach((v, vi) => {
@@ -572,23 +537,19 @@ async function initVideoButtons(track, vids) {
         });
       }
     });
-    // Auto-poll processing
     const proc = data.videos.find(v => v.status === 'processing' || v.status === 'queued');
     if (proc) pollVideoCard(proc.id, proc.prompt, vids);
   } catch(e) {}
 
-  // Wire up each button
   document.querySelectorAll('.vid-gen-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const idx = parseInt(btn.dataset.idx);
       const v = vids[idx];
       const row = document.getElementById('vid-row-' + idx);
       const prompt = `A cinematic promo video for "${track.title}" by ${track.artist}: ${v.title}. ${v.caption}. ${track.genre || ''} music style, visually striking, smooth camera movement.`.trim();
-
       btn.style.display = 'none';
       row.querySelector('.vid-gen-progress').style.display = 'block';
       row.querySelector('.vid-gen-error').classList.remove('vis');
-
       try {
         const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ prompt }) });
         const data = await res.json();
@@ -600,7 +561,6 @@ async function initVideoButtons(track, vids) {
           return;
         }
         pollVideoCard(data.id, prompt, vids);
-        // Disable other buttons
         document.querySelectorAll('.vid-gen-btn').forEach(b => {
           if (b !== btn) { b.disabled = true; b.style.opacity = '0.5'; b.textContent = 'Limit reached'; }
         });
@@ -624,7 +584,6 @@ function pollVideoCard(videoId, prompt, vids) {
       const data = await (await authFetch(A + '/videos/' + videoId + '/status')).json();
       if (data.status === 'completed' && data.video_url) {
         clearInterval(vidPolling); vidPolling = null;
-        // Find matching card
         vids.forEach((v, vi) => {
           const row = document.getElementById('vid-row-' + vi);
           if (row && prompt && prompt.includes(v.title)) {
@@ -639,7 +598,7 @@ function pollVideoCard(videoId, prompt, vids) {
       } else if (data.status === 'error') {
         clearInterval(vidPolling); vidPolling = null;
         document.querySelectorAll('.vid-gen-progress').forEach(p => p.style.display = 'none');
-        document.querySelectorAll('.vid-gen-btn').forEach(b => { b.style.display = 'block'; b.disabled = false; b.style.opacity = '1'; });
+        document.querySelectorAll('.vid-gen-btn').forEach(b => { b.style.display = 'block'; b.disabled = false; b.style.opacity = '1'; b.innerHTML = '🎬 Generate This Video'; });
       }
     } catch(e) {}
   }, 5000);
