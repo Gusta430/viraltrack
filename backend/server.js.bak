@@ -1,5 +1,4 @@
 import http from 'http';
-import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -182,112 +181,6 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === '/api/reports' && method === 'GET') return json(res, await db.getReports(user.id));
-
-    // ── VIDEO GENERATION (fal.ai) ──
-    if (p === '/api/videos' && method === 'GET') {
-      const videos = await db.getUserVideos(user.id);
-      const todayCount = await db.getUserVideoCountToday(user.id);
-      return json(res, { videos, today_count: todayCount, daily_limit: 1 });
-    }
-
-    if (p === '/api/videos/generate' && method === 'POST') {
-      const FAL_KEY = process.env.FAL_API_KEY;
-      if (!FAL_KEY) return json(res, { error: 'Video generation not configured' }, 500);
-
-      const todayCount = await db.getUserVideoCountToday(user.id);
-      if (todayCount >= 1) return json(res, { error: 'Daily limit reached. You can generate 1 video per day.', remaining: 0 }, 429);
-
-      const body = await parseBody(req);
-      if (!body.prompt || body.prompt.trim().length < 5) return json(res, { error: 'Prompt must be at least 5 characters' }, 400);
-
-      const videoId = uuid();
-      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: body.prompt.trim(), status: 'queued', request_id: null });
-
-      // Submit to fal.ai queue
-      try {
-        const falBody = JSON.stringify({ prompt: body.prompt.trim(), duration: "6" });
-        const falRes = await new Promise((resolve, reject) => {
-          const opts = {
-            hostname: 'queue.fal.run', path: '/fal-ai/minimax/video-01/live', method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + FAL_KEY, 'Content-Length': Buffer.byteLength(falBody) }
-          };
-          const r = https.request(opts, (resp) => {
-            const chunks = [];
-            resp.on('data', c => chunks.push(c));
-            resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
-          });
-          r.on('error', reject);
-          r.write(falBody);
-          r.end();
-        });
-
-        if (falRes.request_id) {
-          await db.updateVideoGeneration(videoId, { request_id: falRes.request_id, status: 'processing' });
-          return json(res, { id: videoId, request_id: falRes.request_id, status: 'processing', remaining: 0 });
-        } else {
-          await db.updateVideoGeneration(videoId, { status: 'error', error_message: falRes.detail || 'Failed to queue' });
-          return json(res, { error: falRes.detail || 'Failed to queue video' }, 500);
-        }
-      } catch (err) {
-        await db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message });
-        return json(res, { error: 'Video generation failed: ' + err.message }, 500);
-      }
-    }
-
-    const videoStatusMatch = p.match(/^\/api\/videos\/([^/]+)\/status$/);
-    if (videoStatusMatch && method === 'GET') {
-      const video = await db.getVideoGeneration(videoStatusMatch[1]);
-      if (!video || video.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
-
-      if (video.status === 'processing' && video.request_id) {
-        const FAL_KEY = process.env.FAL_API_KEY;
-        try {
-          const statusRes = await new Promise((resolve, reject) => {
-            const opts = {
-              hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01/live/requests/${video.request_id}/status`, method: 'GET',
-              headers: { 'Authorization': 'Key ' + FAL_KEY }
-            };
-            const r = https.request(opts, (resp) => {
-              const chunks = [];
-              resp.on('data', c => chunks.push(c));
-              resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
-            });
-            r.on('error', reject);
-            r.end();
-          });
-
-          if (statusRes.status === 'COMPLETED') {
-            // Fetch the result
-            const resultRes = await new Promise((resolve, reject) => {
-              const opts = {
-                hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01/live/requests/${video.request_id}`, method: 'GET',
-                headers: { 'Authorization': 'Key ' + FAL_KEY }
-              };
-              const r = https.request(opts, (resp) => {
-                const chunks = [];
-                resp.on('data', c => chunks.push(c));
-                resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
-              });
-              r.on('error', reject);
-              r.end();
-            });
-            const videoUrl = resultRes.video?.url || resultRes.data?.video?.url || null;
-            if (videoUrl) {
-              await db.updateVideoGeneration(video.id, { status: 'completed', video_url: videoUrl });
-              return json(res, { ...video, status: 'completed', video_url: videoUrl });
-            }
-          } else if (statusRes.status === 'FAILED') {
-            await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation failed' });
-            return json(res, { ...video, status: 'error', error_message: 'Generation failed' });
-          }
-          // Still processing
-          return json(res, { ...video, status: 'processing', queue_position: statusRes.queue_position });
-        } catch (err) {
-          return json(res, { ...video, status: 'processing' });
-        }
-      }
-      return json(res, video);
-    }
 
     if (p === '/api/settings' && method === 'GET') return json(res, { user_name: user.name, user_email: user.email, plan: user.plan, email_notifications: user.email_notifications, marketing_emails: user.marketing_emails });
     if (p === '/api/settings' && method === 'PUT') { const body = await parseBody(req); const updated = await db.updateUser(user.id, { name: body.user_name, email: body.user_email, email_notifications: body.email_notifications, marketing_emails: body.marketing_emails }); return json(res, updated); }

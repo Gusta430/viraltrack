@@ -91,11 +91,6 @@ async function initDB() {
     track_id TEXT PRIMARY KEY, plan_json TEXT NOT NULL,
     created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
-  await run(`CREATE TABLE IF NOT EXISTS video_generations (
-    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, prompt TEXT NOT NULL,
-    status TEXT DEFAULT 'pending', video_url TEXT, request_id TEXT,
-    error_message TEXT, created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
-  )`);
   console.log('✅ Database ready!');
 }
 
@@ -222,42 +217,6 @@ class Database {
     const rows = await execute('SELECT plan_json FROM promo_plans WHERE track_id = ?', [trackId]);
     if (rows.length === 0) return null;
     try { return JSON.parse(rows[0].plan_json); } catch { return null; }
-  }
-
-  // Video generations
-  async createVideoGeneration(v) {
-    await run('INSERT INTO video_generations (id, user_id, prompt, status, request_id) VALUES (?,?,?,?,?)',
-      [v.id, v.user_id, v.prompt, v.status, v.request_id]);
-    return v;
-  }
-
-  async getVideoGeneration(id) {
-    const rows = await execute('SELECT * FROM video_generations WHERE id = ?', [id]);
-    return rows[0] || null;
-  }
-
-  async getVideoGenerationByRequestId(requestId) {
-    const rows = await execute('SELECT * FROM video_generations WHERE request_id = ?', [requestId]);
-    return rows[0] || null;
-  }
-
-  async updateVideoGeneration(id, updates) {
-    const sets = [], args = [];
-    if (updates.status) { sets.push('status = ?'); args.push(updates.status); }
-    if (updates.video_url) { sets.push('video_url = ?'); args.push(updates.video_url); }
-    if (updates.request_id) { sets.push('request_id = ?'); args.push(updates.request_id); }
-    if (updates.error_message) { sets.push('error_message = ?'); args.push(updates.error_message); }
-    if (sets.length > 0) { args.push(id); await run(`UPDATE video_generations SET ${sets.join(', ')} WHERE id = ?`, args); }
-    return this.getVideoGeneration(id);
-  }
-
-  async getUserVideoCountToday(userId) {
-    const rows = await execute("SELECT COUNT(*) as c FROM video_generations WHERE user_id = ? AND created_at >= date('now') AND status != 'error'", [userId]);
-    return parseInt(rows[0]?.c || 0);
-  }
-
-  async getUserVideos(userId) {
-    return execute('SELECT * FROM video_generations WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
   }
 
   // Dashboard

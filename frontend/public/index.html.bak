@@ -240,20 +240,6 @@
     .mob-nav button svg{width:22px;height:22px}
     .mob-nav button.on{color:var(--ac)}
     .mob-nav button:active{background:var(--ac-s)}
-
-    /* VIDEO PAGE */
-    .vid-limit{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rs);margin-bottom:20px;font-size:13px}
-    .vid-limit .vid-count{font-weight:700;color:var(--ac)}.vid-limit.exhausted{border-color:rgba(234,179,8,.3);background:var(--yl-s)}
-    .vid-limit.exhausted .vid-count{color:var(--yl)}
-    .vid-hist-item{padding:14px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);margin-bottom:10px;cursor:pointer;transition:.15s}
-    .vid-hist-item:hover{border-color:var(--ac)}
-    .vid-hist-prompt{font-size:13px;font-weight:500;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .vid-hist-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t3)}
-    .vid-hist-status{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
-    .vid-hist-status.completed{background:var(--gr-s);color:var(--gr)}
-    .vid-hist-status.processing{background:var(--yl-s);color:var(--yl)}
-    .vid-hist-status.error{background:rgba(239,68,68,.12);color:#f87171}
-    .vid-hist-status.queued{background:var(--bl-s);color:var(--bl)}
   </style>
   <style>
     /* AUTH STYLES */
@@ -317,7 +303,6 @@
     <button class="ni on" data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
     <button class="ni" data-p="new-analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg><span>New Analysis</span></button>
     <button class="ni" data-p="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Reports</span></button>
-    <button class="ni" data-p="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg><span>Video</span></button>
     <button class="ni" data-p="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
   </nav>
   <div class="sb-foot"><div class="av" id="uav">AM</div><div class="ui"><div class="un" id="udn">Alex Morgan</div><div class="up" id="upl">Pro Trial</div></div></div>
@@ -331,38 +316,6 @@
   <div class="pg" id="pg-analysis"></div>
   <div class="pg" id="pg-promo"></div>
   <div class="pg" id="pg-reports"><h1 class="pt">Reports</h1><p class="ps">Access all your previous analyses and promo plans</p><div id="rlist"></div></div>
-  <div class="pg" id="pg-video">
-    <h1 class="pt">AI Video Generator</h1>
-    <p class="ps">Generate promo videos with MiniMax Hailuo AI — 1 free video per day</p>
-    <div class="vid-limit" id="vid-limit"></div>
-    <div class="ul" style="margin-bottom:32px">
-      <div class="cd" id="vid-gen-card">
-        <div class="sh" style="margin-bottom:20px"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div><div class="stl">Create Video</div><div class="sts">Describe what you want in your promo video</div></div></div>
-        <div class="fg"><label class="fl">Video prompt</label><textarea class="fi" id="vid-prompt" rows="4" placeholder="Describe your video scene, e.g.: A neon-lit city at night with floating musical notes, cinematic camera movement through colorful streets, dreamy atmosphere" style="resize:vertical;font-family:inherit"></textarea></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;margin-bottom:20px"><span style="font-size:12px;color:var(--t3)">Duration: ~6 seconds</span><span style="font-size:12px;color:var(--t3)" id="vid-char-count">0 / 500</span></div>
-        <div class="vid-tips tb pu" style="margin-bottom:20px"><span>💡</span><span><strong>Tips:</strong> Be descriptive about camera angles, lighting, mood and movement. Mention "cinematic", "slow motion", or specific visual styles for best results.</span></div>
-        <button class="bt bp" id="btn-gen-video" style="width:100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Generate Video</button>
-        <div id="vid-progress" style="display:none;margin-top:20px;text-align:center">
-          <div class="sp" style="width:32px;height:32px;border-width:3px;margin:0 auto 12px"></div>
-          <div style="font-size:14px;font-weight:600" id="vid-prog-text">Generating your video...</div>
-          <div style="font-size:12px;color:var(--t3);margin-top:4px">This usually takes 1–3 minutes</div>
-        </div>
-        <div id="vid-result" style="display:none;margin-top:20px">
-          <video id="vid-player" controls playsinline style="width:100%;border-radius:var(--rs);background:#000"></video>
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <a id="vid-download" class="bt bs" style="flex:1;text-align:center;text-decoration:none" download="viraltrack-video.mp4">⬇ Download</a>
-          </div>
-        </div>
-        <div id="vid-error" class="auth-err" style="margin-top:16px"></div>
-      </div>
-      <div>
-        <div class="cd">
-          <div class="stl" style="margin-bottom:16px">Your Videos</div>
-          <div id="vid-history"><div class="es"><p>No videos yet. Generate your first one!</p></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
   <div class="pg" id="pg-settings"><h1 class="pt" style="margin-bottom:24px">Settings</h1><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</div><div class="tr"><div><div class="trl">Email notifications</div><div class="trd">Receive updates about your analyses</div></div><div class="tg on" id="tg-em" data-k="email_notifications"></div></div><div class="tr"><div><div class="trl">Marketing emails</div><div class="trd">Tips and best practices</div></div><div class="tg" id="tg-mk" data-k="marketing_emails"></div></div></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Subscription</div><p class="pc">Current plan</p><p class="pn" id="st-pl">Pro Trial</p><button class="bt bs" style="margin-top:12px">Upgrade plan</button></div><button class="logout-btn" id="btn-logout">Log out</button></div>
 </main>
 <!-- Mobile bottom nav -->
@@ -370,7 +323,6 @@
   <button data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
   <button data-p="new-analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Analyze</button>
   <button data-p="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Reports</button>
-  <button data-p="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Video</button>
   <button data-p="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
 </nav>
 
@@ -477,7 +429,7 @@ function nav(id){
   mobNis.forEach(n=>n.classList.remove('on'));
   const pg=document.getElementById('pg-'+id),ni=document.querySelector(`.sb [data-p="${id}"]`),mni=document.querySelector(`.mob-nav [data-p="${id}"]`);
   if(pg)pg.classList.add('on');if(ni)ni.classList.add('on');if(mni)mni.classList.add('on');
-  if(id==='dashboard')loadDash();if(id==='reports')loadReports();if(id==='settings')loadSettings();if(id==='video')loadVideos();
+  if(id==='dashboard')loadDash();if(id==='reports')loadReports();if(id==='settings')loadSettings();
   window.scrollTo(0,0);
 }
 nis.forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));
@@ -545,147 +497,6 @@ document.getElementById('btn-sp').addEventListener('click',async()=>{await authF
 document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>{t.classList.toggle('on');const k=t.dataset.k;if(k)await authFetch(A+'/settings',{method:'PUT',headers:authHeaders(),body:JSON.stringify({[k]:t.classList.contains('on')?'1':'0'})})}));
 
 function showLoad(v,msg){document.getElementById('lo').classList.toggle('vis',v);if(msg)document.getElementById('lo-text').textContent=msg}
-
-// ── VIDEO GENERATION ──
-let vidPolling = null;
-
-document.getElementById('vid-prompt').addEventListener('input', function() {
-  const count = this.value.length;
-  document.getElementById('vid-char-count').textContent = count + ' / 500';
-  if (count > 500) this.value = this.value.slice(0, 500);
-});
-
-async function loadVideos() {
-  try {
-    const data = await (await authFetch(A + '/videos')).json();
-    const limitEl = document.getElementById('vid-limit');
-    const remaining = data.daily_limit - data.today_count;
-    if (remaining <= 0) {
-      limitEl.className = 'vid-limit exhausted';
-      limitEl.innerHTML = '<span>⚠️</span><span>Daily limit reached — <span class="vid-count">0 of 1</span> video remaining. Resets at midnight UTC.</span>';
-      document.getElementById('btn-gen-video').disabled = true;
-      document.getElementById('btn-gen-video').style.opacity = '0.5';
-    } else {
-      limitEl.className = 'vid-limit';
-      limitEl.innerHTML = '<span>🎬</span><span><span class="vid-count">' + remaining + ' of 1</span> video remaining today</span>';
-      document.getElementById('btn-gen-video').disabled = false;
-      document.getElementById('btn-gen-video').style.opacity = '1';
-    }
-
-    const histEl = document.getElementById('vid-history');
-    if (!data.videos || data.videos.length === 0) {
-      histEl.innerHTML = '<div class="es"><p>No videos yet. Generate your first one!</p></div>';
-      return;
-    }
-    histEl.innerHTML = data.videos.map(v => `<div class="vid-hist-item" data-id="${v.id}" data-url="${v.video_url || ''}" data-status="${v.status}">
-      <div class="vid-hist-prompt">${v.prompt}</div>
-      <div class="vid-hist-meta">
-        <span class="vid-hist-status ${v.status}">${v.status === 'completed' ? '✓ Done' : v.status === 'processing' ? '⏳ Processing' : v.status === 'error' ? '✗ Failed' : '⏳ Queued'}</span>
-        <span>${new Date(v.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-      </div>
-    </div>`).join('');
-
-    histEl.querySelectorAll('.vid-hist-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const url = item.dataset.url;
-        const status = item.dataset.status;
-        if (status === 'completed' && url) {
-          document.getElementById('vid-result').style.display = 'block';
-          document.getElementById('vid-player').src = url;
-          document.getElementById('vid-download').href = url;
-          document.getElementById('vid-progress').style.display = 'none';
-          document.getElementById('vid-error').classList.remove('vis');
-        } else if (status === 'processing') {
-          pollVideoStatus(item.dataset.id);
-        }
-      });
-    });
-
-    // Auto-poll any processing videos
-    const processing = data.videos.find(v => v.status === 'processing' || v.status === 'queued');
-    if (processing) pollVideoStatus(processing.id);
-  } catch (e) { console.error('Failed to load videos:', e); }
-}
-
-document.getElementById('btn-gen-video').addEventListener('click', async () => {
-  const prompt = document.getElementById('vid-prompt').value.trim();
-  if (!prompt || prompt.length < 5) { const err = document.getElementById('vid-error'); err.textContent = 'Prompt must be at least 5 characters.'; err.classList.add('vis'); return; }
-
-  document.getElementById('vid-error').classList.remove('vis');
-  document.getElementById('vid-result').style.display = 'none';
-  document.getElementById('vid-progress').style.display = 'block';
-  document.getElementById('btn-gen-video').disabled = true;
-  document.getElementById('btn-gen-video').style.opacity = '0.5';
-  document.getElementById('vid-prog-text').textContent = 'Submitting to AI...';
-
-  try {
-    const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ prompt }) });
-    const data = await res.json();
-    if (!res.ok) {
-      document.getElementById('vid-progress').style.display = 'none';
-      document.getElementById('btn-gen-video').disabled = false;
-      document.getElementById('btn-gen-video').style.opacity = '1';
-      const err = document.getElementById('vid-error');
-      err.textContent = data.error || 'Failed to generate video.';
-      err.classList.add('vis');
-      return;
-    }
-    document.getElementById('vid-prog-text').textContent = 'Generating your video...';
-    pollVideoStatus(data.id);
-    loadVideos(); // refresh limit + history
-  } catch (e) {
-    document.getElementById('vid-progress').style.display = 'none';
-    document.getElementById('btn-gen-video').disabled = false;
-    document.getElementById('btn-gen-video').style.opacity = '1';
-    const err = document.getElementById('vid-error');
-    err.textContent = 'Connection error.';
-    err.classList.add('vis');
-  }
-});
-
-function pollVideoStatus(videoId) {
-  if (vidPolling) clearInterval(vidPolling);
-  document.getElementById('vid-progress').style.display = 'block';
-  document.getElementById('vid-result').style.display = 'none';
-  document.getElementById('vid-prog-text').textContent = 'Generating your video...';
-
-  let attempts = 0;
-  vidPolling = setInterval(async () => {
-    attempts++;
-    if (attempts > 120) { // max 10 min
-      clearInterval(vidPolling); vidPolling = null;
-      document.getElementById('vid-progress').style.display = 'none';
-      const err = document.getElementById('vid-error');
-      err.textContent = 'Video generation timed out. Check back in your history.';
-      err.classList.add('vis');
-      return;
-    }
-    try {
-      const data = await (await authFetch(A + '/videos/' + videoId + '/status')).json();
-      if (data.status === 'completed' && data.video_url) {
-        clearInterval(vidPolling); vidPolling = null;
-        document.getElementById('vid-progress').style.display = 'none';
-        document.getElementById('vid-result').style.display = 'block';
-        document.getElementById('vid-player').src = data.video_url;
-        document.getElementById('vid-download').href = data.video_url;
-        document.getElementById('btn-gen-video').disabled = false;
-        document.getElementById('btn-gen-video').style.opacity = '1';
-        loadVideos();
-      } else if (data.status === 'error') {
-        clearInterval(vidPolling); vidPolling = null;
-        document.getElementById('vid-progress').style.display = 'none';
-        const err = document.getElementById('vid-error');
-        err.textContent = data.error_message || 'Video generation failed.';
-        err.classList.add('vis');
-        document.getElementById('btn-gen-video').disabled = false;
-        document.getElementById('btn-gen-video').style.opacity = '1';
-        loadVideos();
-      } else if (data.queue_position) {
-        document.getElementById('vid-prog-text').textContent = 'In queue (position ' + data.queue_position + ')...';
-      }
-    } catch (e) { /* keep polling */ }
-  }, 5000);
-}
 
 // ── INIT ──
 checkAuth();
