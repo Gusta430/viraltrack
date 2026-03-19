@@ -245,12 +245,12 @@
     .vid-gen-btn{font-size:12px!important;padding:10px 16px!important}
   </style>
   <style>
-    /* AUTH STYLES */
+    /* AUTH & LANDING STYLES */
     .auth-wrap{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
     .auth-wrap.on{display:flex}
-    .auth-box{width:100%;max-width:400px}
-    .auth-logo{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;text-align:center;margin-bottom:8px}
-    .auth-sub{text-align:center;color:var(--t2);font-size:14px;margin-bottom:32px}
+    .auth-box{width:100%;max-width:960px}
+    .auth-logo{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;text-align:center;margin-bottom:12px}
+    .auth-sub{text-align:center;color:var(--t2);font-size:14px;margin-bottom:12px}
     .auth-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:32px}
     .auth-title{font-size:20px;font-weight:700;margin-bottom:20px}
     .auth-err{display:none;padding:10px 14px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:var(--rs);color:#f87171;font-size:13px;margin-bottom:16px}
@@ -261,6 +261,30 @@
     .app-wrap{display:none}.app-wrap.on{display:flex;min-height:100vh}
     .logout-btn{margin-top:12px;width:100%;padding:10px;background:none;border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:var(--rs);font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;transition:.15s}
     .logout-btn:hover{background:rgba(239,68,68,.1)}
+    .landing-hero{text-align:center;margin-bottom:40px}
+    .landing-headline{font-size:36px;font-weight:700;letter-spacing:-1px;line-height:1.2;margin-bottom:12px;background:linear-gradient(135deg,#fff,#c4b5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .landing-desc{font-size:16px;color:var(--t2);max-width:520px;margin:0 auto 28px;line-height:1.6}
+    .landing-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;margin-bottom:32px}
+    .landing-preview{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+    .landing-preview-header{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--t2)}
+    .landing-preview-header svg{width:16px;height:16px;color:var(--ac)}
+    .landing-preview-body{padding:20px}
+    .lp-stat{display:flex;align-items:center;gap:12px;padding:12px 0}
+    .lp-stat+.lp-stat{border-top:1px solid var(--bdr)}
+    .lp-icon{width:32px;height:32px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+    .lp-label{font-size:12px;color:var(--t3)}.lp-val{font-size:15px;font-weight:600}
+    .lp-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .lp-tag{padding:4px 10px;background:var(--ac-s);color:var(--ac);border-radius:20px;font-size:11px;font-weight:500}
+    .landing-features{display:flex;gap:16px;justify-content:center;margin-bottom:32px;flex-wrap:wrap}
+    .landing-feat{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2)}
+    .landing-feat svg{width:16px;height:16px;color:var(--gr)}
+    @media(max-width:768px){
+      .landing-grid{grid-template-columns:1fr}
+      .landing-headline{font-size:26px}
+      .landing-desc{font-size:14px}
+      .auth-box{max-width:100%}
+      .landing-preview{display:none}
+    }
   </style>
 </head>
 <body>
@@ -268,32 +292,61 @@
 <!-- AUTH SCREEN -->
 <div class="auth-wrap on" id="auth-wrap">
   <div class="auth-box">
-    <div class="auth-logo">🎵 ViralTrack</div>
-    <div class="auth-sub">AI-powered music promotion</div>
-
-    <!-- LOGIN -->
-    <div id="auth-login">
-      <div class="auth-card">
-        <div class="auth-title">Log in</div>
-        <div class="auth-err" id="login-err"></div>
-        <div class="fg"><label class="fl">Email</label><input class="fi" id="login-email" type="email" placeholder="you@example.com"></div>
-        <div class="fg"><label class="fl">Password</label><input class="fi" id="login-pass" type="password" placeholder="Your password"></div>
-        <button class="bt bp" style="width:100%" id="btn-login">Log in</button>
+    <div class="landing-hero">
+      <div class="auth-logo">🎵 ViralTrack</div>
+      <div class="landing-headline">Lag promo-innhold for låten din på sekunder — med AI</div>
+      <div class="landing-desc">Legg inn sangen din og få en komplett analyse, promo-plan, video-ideer og AI-genererte promo-videoer. Alt tilpasset din musikk.</div>
+      <div class="landing-features">
+        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>AI-analyse av låten</div>
+        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>4-ukers promo-plan</div>
+        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>AI promo-videoer</div>
+        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>TikTok & Reels-ideer</div>
       </div>
-      <div class="auth-switch">Don't have an account? <a id="show-register">Sign up</a></div>
     </div>
 
-    <!-- REGISTER -->
-    <div id="auth-register" style="display:none">
-      <div class="auth-card">
-        <div class="auth-title">Create account</div>
-        <div class="auth-err" id="reg-err"></div>
-        <div class="fg"><label class="fl">Name</label><input class="fi" id="reg-name" placeholder="Your name"></div>
-        <div class="fg"><label class="fl">Email</label><input class="fi" id="reg-email" type="email" placeholder="you@example.com"></div>
-        <div class="fg"><label class="fl">Password</label><input class="fi" id="reg-pass" type="password" placeholder="Min. 6 characters"></div>
-        <button class="bt bp" style="width:100%" id="btn-register">Create account</button>
+    <div class="landing-grid">
+      <!-- Example output preview -->
+      <div class="landing-preview">
+        <div class="landing-preview-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Eksempel: Analyse-resultat</div>
+        <div class="landing-preview-body">
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px">Midnight Thoughts</div>
+          <div style="font-size:13px;color:var(--t2);margin-bottom:16px">Luna Rose · Indie Pop</div>
+          <div class="lp-stat"><div class="lp-icon" style="background:var(--ac-s);color:var(--ac)">♪</div><div><div class="lp-label">Tempo</div><div class="lp-val">92 BPM — Chill, laid-back groove</div></div></div>
+          <div class="lp-stat"><div class="lp-icon" style="background:var(--pk-s);color:var(--pk)">⚡</div><div><div class="lp-label">Energy</div><div class="lp-val">58% — Medium, introspective</div></div></div>
+          <div class="lp-stat"><div class="lp-icon" style="background:var(--gr-s);color:var(--gr)">👥</div><div><div class="lp-label">Målgruppe</div><div class="lp-val">18-28, TikTok & Spotify</div></div></div>
+          <div class="lp-tags"><span class="lp-tag">Dreamy</span><span class="lp-tag">Nostalgic</span><span class="lp-tag">Late Night</span><span class="lp-tag">Emotional</span></div>
+          <div style="margin-top:16px;padding:12px 16px;background:var(--ac-s);border-radius:var(--rs);border-left:3px solid var(--ac)">
+            <div style="font-size:11px;font-weight:600;color:var(--ac);margin-bottom:4px">AI Video Idea</div>
+            <div style="font-size:12px;color:var(--t2)">🎬 «Slow-mo shots of city lights at night, soft focus transitions synced to the chorus drop»</div>
+          </div>
+        </div>
       </div>
-      <div class="auth-switch">Already have an account? <a id="show-login">Log in</a></div>
+
+      <!-- Login/Register -->
+      <div>
+        <div id="auth-login">
+          <div class="auth-card">
+            <div class="auth-title">Kom i gang gratis</div>
+            <div class="auth-err" id="login-err"></div>
+            <div class="fg"><label class="fl">Email</label><input class="fi" id="login-email" type="email" placeholder="you@example.com"></div>
+            <div class="fg"><label class="fl">Passord</label><input class="fi" id="login-pass" type="password" placeholder="Ditt passord"></div>
+            <button class="bt bp" style="width:100%" id="btn-login">Logg inn</button>
+          </div>
+          <div class="auth-switch">Ingen konto? <a id="show-register">Registrer deg</a></div>
+        </div>
+
+        <div id="auth-register" style="display:none">
+          <div class="auth-card">
+            <div class="auth-title">Lag konto</div>
+            <div class="auth-err" id="reg-err"></div>
+            <div class="fg"><label class="fl">Navn</label><input class="fi" id="reg-name" placeholder="Ditt navn"></div>
+            <div class="fg"><label class="fl">Email</label><input class="fi" id="reg-email" type="email" placeholder="you@example.com"></div>
+            <div class="fg"><label class="fl">Passord</label><input class="fi" id="reg-pass" type="password" placeholder="Min. 6 tegn"></div>
+            <button class="bt bp" style="width:100%" id="btn-register">Lag konto</button>
+          </div>
+          <div class="auth-switch">Har du konto? <a id="show-login">Logg inn</a></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
