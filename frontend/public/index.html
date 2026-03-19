@@ -246,11 +246,11 @@
   </style>
   <style>
     /* AUTH & LANDING STYLES */
-    .auth-wrap{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
-    .auth-wrap.on{display:flex}
-    .auth-box{width:100%;max-width:960px}
-    .auth-logo{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;text-align:center;margin-bottom:12px}
-    .auth-sub{text-align:center;color:var(--t2);font-size:14px;margin-bottom:12px}
+    .auth-wrap{display:none;min-height:100vh;background:var(--bg);padding:0}
+    .auth-wrap.on{display:block}
+    .app-wrap{display:none}.app-wrap.on{display:flex;min-height:100vh}
+    .logout-btn{margin-top:12px;width:100%;padding:10px;background:none;border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:var(--rs);font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;transition:.15s}
+    .logout-btn:hover{background:rgba(239,68,68,.1)}
     .auth-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:32px}
     .auth-title{font-size:20px;font-weight:700;margin-bottom:20px}
     .auth-err{display:none;padding:10px 14px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);border-radius:var(--rs);color:#f87171;font-size:13px;margin-bottom:16px}
@@ -258,32 +258,69 @@
     .auth-switch{text-align:center;margin-top:20px;font-size:13px;color:var(--t2)}
     .auth-switch a{color:var(--ac);cursor:pointer;text-decoration:none;font-weight:600}
     .auth-switch a:hover{text-decoration:underline}
-    .app-wrap{display:none}.app-wrap.on{display:flex;min-height:100vh}
-    .logout-btn{margin-top:12px;width:100%;padding:10px;background:none;border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:var(--rs);font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;transition:.15s}
-    .logout-btn:hover{background:rgba(239,68,68,.1)}
-    .landing-hero{text-align:center;margin-bottom:40px}
-    .landing-headline{font-size:36px;font-weight:700;letter-spacing:-1px;line-height:1.2;margin-bottom:12px;background:linear-gradient(135deg,#fff,#c4b5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .landing-desc{font-size:16px;color:var(--t2);max-width:520px;margin:0 auto 28px;line-height:1.6}
-    .landing-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;margin-bottom:32px}
-    .landing-preview{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
-    .landing-preview-header{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--t2)}
-    .landing-preview-header svg{width:16px;height:16px;color:var(--ac)}
-    .landing-preview-body{padding:20px}
-    .lp-stat{display:flex;align-items:center;gap:12px;padding:12px 0}
-    .lp-stat+.lp-stat{border-top:1px solid var(--bdr)}
-    .lp-icon{width:32px;height:32px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
-    .lp-label{font-size:12px;color:var(--t3)}.lp-val{font-size:15px;font-weight:600}
-    .lp-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-    .lp-tag{padding:4px 10px;background:var(--ac-s);color:var(--ac);border-radius:20px;font-size:11px;font-weight:500}
-    .landing-features{display:flex;gap:16px;justify-content:center;margin-bottom:32px;flex-wrap:wrap}
-    .landing-feat{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2)}
-    .landing-feat svg{width:16px;height:16px;color:var(--gr)}
+
+    /* HERO */
+    .l-hero{padding:80px 24px 60px;text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,.12) 0%,transparent 70%)}
+    .l-logo{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;margin-bottom:32px;color:var(--t2)}
+    .l-logo span{color:var(--ac)}
+    .l-h1{font-size:48px;font-weight:700;letter-spacing:-1.5px;line-height:1.15;margin-bottom:20px;max-width:700px;margin-left:auto;margin-right:auto}
+    .l-h1 em{font-style:normal;background:linear-gradient(135deg,var(--ac),var(--pk));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .l-sub{font-size:18px;color:var(--t2);max-width:540px;margin:0 auto 36px;line-height:1.6}
+    .l-cta-row{display:flex;gap:16px;justify-content:center;align-items:center;margin-bottom:16px}
+    .l-cta{padding:16px 40px;font-size:16px;font-weight:700;border-radius:var(--rs);background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;cursor:pointer;box-shadow:0 8px 32px var(--ac-g);transition:.2s;font-family:inherit}
+    .l-cta:hover{transform:translateY(-2px);box-shadow:0 12px 40px var(--ac-g)}
+    .l-trust{font-size:13px;color:var(--t3);margin-top:12px}
+
+    /* FEATURES */
+    .l-features{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:900px;margin:0 auto 64px;padding:0 24px}
+    .l-feat{text-align:center;padding:28px 16px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r)}
+    .l-feat-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px}
+    .l-feat h3{font-size:14px;font-weight:700;margin-bottom:6px}
+    .l-feat p{font-size:12px;color:var(--t2);line-height:1.5}
+
+    /* EXAMPLE OUTPUT */
+    .l-example{max-width:900px;margin:0 auto 64px;padding:0 24px}
+    .l-example-title{text-align:center;font-size:13px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px}
+    .l-example-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+    .l-ex-header{padding:20px 24px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:16px}
+    .l-ex-icon{width:48px;height:48px;border-radius:var(--r);background:linear-gradient(135deg,#7c3aed,#ec4899);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .l-ex-info h3{font-size:18px;font-weight:700}.l-ex-info p{font-size:13px;color:var(--t2)}
+    .l-ex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+    .l-ex-stat{padding:20px 24px;border-right:1px solid var(--bdr)}
+    .l-ex-stat:last-child{border-right:none}
+    .l-ex-stat-label{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+    .l-ex-stat-val{font-size:22px;font-weight:700}
+    .l-ex-stat-desc{font-size:12px;color:var(--t2);margin-top:2px}
+    .l-ex-bottom{padding:20px 24px;border-top:1px solid var(--bdr);display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .l-ex-tags{display:flex;flex-wrap:wrap;gap:6px}
+    .l-ex-tag{padding:5px 12px;background:var(--ac-s);color:var(--ac);border-radius:20px;font-size:12px;font-weight:500}
+    .l-ex-ai{padding:14px 18px;background:var(--ac-s);border-radius:var(--rs);border-left:3px solid var(--ac)}
+    .l-ex-ai-label{font-size:11px;font-weight:600;color:var(--ac);margin-bottom:6px}
+    .l-ex-ai p{font-size:13px;color:var(--t2);line-height:1.5}
+
+    /* TESTIMONIALS */
+    .l-social{max-width:900px;margin:0 auto 64px;padding:0 24px}
+    .l-social-title{text-align:center;font-size:13px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px}
+    .l-quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .l-quote{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:24px}
+    .l-quote p{font-size:14px;line-height:1.6;margin-bottom:12px;color:var(--t1)}
+    .l-quote cite{font-size:12px;color:var(--t3);font-style:normal}
+
+    /* AUTH SECTION */
+    .l-auth{max-width:420px;margin:0 auto 80px;padding:0 24px}
+
+    /* MOBILE */
     @media(max-width:768px){
-      .landing-grid{grid-template-columns:1fr}
-      .landing-headline{font-size:26px}
-      .landing-desc{font-size:14px}
-      .auth-box{max-width:100%}
-      .landing-preview{display:none}
+      .l-hero{padding:48px 20px 40px}
+      .l-h1{font-size:28px}
+      .l-sub{font-size:15px}
+      .l-features{grid-template-columns:1fr 1fr;gap:12px;padding:0 16px}
+      .l-ex-grid{grid-template-columns:1fr 1fr}
+      .l-ex-stat{border-bottom:1px solid var(--bdr)}
+      .l-ex-bottom{grid-template-columns:1fr}
+      .l-quotes{grid-template-columns:1fr}
+      .l-auth{padding:0 16px}
+      .l-cta{padding:14px 32px;font-size:15px}
     }
   </style>
 </head>
@@ -291,64 +328,83 @@
 
 <!-- AUTH SCREEN -->
 <div class="auth-wrap on" id="auth-wrap">
-  <div class="auth-box">
-    <div class="landing-hero">
-      <div class="auth-logo">🎵 ViralTrack</div>
-      <div class="landing-headline">Create promo content for your track in seconds — with AI</div>
-      <div class="landing-desc">Upload your track and get a full analysis, promo plan, video ideas and AI-generated promo videos. All tailored to your music.</div>
-      <div class="landing-features">
-        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>AI track analysis</div>
-        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>4-week promo plan</div>
-        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>AI promo videos</div>
-        <div class="landing-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>TikTok & Reels ideas</div>
-      </div>
+
+  <!-- HERO -->
+  <div class="l-hero">
+    <div class="l-logo">🎵 <span>ViralTrack</span></div>
+    <h1 class="l-h1">Create promo content for your track in seconds — <em>with AI</em></h1>
+    <p class="l-sub">Upload your track and get a complete analysis, 4-week promo plan, video ideas and AI-generated promo videos. All tailored to your music.</p>
+    <div class="l-cta-row">
+      <button class="l-cta" onclick="document.getElementById('l-auth-section').scrollIntoView({behavior:'smooth'})">Get Started Free</button>
     </div>
+    <div class="l-trust">Free to use · No credit card required · 50+ artists already testing</div>
+  </div>
 
-    <div class="landing-grid">
-      <!-- Example output preview -->
-      <div class="landing-preview">
-        <div class="landing-preview-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Example: Analysis result</div>
-        <div class="landing-preview-body">
-          <div style="font-size:16px;font-weight:700;margin-bottom:4px">Midnight Thoughts</div>
-          <div style="font-size:13px;color:var(--t2);margin-bottom:16px">Luna Rose · Indie Pop</div>
-          <div class="lp-stat"><div class="lp-icon" style="background:var(--ac-s);color:var(--ac)">♪</div><div><div class="lp-label">Tempo</div><div class="lp-val">92 BPM — Chill, laid-back groove</div></div></div>
-          <div class="lp-stat"><div class="lp-icon" style="background:var(--pk-s);color:var(--pk)">⚡</div><div><div class="lp-label">Energy</div><div class="lp-val">58% — Medium, introspective</div></div></div>
-          <div class="lp-stat"><div class="lp-icon" style="background:var(--gr-s);color:var(--gr)">👥</div><div><div class="lp-label">Audience</div><div class="lp-val">18-28, TikTok & Spotify</div></div></div>
-          <div class="lp-tags"><span class="lp-tag">Dreamy</span><span class="lp-tag">Nostalgic</span><span class="lp-tag">Late Night</span><span class="lp-tag">Emotional</span></div>
-          <div style="margin-top:16px;padding:12px 16px;background:var(--ac-s);border-radius:var(--rs);border-left:3px solid var(--ac)">
-            <div style="font-size:11px;font-weight:600;color:var(--ac);margin-bottom:4px">AI Video Idea</div>
-            <div style="font-size:12px;color:var(--t2)">🎬 «Slow-mo shots of city lights at night, soft focus transitions synced to the chorus drop»</div>
-          </div>
-        </div>
+  <!-- FEATURES -->
+  <div class="l-features">
+    <div class="l-feat"><div class="l-feat-icon" style="background:var(--ac-s)">🎯</div><h3>AI Track Analysis</h3><p>Tempo, mood, energy, audience — all analyzed in seconds</p></div>
+    <div class="l-feat"><div class="l-feat-icon" style="background:var(--gr-s)">📋</div><h3>4-Week Promo Plan</h3><p>Day-by-day strategy with tasks, platforms and content ideas</p></div>
+    <div class="l-feat"><div class="l-feat-icon" style="background:var(--pk-s)">🎬</div><h3>AI Promo Videos</h3><p>Generate cinematic promo clips tailored to your track's vibe</p></div>
+    <div class="l-feat"><div class="l-feat-icon" style="background:var(--bl-s)">📱</div><h3>TikTok & Reels Ideas</h3><p>Ready-to-post content ideas with captions and hashtags</p></div>
+  </div>
+
+  <!-- EXAMPLE OUTPUT -->
+  <div class="l-example">
+    <div class="l-example-title">What you get — real example output</div>
+    <div class="l-example-card">
+      <div class="l-ex-header">
+        <div class="l-ex-icon">🎵</div>
+        <div class="l-ex-info"><h3>Midnight Thoughts</h3><p>Luna Rose · Indie Pop · Analysis complete</p></div>
       </div>
-
-      <!-- Login/Register -->
-      <div>
-        <div id="auth-login">
-          <div class="auth-card">
-            <div class="auth-title">Get started free</div>
-            <div class="auth-err" id="login-err"></div>
-            <div class="fg"><label class="fl">Email</label><input class="fi" id="login-email" type="email" placeholder="you@example.com"></div>
-            <div class="fg"><label class="fl">Password</label><input class="fi" id="login-pass" type="password" placeholder="Your password"></div>
-            <button class="bt bp" style="width:100%" id="btn-login">Log in</button>
-          </div>
-          <div class="auth-switch">Don't have an account? <a id="show-register">Sign up</a></div>
-        </div>
-
-        <div id="auth-register" style="display:none">
-          <div class="auth-card">
-            <div class="auth-title">Create account</div>
-            <div class="auth-err" id="reg-err"></div>
-            <div class="fg"><label class="fl">Name</label><input class="fi" id="reg-name" placeholder="Your name"></div>
-            <div class="fg"><label class="fl">Email</label><input class="fi" id="reg-email" type="email" placeholder="you@example.com"></div>
-            <div class="fg"><label class="fl">Password</label><input class="fi" id="reg-pass" type="password" placeholder="Min. 6 characters"></div>
-            <button class="bt bp" style="width:100%" id="btn-register">Create account</button>
-          </div>
-          <div class="auth-switch">Already have an account? <a id="show-login">Log in</a></div>
-        </div>
+      <div class="l-ex-grid">
+        <div class="l-ex-stat"><div class="l-ex-stat-label">Tempo</div><div class="l-ex-stat-val">92 BPM</div><div class="l-ex-stat-desc">Chill, laid-back groove</div></div>
+        <div class="l-ex-stat"><div class="l-ex-stat-label">Energy</div><div class="l-ex-stat-val">58%</div><div class="l-ex-stat-desc">Medium, introspective</div></div>
+        <div class="l-ex-stat"><div class="l-ex-stat-label">Audience</div><div class="l-ex-stat-val">18–28</div><div class="l-ex-stat-desc">TikTok & Spotify listeners</div></div>
+        <div class="l-ex-stat"><div class="l-ex-stat-label">Genre Fit</div><div class="l-ex-stat-val">Indie Pop</div><div class="l-ex-stat-desc">Bedroom pop crossover</div></div>
+      </div>
+      <div class="l-ex-bottom">
+        <div><div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--t2)">Mood Tags</div><div class="l-ex-tags"><span class="l-ex-tag">Dreamy</span><span class="l-ex-tag">Nostalgic</span><span class="l-ex-tag">Late Night</span><span class="l-ex-tag">Emotional</span></div></div>
+        <div class="l-ex-ai"><div class="l-ex-ai-label">🎬 AI Video Idea</div><p>Slow-mo shots of city lights at night, soft focus transitions synced to the chorus drop, neon reflections on wet streets</p></div>
       </div>
     </div>
   </div>
+
+  <!-- SOCIAL PROOF -->
+  <div class="l-social">
+    <div class="l-social-title">What artists are saying</div>
+    <div class="l-quotes">
+      <div class="l-quote"><p>"This saved me hours of figuring out how to promote my single. Had a full plan in minutes."</p><cite>— Independent artist, Oslo</cite></div>
+      <div class="l-quote"><p>"The video ideas were spot on for my vibe. Actually used one for my TikTok and it did numbers."</p><cite>— Upcoming producer</cite></div>
+      <div class="l-quote"><p>"Finally a tool that gets what independent artists actually need. No fluff, just actionable stuff."</p><cite>— Singer-songwriter</cite></div>
+    </div>
+  </div>
+
+  <!-- AUTH -->
+  <div class="l-auth" id="l-auth-section">
+    <div id="auth-login">
+      <div class="auth-card">
+        <div class="auth-title" style="text-align:center">Get started free</div>
+        <div class="auth-err" id="login-err"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" id="login-email" type="email" placeholder="you@example.com"></div>
+        <div class="fg"><label class="fl">Password</label><input class="fi" id="login-pass" type="password" placeholder="Your password"></div>
+        <button class="bt bp" style="width:100%" id="btn-login">Log in</button>
+      </div>
+      <div class="auth-switch">Don't have an account? <a id="show-register">Sign up free</a></div>
+    </div>
+
+    <div id="auth-register" style="display:none">
+      <div class="auth-card">
+        <div class="auth-title" style="text-align:center">Create your free account</div>
+        <div class="auth-err" id="reg-err"></div>
+        <div class="fg"><label class="fl">Name</label><input class="fi" id="reg-name" placeholder="Your name"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" id="reg-email" type="email" placeholder="you@example.com"></div>
+        <div class="fg"><label class="fl">Password</label><input class="fi" id="reg-pass" type="password" placeholder="Min. 6 characters"></div>
+        <button class="bt bp" style="width:100%" id="btn-register">Create account</button>
+      </div>
+      <div class="auth-switch">Already have an account? <a id="show-login">Log in</a></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- APP (hidden until logged in) -->
