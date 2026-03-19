@@ -46,20 +46,20 @@ function parseJSON(text) {
 
 // ── TRACK ANALYSIS ──────────────────────────────────────
 export async function analyzeTrack(track) {
-  const systemPrompt = `Du er en ekstremt erfaren musikkmarkedsfører med 15+ års erfaring i musikkindustrien. Du har jobbet med artister fra bedroom pop til trap, og du vet NØYAKTIG hva som skiller generiske råd fra råd som faktisk gir resultater.
+  const systemPrompt = `You are an extremely experienced music marketer with 15+ years in the music industry. You have worked with artists from bedroom pop to trap, and you know EXACTLY what separates generic advice from advice that actually delivers results. IMPORTANT: Always respond in English.
 
-REGLER DU MÅ FØLGE:
-- ALDRI gi generiske råd som "post consistently" eller "engage with your audience" — dette vet alle allerede
-- ALDRI foreslå "behind the scenes"-videoer eller "studio session"-klipp med mindre du har en SPESIFIKK, UNIK vinkling på det
-- Alle forslag SKAL være direkte knyttet til denne spesifikke låtens tittel, stemning, eller sjanger
-- Video-ideer skal inneholde KONKRETE scenarier, ikke vage beskrivelser. Beskriv nøyaktig hva som skjer i videoen sekund for sekund
+RULES YOU MUST FOLLOW:
+- NEVER give generic advice like "post consistently" or "engage with your audience" — everyone knows this already
+- NEVER suggest "behind the scenes" videos or "studio session" clips unless you have a SPECIFIC, UNIQUE angle on it
+- All suggestions MUST be directly tied to this specific track's title, mood, or genre
+- Video ideas must contain CONCRETE scenarios, not vague descriptions. Describe exactly what happens in the video second by second
 - Hashtags skal inkludere NISJE-hashtags (under 1M innlegg) som faktisk treffer målgruppen, ikke bare store generiske tags
 - Captions skal ha en hook i første linje som får folk til å stoppe scrollingen
 - DIY-ideer skal være KREATIVE og OVERRASKENDE — ting artisten ikke ville tenkt på selv
 - Reference artists skal ikke bare være de mest åpenbare — inkluder minst 2 mindre kjente artister som har lignende sound men en unik markedsføringsstrategi å lære av
 - Key insight skal være EN spesifikk, kontraintuitiv innsikt — ikke en generisk observasjon
 
-VIKTIG: Svar ALLTID med gyldig JSON og INGENTING annet.
+VIKTIG: ALWAYS respond with valid JSON og INGENTING annet.
 
 JSON-struktur:
 {
@@ -81,7 +81,7 @@ JSON-struktur:
   "creator_tip": "<tips>"
 }`;
 
-  const userPrompt = `Analyser denne låten og lag en UNIK promo-strategi som denne artisten ikke ville funnet noe annet sted:
+  const userPrompt = `Analyze this track og lag en UNIK promo-strategi som denne artisten ikke ville funnet noe annet sted:
 
 Tittel: "${track.title}"
 Artist: ${track.artist}
@@ -132,19 +132,19 @@ export async function generatePromoPlan(track, analysis) {
   const moods = JSON.parse(analysis.mood_tags || '[]');
   const refs = JSON.parse(analysis.reference_artists || '[]');
 
-  const systemPrompt = `Du er en elite musikkmarkedsfører som har hjulpet artister gå fra 0 til 100K+ månedlige lyttere. Du lager IKKE generiske lanseringsplaner — du lager skreddersydde, overraskende strategier som er tilpasset denne ene låten.
+  const systemPrompt = `You are an elite music marketer who has helped artists go from 0 to 100K+ monthly listeners. You do NOT create generic launch plans — you create tailored, surprising strategies adapted to this one specific track. IMPORTANT: Always respond in English.
 
-REGLER:
-- HVER oppgave skal være så spesifikk at artisten kan gjøre den umiddelbart uten å tenke "men hva betyr det egentlig?"
-- IKKE skriv "post engaging content" — skriv NØYAKTIG hva de skal poste, med eksempel på caption og visuell beskrivelse
-- Spilleliste-strategien skal nevne EKTE spillelistenavn som finnes på Spotify, ikke generiske kategorier
-- Samarbeidsideer skal inkludere SPESIFIKKE typer kreatører å kontakte (ikke bare "influencers"), med forslag til hva samarbeidet skal inneholde
+RULES:
+- EVERY task must be so specific that the artist can do it immediately without thinking "but what does that actually mean?"
+- DO NOT write "post engaging content" — write EXACTLY what they should post, with example captions and visual descriptions
+- Playlist strategy must mention REAL playlist names that exist on Spotify, not generic categories
+- Collaboration ideas must include SPECIFIC types of creators to contact (not just "influencers"), with suggestions for what the collaboration should contain
 - Budget-tips skal ha REELLE tall basert på hva som faktisk fungerer i ${new Date().getFullYear()}
 - Unngå disse klisjeene: "consistency is key", "engage with your community", "post regularly", "be authentic"
 - Tenk på hva som er KONTRAINTUITIVT — hvilke strategier VIRKER rare men faktisk fungerer?
 - Inkluder minst én "growth hack" som utnytter en plattform-mekanikk de fleste ikke vet om
 
-VIKTIG: Svar ALLTID med gyldig JSON og INGENTING annet.
+VIKTIG: ALWAYS respond with valid JSON og INGENTING annet.
 
 JSON-struktur:
 {
@@ -218,7 +218,7 @@ JSON-struktur:
   "common_mistakes": ["<feil å unngå 1>", "<feil 2>", "<feil 3>"]
 }`;
 
-  const userPrompt = `Lag en detaljert 4-ukers lanseringsplan for denne låten som er SÅ SPESIFIKK at artisten kan følge den dag for dag uten å google noe:
+  const userPrompt = `Create a detailed 4-ukers launch plan for this track som er SÅ SPESIFIKK at artisten kan følge den dag for dag uten å google noe:
 
 Tittel: "${track.title}"
 Artist: ${track.artist}
