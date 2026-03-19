@@ -420,7 +420,16 @@
   <div class="sb-foot"><div class="av" id="uav">AM</div><div class="ui"><div class="un" id="udn">Alex Morgan</div><div class="up" id="upl">Pro Trial</div></div></div>
 </aside>
 <main class="mn">
-  <div class="pg on" id="pg-dashboard"><h1 class="pt">Dashboard</h1><p class="ps">Overview of your music promotion performance</p><div class="sg" id="sg"></div><div class="cd" style="text-align:center;color:var(--t3);padding:48px">More dashboard features coming soon...</div></div>
+  <div class="pg on" id="pg-dashboard"><h1 class="pt">Dashboard</h1><p class="ps">Overview of your music promotion performance</p>
+    <div class="sg" id="sg"></div>
+    <div class="cd" style="text-align:center;padding:40px 24px;margin-bottom:24px;background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(236,72,153,.06));border:1px solid rgba(139,92,246,.2)">
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px">Ready to promote your next track?</div>
+      <div style="font-size:14px;color:var(--t2);margin-bottom:20px">Upload a track and get AI-powered analysis, promo plan and video ideas</div>
+      <button class="bt bp" onclick="nav('new-analysis')" style="padding:14px 36px;font-size:15px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg> New Analysis</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font-size:18px;font-weight:700">Your Tracks</div></div>
+    <div id="dash-tracks"><div class="es"><p>No tracks yet. Analyze your first track to get started!</p></div></div>
+  </div>
   <div class="pg" id="pg-new-analysis"><div class="ph"><div><h1 class="pt">Upload your track</h1><p class="ps">Get an AI-generated promo strategy for your next release</p></div><button class="bd" id="demo-btn">Try demo track</button></div>
     <div class="ul"><div class="cd" style="padding:0"><div class="uz" id="uz"><div class="uzi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="uzt">Drag and drop your track</div><div class="uzs">MP3, WAV or paste a Spotify link</div><div class="ub" id="ub-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload file</div><div class="spl" id="sp-tog"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Paste Spotify URL</div><input type="text" class="spi" id="sp-url" placeholder="https://open.spotify.com/track/..."><div class="uff">Supported formats: MP3, WAV, Spotify link<br>Max size: 50 MB</div><div class="fa" id="fa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="fn"></span></div></div><input type="file" id="finp" accept=".mp3,.wav,.m4a,.flac,.ogg,.aac" hidden></div>
     <div><div class="fg"><label class="fl">Track title</label><input class="fi" id="in-t" placeholder="Enter track title"></div><div class="fg"><label class="fl">Artist name</label><input class="fi" id="in-a" placeholder="Enter artist name"></div><div class="fg"><label class="fl">Genre</label><input class="fi" id="in-g" placeholder="e.g., Pop, Hip-hop, Electronic"></div><div class="fg"><label class="fl">Similar artists</label><input class="fi" id="in-s" placeholder="e.g., Taylor Swift, Billie Eilish"></div><div class="fg"><label class="fl">Main goal for this release</label><select class="fs" id="in-gl"><option value="">Select your main goal</option><option>Grow fanbase</option><option>Get playlist placements</option><option>Promote a tour</option><option>Build brand deals</option><option>Go viral on TikTok</option></select></div><label class="cr"><input type="checkbox" id="in-tk" checked>I want content ideas for TikTok and Reels</label><div class="br"><button class="bt bp" id="btn-az"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Analyze track</button><button class="bt bs" id="btn-dr">Save draft</button></div></div></div>
@@ -549,7 +558,26 @@ mobNis.forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));
 document.querySelector('.mob-nav [data-p="dashboard"]')?.classList.add('on');
 
 // ── DASHBOARD ──
-async function loadDash(){try{const d=await(await authFetch(A+'/dashboard')).json();document.getElementById('sg').innerHTML=`<div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="sl">Total Tracks Analyzed</div><div class="sv">${d.total_tracks}</div><div class="sch">${d.weekly_tracks}</div></div><div class="sc"><div class="si gn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="sl">Promo Plans Created</div><div class="sv">${d.promo_plans}</div><div class="sch">${d.weekly_promos}</div></div><div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="sl">Total Views</div><div class="sv">${d.total_views}</div><div class="sch">${d.weekly_views}</div></div><div class="sc"><div class="si pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="sl">Engagement Rate</div><div class="sv">${d.engagement_rate}</div><div class="sch">${d.weekly_engagement}</div></div>`}catch(e){}}
+async function loadDash(){
+  try{
+    const d=await(await authFetch(A+'/dashboard')).json();
+    document.getElementById('sg').innerHTML=`<div class="sc"><div class="si pu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="sl">Tracks Analyzed</div><div class="sv">${d.total_tracks}</div></div><div class="sc"><div class="si gn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="sl">Promo Plans</div><div class="sv">${d.promo_plans}</div></div>`;
+  }catch(e){}
+  try{
+    const tracks=await(await authFetch(A+'/tracks')).json();
+    const el=document.getElementById('dash-tracks');
+    if(!tracks.length){el.innerHTML='<div class="es"><p>No tracks yet. Analyze your first track to get started!</p></div>';return;}
+    el.innerHTML=tracks.map(t=>{
+      const date=new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const statusClass=t.status==='analyzed'?'bg-g':t.status==='draft'?'bg-b':'bg-p';
+      const statusText=t.status==='analyzed'?'Analyzed':t.status==='draft'?'Draft':'Processing';
+      return `<div class="ri" data-t="${t.id}" style="cursor:pointer"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="rim"><div class="rit">${t.title}</div><div class="ris">${t.artist} · ${date}</div></div><div class="ria"><span class="bg ${statusClass}">${statusText}</span></div></div>`;
+    }).join('');
+    el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{
+      try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(d.analysis)showAn(d,d.analysis);}catch(e){console.error(e)}
+    }));
+  }catch(e){}
+}
 
 // ── UPLOAD ──
 const uz=document.getElementById('uz'),finp=document.getElementById('finp');
