@@ -602,6 +602,20 @@ async function loadDash(){
       try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(d.analysis)showAn(d,d.analysis);}catch(e){console.error(e)}
     }));
   }catch(e){}
+  try{
+    const tracks=await(await authFetch(A+'/tracks')).json();
+    const el=document.getElementById('dash-tracks');
+    if(!tracks.length){el.innerHTML='<div class="es"><p>No tracks yet. Analyze your first track to get started!</p></div>';return;}
+    el.innerHTML=tracks.map(t=>{
+      const date=new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const statusClass=t.status==='analyzed'?'bg-g':t.status==='draft'?'bg-b':'bg-p';
+      const statusText=t.status==='analyzed'?'Analyzed':t.status==='draft'?'Draft':'Processing';
+      return `<div class="ri" data-t="${t.id}" style="cursor:pointer"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="rim"><div class="rit">${t.title}</div><div class="ris">${t.artist} · ${date}</div></div><div class="ria"><span class="bg ${statusClass}">${statusText}</span></div></div>`;
+    }).join('');
+    el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{
+      try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(d.analysis)showAn(d,d.analysis);}catch(e){console.error(e)}
+    }));
+  }catch(e){}
 }
 
 // ── UPLOAD ──
