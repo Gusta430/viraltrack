@@ -214,6 +214,22 @@ JSON-struktur:
       {"tactic": "<taktikk>", "estimated_cost": "<kostnad>", "expected_result": "<resultat>"}
     ]
   },
+  "meta_ads": {
+    "campaign_objective": "<best Meta Ads objective for this track>",
+    "ad_copy_variations": [
+      {"headline": "<headline>", "primary_text": "<primary text>", "cta": "<call to action>"},
+      {"headline": "<headline>", "primary_text": "<primary text>", "cta": "<call to action>"}
+    ],
+    "targeting": {
+      "age_range": "<age range>",
+      "interests": ["<interest1>", "<interest2>", "<interest3>", "<interest4>"],
+      "lookalike_suggestion": "<lookalike audience suggestion>",
+      "excluded_audiences": "<who to exclude>"
+    },
+    "budget_recommendation": "<daily budget recommendation with reasoning>",
+    "ad_format": "<recommended ad format (video, carousel, etc.)>",
+    "creative_direction": "<specific visual direction for the ad>"
+  },
   "key_metrics": ["<metrikk å følge med på 1>", "<metrikk 2>", "<metrikk 3>", "<metrikk 4>"],
   "common_mistakes": ["<feil å unngå 1>", "<feil 2>", "<feil 3>"]
 }`;
@@ -237,18 +253,24 @@ TENK PÅ DETTE:
 - Hvilke uventede plattformer eller communities kan denne musikken treffe?
 - Hva bør artisten IKKE gjøre som de fleste nye artister gjør feil?
 
-For hver dag-oppgave: Gi en komplett oppskrift. Ikke bare "lag en TikTok" — beskriv konseptet, hook-en, og den visuelle stilen.
+For each day-task: Give a complete recipe. Not just "make a TikTok" — describe the concept, hook, and visual style.
 
-Svar KUN med JSON.`;
+IMPORTANT: Include a complete Meta Ads section with:
+- 2 ad copy variations (headline + primary text + CTA) ready to paste into Meta Ads Manager
+- Specific audience targeting (age, interests, lookalikes, exclusions)
+- Daily budget recommendation with reasoning
+- Recommended ad format and creative direction
+
+Respond ONLY with JSON.`;
 
   try {
-    console.log('📋 Genererer promo-plan...');
+    console.log('📋 Generating promo plan...');
     const response = await callClaude(userPrompt, systemPrompt);
     const plan = parseJSON(response);
-    console.log('✅ Promo-plan generert!');
+    console.log('✅ Promo plan generated!');
     return plan;
   } catch (err) {
-    console.error('❌ Promo-plan feilet:', err.message);
+    console.error('❌ Promo plan failed:', err.message);
     return null;
   }
 }
