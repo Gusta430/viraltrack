@@ -16,6 +16,12 @@ const KEY_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', '
  * @param {string} filepath - Path to MP3/WAV file
  * @returns {object} Audio features (bpm, key, energy, danceability, etc.)
  */
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
 export async function analyzeAudio(filepath) {
   try {
     console.log('🎵 Analyzing audio file with Essentia.js...');
@@ -98,6 +104,41 @@ export async function analyzeAudio(filepath) {
     // Duration
     const duration = audio.duration || monoChannel.length / audio.sampleRate;
     
+    // Find peak energy moments (best sections for TikTok clips)
+    let peakMoments = [];
+    try {
+      const sampleRate = audio.sampleRate;
+      const chunkSize = Math.floor(sampleRate * 5); // 5-second chunks
+      const totalChunks = Math.floor(monoChannel.length / chunkSize);
+      const chunks = [];
+      
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * chunkSize;
+        const end = start + chunkSize;
+        const chunk = monoChannel.slice(start, end);
+        const chunkVector = essentia.arrayToVector(chunk);
+        const rms = essentia.RMS(chunkVector);
+        chunks.push({
+          startTime: Math.round(start / sampleRate),
+          endTime: Math.round(end / sampleRate),
+          energy: rms.rms
+        });
+      }
+      
+      // Sort by energy and pick top 3 most intense moments
+      chunks.sort((a, b) => b.energy - a.energy);
+      peakMoments = chunks.slice(0, 3).map(c => ({
+        start: c.startTime,
+        end: c.endTime,
+        label: formatTime(c.startTime) + ' - ' + formatTime(c.endTime)
+      }));
+      // Sort by time order
+      peakMoments.sort((a, b) => a.start - b.start);
+      console.log('Peak moments found:', peakMoments);
+    } catch (e) {
+      console.warn('Peak detection failed:', e.message);
+    }
+    
     const result = {
       bpm,
       key: `${key} ${scale}`,
@@ -105,6 +146,7 @@ export async function analyzeAudio(filepath) {
       danceability: Math.round(danceability * 100),
       loudness: Math.round(loudness * 10) / 10,
       duration: Math.round(duration),
+      peakMoments: peakMoments,
       analyzed: true
     };
     

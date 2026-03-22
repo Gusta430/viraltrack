@@ -113,7 +113,10 @@ REAL AUDIO ANALYSIS DATA (from actual audio file - use these exact values, do NO
 - Danceability: ${audioFeatures.danceability}% (0=not danceable, 100=very danceable)
 - Duration: ${audioFeatures.duration} seconds
 
-IMPORTANT: Use the EXACT BPM and energy values above in your response. These are measured from the actual audio file, not estimates.` : 'NOTE: No audio file was uploaded. Estimate BPM and energy based on genre and similar artists, and mark them as estimates.'}
+- Peak energy moments (best for TikTok clips): ${audioFeatures.peakMoments ? audioFeatures.peakMoments.map(p => p.label).join(', ') : 'unknown'}
+
+IMPORTANT: Use the EXACT BPM and energy values above. These are from the actual audio file.
+For video suggestions, recommend using the PEAK MOMENTS timestamps above — these are the most intense, energetic parts of the song with the highest viral potential. Each video idea should reference a specific timestamp from these peaks.` : 'NOTE: No audio file was uploaded. Estimate BPM and energy based on genre and similar artists, and mark them as estimates.'}
 ${track.social_vibe ? `Social media vibe: ${track.social_vibe}. ALL content suggestions must match this vibe. The artist wants their social presence to feel ${track.social_vibe}.` : ''}
 
 THINK THROUGH THIS BEFORE ANSWERING:
