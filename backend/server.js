@@ -297,6 +297,13 @@ const server = http.createServer(async (req, res) => {
       return json(res, video);
     }
 
+    // ── ADMIN (only your account) ──
+    if (p === '/api/admin/users' && method === 'GET') {
+      if (user.email !== 'andre.s.gustad@gmail.com') return json(res, { error: 'Not authorized' }, 403);
+      const users = await db.getAllUsers();
+      return json(res, users);
+    }
+
     if (p === '/api/settings' && method === 'GET') return json(res, { user_name: user.name, user_email: user.email, plan: user.plan, email_notifications: user.email_notifications, marketing_emails: user.marketing_emails });
     if (p === '/api/settings' && method === 'PUT') { const body = await parseBody(req); const updated = await db.updateUser(user.id, { name: body.user_name, email: body.user_email, email_notifications: body.email_notifications, marketing_emails: body.marketing_emails }); return json(res, updated); }
 

@@ -452,6 +452,7 @@
     <button class="ni on" data-p="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></button>
     <button class="ni" data-p="new-analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg><span>New Analysis</span></button>
     <button class="ni" data-p="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Reports</span></button>
+    <button class="ni" data-p="admin" id="admin-nav" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Admin</span></button>
     <button class="ni" data-p="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
   </nav>
   <div class="sb-foot"><div class="av" id="uav">AM</div><div class="ui"><div class="un" id="udn">Alex Morgan</div><div class="up" id="upl">Pro Trial</div></div></div>
@@ -475,6 +476,7 @@
   <div class="pg" id="pg-analysis"></div>
   <div class="pg" id="pg-promo"></div>
   <div class="pg" id="pg-reports"><h1 class="pt">Reports</h1><p class="ps">Access all your previous analyses and promo plans</p><div id="rlist"></div></div>
+  <div class="pg" id="pg-admin"><h1 class="pt">Admin</h1><p class="ps">All registered users</p><div id="admin-stats" style="margin-bottom:20px"></div><div id="admin-users"></div></div>
   <div class="pg" id="pg-settings"><h1 class="pt" style="margin-bottom:24px">Settings</h1><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</div><div class="tr"><div><div class="trl">Email notifications</div><div class="trd">Receive updates about your analyses</div></div><div class="tg on" id="tg-em" data-k="email_notifications"></div></div><div class="tr"><div><div class="trl">Marketing emails</div><div class="trd">Tips and best practices</div></div><div class="tg" id="tg-mk" data-k="marketing_emails"></div></div></div><div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Subscription</div><p class="pc">Current plan</p><p class="pn" id="st-pl">Pro Trial</p><button class="bt bs" style="margin-top:12px">Upgrade plan</button></div><button class="logout-btn" id="btn-logout">Log out</button></div>
 <footer class="site-footer">© 2026 ViralTrack · <a href="/terms.html" target="_blank">Terms of Service</a> · <a href="/privacy.html" target="_blank">Privacy Policy</a></footer>
 </main>
@@ -515,6 +517,9 @@ function showApp(user) {
   document.getElementById('uav').textContent = user.name.split(' ').map(n=>n[0]).join('').toUpperCase();
   document.getElementById('upl').textContent = user.plan || 'Free Trial';
   loadDash();
+  if (user.email === 'andre.s.gustad@gmail.com') {
+    document.getElementById('admin-nav').style.display = 'flex';
+  }
 }
 
 // ── CHECK EXISTING SESSION ──
@@ -589,7 +594,7 @@ function nav(id){
   mobNis.forEach(n=>n.classList.remove('on'));
   const pg=document.getElementById('pg-'+id),ni=document.querySelector(`.sb [data-p="${id}"]`),mni=document.querySelector(`.mob-nav [data-p="${id}"]`);
   if(pg)pg.classList.add('on');if(ni)ni.classList.add('on');if(mni)mni.classList.add('on');
-  if(id==='dashboard')loadDash();if(id==='reports')loadReports();if(id==='settings')loadSettings();
+  if(id==='dashboard')loadDash();if(id==='reports')loadReports();if(id==='settings')loadSettings();if(id==='admin')loadAdmin();
   window.scrollTo(0,0);
 }
 nis.forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));
@@ -695,6 +700,18 @@ document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>
 
 function showLoad(v,msg){document.getElementById('lo').classList.toggle('vis',v);if(msg)document.getElementById('lo-text').textContent=msg}
 
+
+// ── ADMIN ──
+async function loadAdmin() {
+  try {
+    const users = await (await authFetch(A + '/admin/users')).json();
+    if (users.error) { document.getElementById('admin-users').innerHTML = '<div class="es"><p>Not authorized</p></div>'; return; }
+    document.getElementById('admin-stats').innerHTML = '<div class="sc" style="display:inline-block;margin-right:12px"><div class="sl">Total Users</div><div class="sv">' + users.length + '</div></div>';
+    document.getElementById('admin-users').innerHTML = users.map(u => 
+      '<div class="ri"><div class="ric"><div class="av" style="width:36px;height:36px;font-size:12px">' + u.name.split(' ').map(n=>n[0]).join('').toUpperCase() + '</div></div><div class="rim"><div class="rit">' + u.name + '</div><div class="ris">' + u.email + ' · ' + new Date(u.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) + '</div></div><div class="ria"><span class="bg bg-p">' + (u.plan || 'Free') + '</span></div></div>'
+    ).join('');
+  } catch(e) { console.error(e); }
+}
 
 // ── DELETE TRACK ──
 async function deleteTrack(trackId) {

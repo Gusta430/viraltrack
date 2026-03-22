@@ -265,6 +265,16 @@ class Database {
     return execute('SELECT * FROM video_generations WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
   }
 
+  // Admin
+  async getAllUsers() {
+    return execute("SELECT id, name, email, plan, created_at FROM users ORDER BY created_at DESC");
+  }
+
+  async getUserCount() {
+    const rows = await execute("SELECT COUNT(*) as c FROM users");
+    return parseInt(rows[0]?.c || 0);
+  }
+
   // Dashboard
   async getStats(userId) {
     const tracks = await execute("SELECT COUNT(*) as c FROM tracks WHERE user_id = ? AND status = 'analyzed'", [userId]);
