@@ -93,17 +93,18 @@ ${track.social_vibe ? `Content style: ${track.social_vibe}` : ''}
 ${track.want_tiktok_content ? 'Wants TikTok/Reels content.' : ''}
 ${track.lyrics ? `
 
-SONG LYRICS (THIS IS THE MOST IMPORTANT INPUT — base ALL suggestions on what the song is actually about):
+SONG LYRICS — read these to understand the song's deeper meaning:
 ${track.lyrics}
 
-You MUST analyze these lyrics deeply. Identify:
-- The core THEME and MESSAGE of the song
-- The EMOTIONS expressed (love, pain, anger, joy, etc.)
-- Key LINES that could go viral as captions or hooks
-- The STORY being told
-- ANY metaphors, slang, or cultural references
-
-ALL video ideas and content suggestions MUST directly reflect the lyrics and themes. Do NOT just play on the song title — understand what the song is ABOUT.` : ''}
+INSTRUCTIONS FOR USING LYRICS:
+- Analyze the lyrics to understand the CORE EMOTIONS, THEMES and STORY
+- DO NOT quote lyrics directly in captions or content ideas
+- Instead, use the FEELINGS and THEMES as inspiration for visual concepts
+- Combine the lyrical themes with the audio energy level to create content that FEELS like the song
+- Example: if lyrics are about heartbreak and energy is high, create intense emotional content — not just "sad" content
+- Think about what VISUAL WORLD the lyrics describe — colors, settings, moods, situations
+- Content should make viewers FEEL the same emotions as the song, without needing to hear it
+- The best viral content captures a universal feeling that the lyrics express — jealousy, freedom, obsession, confidence — and turns it into a relatable visual moment` : ''}
 ${audioFeatures && audioFeatures.analyzed ? `
 REAL AUDIO ANALYSIS DATA (from actual audio file - use these exact values, do NOT make up different numbers):
 - BPM: ${audioFeatures.bpm}
