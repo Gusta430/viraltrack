@@ -90,6 +90,7 @@ ${track.genre ? `Sjanger: ${track.genre}` : ''}
 ${track.similar_artists ? `Lignende artister: ${track.similar_artists}` : ''}
 ${track.main_goal ? `Hovedmål: ${track.main_goal}` : ''}
 ${track.want_tiktok_content ? 'Ønsker TikTok/Reels-innhold.' : ''}
+${track.social_vibe ? `Social media vibe: ${track.social_vibe}. ALL content suggestions must match this vibe. The artist wants their social presence to feel ${track.social_vibe}.` : ''}
 
 THINK THROUGH THIS BEFORE ANSWERING:
 1. What is the MOOD, ENERGY and VIBE of this track? What visuals, colors, settings and emotions does the music evoke? This should drive MOST of your suggestions.
