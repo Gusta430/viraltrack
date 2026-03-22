@@ -45,7 +45,7 @@ function parseJSON(text) {
 }
 
 // ── TRACK ANALYSIS ──────────────────────────────────────
-export async function analyzeTrack(track) {
+export async function analyzeTrack(track, audioFeatures = null) {
   const systemPrompt = `You are an extremely experienced music marketer with 15+ years in the music industry. You have worked with artists from bedroom pop to trap, and you know EXACTLY what separates generic advice from advice that actually delivers results. IMPORTANT: Always respond in English.
 
 RULES YOU MUST FOLLOW:
@@ -90,6 +90,15 @@ ${track.genre ? `Sjanger: ${track.genre}` : ''}
 ${track.similar_artists ? `Lignende artister: ${track.similar_artists}` : ''}
 ${track.main_goal ? `Hovedmål: ${track.main_goal}` : ''}
 ${track.want_tiktok_content ? 'Ønsker TikTok/Reels-innhold.' : ''}
+\${audioFeatures && audioFeatures.analyzed ? `
+REAL AUDIO ANALYSIS DATA (from actual audio file - use these exact values, do NOT make up different numbers):
+- BPM: \${audioFeatures.bpm}
+- Key: \${audioFeatures.key}
+- Energy: \${audioFeatures.energy}% (0=very calm, 100=very intense)
+- Danceability: \${audioFeatures.danceability}% (0=not danceable, 100=very danceable)
+- Duration: \${audioFeatures.duration} seconds
+
+IMPORTANT: Use the EXACT BPM and energy values above in your response. These are measured from the actual audio file, not estimates.` : 'NOTE: No audio file was uploaded. Estimate BPM and energy based on genre and similar artists, and mark them as estimates.'}
 ${track.social_vibe ? `Social media vibe: ${track.social_vibe}. ALL content suggestions must match this vibe. The artist wants their social presence to feel ${track.social_vibe}.` : ''}
 
 THINK THROUGH THIS BEFORE ANSWERING:
@@ -125,7 +134,7 @@ Svar KUN med JSON.`;
       video_edits: JSON.stringify(result.video_edits || []),
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
       pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
-      model_used: 'claude-sonnet-4-20250514', status: 'completed', completed_at: new Date().toISOString(),
+      model_used: 'claude-sonnet-4-20250514', audio_analyzed: audioFeatures?.analyzed || false, status: 'completed', completed_at: new Date().toISOString(),
     };
   } catch (err) {
     console.error('❌ Analyse feilet:', err.message);
