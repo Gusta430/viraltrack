@@ -152,7 +152,7 @@ Svar KUN med JSON.`;
       video_edits: JSON.stringify(result.video_edits || []),
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
       pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
-      model_used: 'claude-sonnet-4-20250514', audio_analyzed: audioFeatures?.analyzed || false, status: 'completed', completed_at: new Date().toISOString(),
+      model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null, audio_danceability: audioFeatures?.danceability || null, audio_analyzed: audioFeatures?.analyzed || false, status: 'completed', completed_at: new Date().toISOString(),
     };
   } catch (err) {
     console.error('❌ Analyse feilet:', err.message);

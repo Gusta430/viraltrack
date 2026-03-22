@@ -201,8 +201,8 @@ class Database {
   }
 
   async updateAnalysis(id, u) {
-    await run(`UPDATE analyses SET tempo_bpm=?, tempo_description=?, mood_tags=?, energy_percent=?, energy_description=?, genre_fit=?, audience_age=?, audience_interests=?, audience_platforms=?, audience_content_angle=?, audience_key_insight=?, reference_artists=?, video_edits=?, diy_content_ideas=?, pro_tip=?, creator_tip=?, model_used=?, status=?, completed_at=? WHERE id=?`,
-      [u.tempo_bpm, u.tempo_description, u.mood_tags, u.energy_percent, u.energy_description, u.genre_fit, u.audience_age, u.audience_interests, u.audience_platforms, u.audience_content_angle, u.audience_key_insight, u.reference_artists, u.video_edits, u.diy_content_ideas, u.pro_tip, u.creator_tip, u.model_used, u.status, u.completed_at, id]);
+    await run(`UPDATE analyses SET tempo_bpm=?, tempo_description=?, mood_tags=?, energy_percent=?, energy_description=?, genre_fit=?, audience_age=?, audience_interests=?, audience_platforms=?, audience_content_angle=?, audience_key_insight=?, reference_artists=?, video_edits=?, diy_content_ideas=?, pro_tip=?, creator_tip=?, model_used=?, audio_key=?, audio_danceability=?, status=?, completed_at=? WHERE id=?`,
+      [u.tempo_bpm, u.tempo_description, u.mood_tags, u.energy_percent, u.energy_description, u.genre_fit, u.audience_age, u.audience_interests, u.audience_platforms, u.audience_content_angle, u.audience_key_insight, u.reference_artists, u.video_edits, u.diy_content_ideas, u.pro_tip, u.creator_tip, u.model_used, u.audio_key, u.audio_danceability, u.status, u.completed_at, id]);
     return this.getAnalysis(id);
   }
 
