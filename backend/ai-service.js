@@ -104,13 +104,13 @@ You MUST analyze these lyrics deeply. Identify:
 - ANY metaphors, slang, or cultural references
 
 ALL video ideas and content suggestions MUST directly reflect the lyrics and themes. Do NOT just play on the song title — understand what the song is ABOUT.` : ''}
-\${audioFeatures && audioFeatures.analyzed ? `
+${audioFeatures && audioFeatures.analyzed ? `
 REAL AUDIO ANALYSIS DATA (from actual audio file - use these exact values, do NOT make up different numbers):
-- BPM: \${audioFeatures.bpm}
-- Key: \${audioFeatures.key}
-- Energy: \${audioFeatures.energy}% (0=very calm, 100=very intense)
-- Danceability: \${audioFeatures.danceability}% (0=not danceable, 100=very danceable)
-- Duration: \${audioFeatures.duration} seconds
+- BPM: ${audioFeatures.bpm}
+- Key: ${audioFeatures.key}
+- Energy: ${audioFeatures.energy}% (0=very calm, 100=very intense)
+- Danceability: ${audioFeatures.danceability}% (0=not danceable, 100=very danceable)
+- Duration: ${audioFeatures.duration} seconds
 
 IMPORTANT: Use the EXACT BPM and energy values above in your response. These are measured from the actual audio file, not estimates.` : 'NOTE: No audio file was uploaded. Estimate BPM and energy based on genre and similar artists, and mark them as estimates.'}
 ${track.social_vibe ? `Social media vibe: ${track.social_vibe}. ALL content suggestions must match this vibe. The artist wants their social presence to feel ${track.social_vibe}.` : ''}
