@@ -99,6 +99,8 @@ async function initDB() {
   // Add new columns if they don't exist (safe to run multiple times)
   try { await run('ALTER TABLE tracks ADD COLUMN lyrics TEXT'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN social_vibe TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE analyses ADD COLUMN audio_key TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE analyses ADD COLUMN audio_danceability INTEGER'); } catch(e) {}
   console.log('✅ Database ready!');
 }
 
