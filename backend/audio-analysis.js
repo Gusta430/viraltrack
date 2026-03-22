@@ -28,14 +28,32 @@ export async function analyzeAudio(filepath) {
     const monoChannel = audio.channelData[0];
     const audioVector = essentia.arrayToVector(monoChannel);
     
-    // BPM Detection
+    // BPM Detection - use multiple methods and pick best
     let bpm = 120;
     try {
-      const bpmResult = essentia.PercivalBpmEstimator(audioVector);
-      bpm = Math.round(bpmResult.bpm);
-      if (bpm < 40 || bpm > 250) bpm = 120; // sanity check
+      // Method 1: RhythmExtractor2013 (most accurate for full songs)
+      const rhythm = essentia.RhythmExtractor2013(audioVector);
+      bpm = Math.round(rhythm.bpm);
+      console.log('RhythmExtractor2013 BPM:', bpm);
+      
+      // Sanity check - if way off, try PercivalBpmEstimator as backup
+      if (bpm < 40 || bpm > 250) {
+        const backup = essentia.PercivalBpmEstimator(audioVector);
+        bpm = Math.round(backup.bpm);
+        console.log('Percival backup BPM:', bpm);
+      }
+      
+      if (bpm < 40 || bpm > 250) bpm = 120;
     } catch (e) {
-      console.warn('BPM detection failed, using default:', e.message);
+      // Fallback to Percival if RhythmExtractor fails
+      try {
+        const bpmResult = essentia.PercivalBpmEstimator(audioVector);
+        bpm = Math.round(bpmResult.bpm);
+        console.log('Percival fallback BPM:', bpm);
+        if (bpm < 40 || bpm > 250) bpm = 120;
+      } catch (e2) {
+        console.warn('All BPM detection failed, using default:', e2.message);
+      }
     }
     
     // Key Detection
