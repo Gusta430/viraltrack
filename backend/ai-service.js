@@ -82,14 +82,28 @@ JSON-struktur:
   "creator_tip": "<tips>"
 }`;
 
-  const userPrompt = `Analyze this track og lag en UNIK promo-strategi som denne artisten ikke ville funnet noe annet sted:
+  const userPrompt = `Analyze this track and create a VIRAL STRATEGY:
 
-Tittel: "${track.title}"
+Title: "${track.title}"
 Artist: ${track.artist}
-${track.genre ? `Sjanger: ${track.genre}` : ''}
-${track.similar_artists ? `Lignende artister: ${track.similar_artists}` : ''}
-${track.main_goal ? `Hovedmål: ${track.main_goal}` : ''}
-${track.want_tiktok_content ? 'Ønsker TikTok/Reels-innhold.' : ''}
+${track.genre ? `Genre: ${track.genre}` : ''}
+${track.similar_artists ? `Similar artists: ${track.similar_artists}` : ''}
+${track.main_goal ? `Main goal: ${track.main_goal}` : ''}
+${track.social_vibe ? `Content style: ${track.social_vibe}` : ''}
+${track.want_tiktok_content ? 'Wants TikTok/Reels content.' : ''}
+${track.lyrics ? `
+
+SONG LYRICS (THIS IS THE MOST IMPORTANT INPUT — base ALL suggestions on what the song is actually about):
+${track.lyrics}
+
+You MUST analyze these lyrics deeply. Identify:
+- The core THEME and MESSAGE of the song
+- The EMOTIONS expressed (love, pain, anger, joy, etc.)
+- Key LINES that could go viral as captions or hooks
+- The STORY being told
+- ANY metaphors, slang, or cultural references
+
+ALL video ideas and content suggestions MUST directly reflect the lyrics and themes. Do NOT just play on the song title — understand what the song is ABOUT.` : ''}
 \${audioFeatures && audioFeatures.analyzed ? `
 REAL AUDIO ANALYSIS DATA (from actual audio file - use these exact values, do NOT make up different numbers):
 - BPM: \${audioFeatures.bpm}
