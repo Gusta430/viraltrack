@@ -273,6 +273,9 @@
     .site-footer{text-align:center;padding:24px;font-size:12px;color:var(--t3);border-top:1px solid var(--bdr);width:100%;margin-top:40px}
     .site-footer a{color:var(--t2);text-decoration:none;margin:0 8px}
     .site-footer a:hover{color:var(--ac);text-decoration:underline}
+    /* Delete button */
+    .del-btn{background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:4px;transition:.15s;margin-left:8px}
+    .del-btn:hover{color:#f87171;background:rgba(239,68,68,.12)}
     /* Video generate buttons in analysis cards */
     .vid-gen-row{border-top:1px solid var(--bdr);padding:12px 16px}
     .vid-gen-btn{font-size:12px!important;padding:10px 16px!important}
@@ -607,7 +610,7 @@ async function loadDash(){
       const date=new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});
       const statusClass=t.status==='analyzed'?'bg-g':t.status==='draft'?'bg-b':'bg-p';
       const statusText=t.status==='analyzed'?'Analyzed':t.status==='draft'?'Draft':'Processing';
-      return `<div class="ri" data-t="${t.id}" style="cursor:pointer"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="rim"><div class="rit">${t.title}</div><div class="ris">${t.artist} · ${date}</div></div><div class="ria"><span class="bg ${statusClass}">${statusText}</span></div></div>`;
+      return `<div class="ri" data-t="${t.id}" style="cursor:pointer"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="rim"><div class="rit">${t.title}</div><div class="ris">${t.artist} · ${date}</div></div><div class="ria"><span class="bg ${statusClass}">${statusText}</span><button class="del-btn" data-del="${t.id}" onclick="event.stopPropagation();deleteTrack(this.dataset.del)">✕</button></div></div>`;
     }).join('');
     el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{
       try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(d.analysis)showAn(d,d.analysis);}catch(e){console.error(e)}
@@ -683,7 +686,7 @@ function showPromoPlan(track,plan){
 }
 
 // ── REPORTS ──
-async function loadReports(){try{const reps=await(await authFetch(A+'/reports')).json();const el=document.getElementById('rlist');if(!reps.length){el.innerHTML='<div class="es"><p>No reports yet. Analyze a track to create your first report.</p></div>';return}el.innerHTML=reps.map(r=>`<div class="ri" data-t="${r.track_id}"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="rim"><div class="rit">${r.title}</div><div class="ris">${r.track_artist} · ${new Date(r.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div></div><div class="ria"><span class="bg ${r.type==='promo_plan'?'bg-p':'bg-g'}">${r.type==='promo_plan'?'Promo Plan':'Analysis'}</span></div></div>`).join('');el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(d.promo_plan)showPromoPlan(d,d.promo_plan);else if(d.analysis)showAn(d,d.analysis)}catch(e){console.error(e)}}))}catch(e){}}
+async function loadReports(){try{const reps=await(await authFetch(A+'/reports')).json();const el=document.getElementById('rlist');if(!reps.length){el.innerHTML='<div class="es"><p>No reports yet. Analyze a track to create your first report.</p></div>';return}el.innerHTML=reps.map(r=>`<div class="ri" data-t="${r.track_id}"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="rim"><div class="rit">${r.title}</div><div class="ris">${r.track_artist} · ${new Date(r.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div></div><div class="ria"><span class="bg ${r.type==='promo_plan'?'bg-p':'bg-g'}">${r.type==='promo_plan'?'Promo Plan':'Analysis'}</span><button class="del-btn" data-del="${r.track_id}" onclick="event.stopPropagation();deleteTrack(this.dataset.del)">✕</button></div></div>`).join('');el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(d.promo_plan)showPromoPlan(d,d.promo_plan);else if(d.analysis)showAn(d,d.analysis)}catch(e){console.error(e)}}))}catch(e){}}
 
 // ── SETTINGS ──
 async function loadSettings(){try{const s=await(await authFetch(A+'/settings')).json();document.getElementById('st-n').value=s.user_name||'';document.getElementById('st-e').value=s.user_email||'';document.getElementById('st-pl').textContent=s.plan||'Free';document.getElementById('tg-em').classList.toggle('on',s.email_notifications==='1');document.getElementById('tg-mk').classList.toggle('on',s.marketing_emails==='1')}catch(e){}}
@@ -692,6 +695,15 @@ document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>
 
 function showLoad(v,msg){document.getElementById('lo').classList.toggle('vis',v);if(msg)document.getElementById('lo-text').textContent=msg}
 
+
+// ── DELETE TRACK ──
+async function deleteTrack(trackId) {
+  if (!confirm('Delete this track and all its analysis data?')) return;
+  try {
+    await authFetch(A + '/tracks/' + trackId, { method: 'DELETE' });
+    nav('dashboard');
+  } catch(e) { alert('Failed to delete.'); console.error(e); }
+}
 
 // ── VIDEO GENERATION (per video card in analysis) ──
 let vidPolling = null;
