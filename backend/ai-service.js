@@ -264,26 +264,33 @@ JSON-struktur:
   "common_mistakes": ["<feil å unngå 1>", "<feil 2>", "<feil 3>"]
 }`;
 
-  const userPrompt = `Create a detailed 4-ukers launch plan for this track som er SÅ SPESIFIKK at artisten kan følge den dag for dag uten å google noe:
+  const userPrompt = `Create a detailed 4-week launch plan for this track. Be EXTREMELY specific — the artist should be able to follow it day by day without googling anything.
 
-Tittel: "${track.title}"
+Title: "${track.title}"
 Artist: ${track.artist}
-Sjanger: ${track.genre || analysis.genre_fit || 'Ukjent'}
-Lignende artister: ${track.similar_artists || refs.map(r => r.name).join(', ') || 'Ukjent'}
-Hovedmål: ${track.main_goal || 'Få flest mulig streams'}
-Stemning: ${moods.join(', ') || 'Ukjent'}
-Energi: ${analysis.energy_percent || 50}%
+Genre: ${track.genre || analysis.genre_fit || 'Unknown'}
+Similar artists: ${track.similar_artists || refs.map(r => r.name).join(', ') || 'Unknown'}
+Main goal: ${track.main_goal || 'Get the most streams possible'}
+Mood: ${moods.join(', ') || 'Unknown'}
+Energy: ${analysis.energy_percent || 50}%
 Tempo: ${analysis.tempo_bpm || 120} BPM
-Målgruppe: ${analysis.audience_age || '18-28'}, ${analysis.audience_platforms || 'TikTok, Spotify'}
+Audience: ${analysis.audience_age || '18-28'}, ${analysis.audience_platforms || 'TikTok, Spotify'}
+${track.lyrics ? `
+SONG LYRICS — use these to understand what the song is ABOUT:
+${track.lyrics}
 
-TENK PÅ DETTE:
-- Hvordan kan låttittelen "${track.title}" bli en hashtag, trend, eller konsept som folk bruker?
-- Hvilke SPESIFIKKE Spotify-spillelister (nevn ekte navn) passer denne låtens stemning og sjanger?
-- Hva er den SMARTESTE rekkefølgen å rulle ut innhold? Ikke bare "tease → release → promote"
-- Hvilke uventede plattformer eller communities kan denne musikken treffe?
-- Hva bør artisten IKKE gjøre som de fleste nye artister gjør feil?
+The promo plan MUST be built around the song's actual THEMES and EMOTIONS from the lyrics. Do NOT just use the title as a gimmick. The content strategy should capture the FEELING of the song and turn it into relatable, shareable moments.` : ''}
 
-For each day-task: Give a complete recipe. Not just "make a TikTok" — describe the concept, hook, and visual style.
+IMPORTANT RULES:
+- The song title can be used for hashtags, but content ideas must come from the song's MOOD, ENERGY and LYRICAL THEMES — not just wordplay on the title
+- Which SPECIFIC Spotify playlists (name real ones) match this song's mood and genre?
+- What is the SMARTEST rollout sequence? Not just "tease, release, promote"
+- What unexpected platforms or communities could this music reach?
+- What should the artist NOT do that most new artists get wrong?
+
+For each day-task: Give a complete recipe. Not just "make a TikTok" — describe the concept, the hook (first 2 seconds), and the visual style. Every piece of content should be designed to make viewers FEEL the same emotion as the song.
+
+For Meta Ads: Create ad copy that captures the song's emotional core, not just promotes it generically. Target audiences who would relate to the themes in the lyrics.
 
 IMPORTANT: Include a complete Meta Ads section with:
 - 2 ad copy variations (headline + primary text + CTA) ready to paste into Meta Ads Manager
