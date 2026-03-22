@@ -69,7 +69,7 @@ async function initDB() {
   await run(`CREATE TABLE IF NOT EXISTS tracks (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL, title TEXT NOT NULL, artist TEXT NOT NULL,
     genre TEXT, similar_artists TEXT, filename TEXT, original_name TEXT, file_size INTEGER,
-    spotify_url TEXT, want_tiktok_content INTEGER DEFAULT 0, main_goal TEXT,
+    spotify_url TEXT, want_tiktok_content INTEGER DEFAULT 0, main_goal TEXT, lyrics TEXT,
     status TEXT DEFAULT 'uploaded', created_at TEXT DEFAULT (CURRENT_TIMESTAMP),
     updated_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
@@ -153,8 +153,8 @@ class Database {
 
   // Tracks
   async createTrack(t) {
-    await run('INSERT INTO tracks (id, user_id, title, artist, genre, similar_artists, filename, original_name, file_size, spotify_url, want_tiktok_content, main_goal, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [t.id, t.user_id, t.title, t.artist, t.genre, t.similar_artists, t.filename, t.original_name, t.file_size, t.spotify_url, t.want_tiktok_content, t.main_goal, t.status]);
+    await run('INSERT INTO tracks (id, user_id, title, artist, genre, similar_artists, filename, original_name, file_size, spotify_url, want_tiktok_content, main_goal, lyrics, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [t.id, t.user_id, t.title, t.artist, t.genre, t.similar_artists, t.filename, t.original_name, t.file_size, t.spotify_url, t.want_tiktok_content, t.main_goal, t.lyrics, t.status]);
     return t;
   }
 
