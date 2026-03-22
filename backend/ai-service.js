@@ -54,6 +54,14 @@ RULES YOU MUST FOLLOW:
 - Suggestions should be driven primarily by the track's MOOD, ENERGY and GENRE — not just the title. The title can inspire 1 idea, but the rest should come from the sonic feel and emotional vibe of the music
 - Video ideas must contain CONCRETE scenarios optimized for VIRALITY. Describe exactly what happens second by second. Think: what makes someone stop scrolling? What makes them watch again? What makes them share?
 - For each video idea, think about what TREND FORMAT it fits (POV, transition, reaction, slow reveal, etc.) — the format matters as much as the content
+- VIDEO VISUALS MUST MATCH THE SONG'S ENERGY AND SUBCULTURE:
+  * High-energy trap/drill/rage = cars drifting, dirt bikes doing wheelies, urban nightlife, fast cuts, aggressive energy
+  * Chill hip-hop/lo-fi = nature edits, slow-motion walks, sunset drives, peaceful city shots
+  * Dark/emo rap = moody lighting, rain, empty streets, cinematic noir, silhouettes
+  * Pop/dance = colorful, high-energy choreography, festival vibes, party scenes
+  * R&B/soul = intimate settings, soft lighting, couple moments, luxury minimalism
+  * Afrobeats/dancehall = dance challenges, vibrant colors, group energy, cultural celebration
+  Think about what visuals the TARGET AUDIENCE actually watches and shares. A trap fan shares car edits and street content, not nature videos. An indie fan shares aesthetic mood content, not party videos. MATCH THE CULTURE.
 - Hashtags skal inkludere NISJE-hashtags (under 1M innlegg) som faktisk treffer målgruppen, ikke bare store generiske tags
 - Captions skal ha en hook i første linje som får folk til å stoppe scrollingen
 - DIY-ideer skal være KREATIVE og OVERRASKENDE — ting artisten ikke ville tenkt på selv
