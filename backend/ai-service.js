@@ -51,8 +51,9 @@ export async function analyzeTrack(track) {
 RULES YOU MUST FOLLOW:
 - NEVER give generic advice like "post consistently" or "engage with your audience" — everyone knows this already
 - NEVER suggest "behind the scenes" videos or "studio session" clips unless you have a SPECIFIC, UNIQUE angle on it
-- All suggestions MUST be directly tied to this specific track's title, mood, or genre
-- Video ideas must contain CONCRETE scenarios, not vague descriptions. Describe exactly what happens in the video second by second
+- Suggestions should be driven primarily by the track's MOOD, ENERGY and GENRE — not just the title. The title can inspire 1 idea, but the rest should come from the sonic feel and emotional vibe of the music
+- Video ideas must contain CONCRETE scenarios optimized for VIRALITY. Describe exactly what happens second by second. Think: what makes someone stop scrolling? What makes them watch again? What makes them share?
+- For each video idea, think about what TREND FORMAT it fits (POV, transition, reaction, slow reveal, etc.) — the format matters as much as the content
 - Hashtags skal inkludere NISJE-hashtags (under 1M innlegg) som faktisk treffer målgruppen, ikke bare store generiske tags
 - Captions skal ha en hook i første linje som får folk til å stoppe scrollingen
 - DIY-ideer skal være KREATIVE og OVERRASKENDE — ting artisten ikke ville tenkt på selv
@@ -90,15 +91,19 @@ ${track.similar_artists ? `Lignende artister: ${track.similar_artists}` : ''}
 ${track.main_goal ? `Hovedmål: ${track.main_goal}` : ''}
 ${track.want_tiktok_content ? 'Ønsker TikTok/Reels-innhold.' : ''}
 
-TENK GJENNOM DETTE FØR DU SVARER:
-1. Hva er det med TITTELEN "${track.title}" som kan brukes kreativt i markedsføring? Kan tittelen bli en trend, et konsept, eller en hook?
-2. Basert på sjangeren og lignende artister — hva er det SPESIFIKKE soniske landskapet? Ikke bare "indie pop", men hvilken FØLELSE og VISUELL ESTETIKK passer?
-3. Hvilke KONKRETE TikTok-trender akkurat nå kan denne låten passe inn i? Tenk på spesifikke lyder, formater og memes.
-4. Hva gjør artister i denne nisjen FEIL med markedsføring, og hvordan kan vi gjøre det MOTSATTE?
+THINK THROUGH THIS BEFORE ANSWERING:
+1. What is the MOOD, ENERGY and VIBE of this track? What visuals, colors, settings and emotions does the music evoke? This should drive MOST of your suggestions.
+2. What SPECIFIC TikTok/Reels trend formats could this track fit? Think about current viral formats: POVs, transitions, slow reveals, reaction videos, "watch till the end" hooks. Match the format to the track's energy.
+3. The title "${track.title}" — can it inspire ONE creative concept? But don't force all ideas around the title.
+4. What do artists in this niche do WRONG with marketing, and how can we do the OPPOSITE?
 
-For video-ideer: Beskriv hvert videoklipp som en mini-fortelling. Hva skjer i starten? Hva er "plottwisten" eller øyeblikket som får folk til å se om igjen? Tenk som en kreativ regissør, ikke en markedsfører.
+For video ideas: VIRALITY IS THE #1 PRIORITY. For each video, explain:
+- The hook (first 1-2 seconds that stop the scroll)
+- The payoff (why someone watches to the end)
+- The share trigger (why someone sends it to a friend)
+Think like a viral content creator, not a marketer. At least 1 video should use a currently trending format.
 
-For DIY-ideer: Tenk utenfor boksen. Ingen "film deg selv i studio" med mindre det har en HELT NY TWIST. Hva kan artisten gjøre som er overraskende, morsomt, emosjonelt, eller kontroversiellt (på en god måte)?
+For DIY ideas: Think outside the box. No "film yourself in the studio" unless it has a COMPLETELY NEW TWIST. What can the artist do that is surprising, funny, emotional, or controversial (in a good way)? Focus on what has the highest chance of going viral.
 
 Svar KUN med JSON.`;
 
