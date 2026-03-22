@@ -243,9 +243,12 @@ JSON-struktur:
     }
   ],
   "playlist_strategy": {
-    "approach": "<strategi for å komme på spillelister>",
-    "target_playlists": ["<spilleliste1>", "<spilleliste2>", "<spilleliste3>", "<spilleliste4>", "<spilleliste5>"],
-    "pitch_tips": "<tips for å pitche til kuratorer>"
+    "approach": "<detailed strategy for getting on playlists>",
+    "editorial_playlists": [{"name": "<real Spotify editorial playlist>", "why": "<why this song fits>", "follower_estimate": "<approx followers>"}],
+    "independent_playlists": [{"name": "<real independent/user playlist>", "curator_contact": "<how to find/contact curator>", "why": "<why this fits>"},{"name": "<playlist>", "curator_contact": "<contact method>", "why": "<why>"}],
+    "pitch_template": "<a ready-to-send pitch email/message for playlist curators — specific to this song>",
+    "pitch_tips": "<additional tips>",
+    "spotify_for_artists_pitch": "<exact text to paste into Spotify for Artists editorial pitch tool>"
   },
   "collaboration_ideas": [
     {"type": "<type samarbeid>", "description": "<beskrivelse>", "expected_impact": "<forventet effekt>"},
