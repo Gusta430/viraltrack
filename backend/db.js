@@ -96,6 +96,9 @@ async function initDB() {
     status TEXT DEFAULT 'pending', video_url TEXT, request_id TEXT,
     error_message TEXT, created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
   )`);
+  // Add new columns if they don't exist (safe to run multiple times)
+  try { await run('ALTER TABLE tracks ADD COLUMN lyrics TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE tracks ADD COLUMN social_vibe TEXT'); } catch(e) {}
   console.log('✅ Database ready!');
 }
 
