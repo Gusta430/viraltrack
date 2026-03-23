@@ -129,14 +129,14 @@ SONG LYRICS — read these to understand the song's deeper meaning:
 ${track.lyrics}
 
 INSTRUCTIONS FOR USING LYRICS:
-- Analyze the lyrics to understand the CORE EMOTIONS, THEMES and STORY
-- DO NOT quote lyrics directly in captions or content ideas
-- Instead, use the FEELINGS and THEMES as inspiration for visual concepts
-- Combine the lyrical themes with the audio energy level to create content that FEELS like the song
-- Example: if lyrics are about heartbreak and energy is high, create intense emotional content — not just "sad" content
-- Think about what VISUAL WORLD the lyrics describe — colors, settings, moods, situations
-- Content should make viewers FEEL the same emotions as the song, without needing to hear it
-- The best viral content captures a universal feeling that the lyrics express — jealousy, freedom, obsession, confidence — and turns it into a relatable visual moment` : ''}
+- READ EVERY LINE. Understand slang, street language, cultural references and double meanings. Do NOT assume a word means what it looks like — let the CONTEXT of the lyrics define every meaning
+- The title might mean something completely different than you think — only the lyrics reveal the true meaning
+- Identify the CORE STORY: What situation is the artist in? Who are they talking about? What culture/lifestyle do they represent?
+- Find KEY LINES that would work as viral captions — hard-hitting, relatable, or emotional bars that fans would screenshot
+- DO NOT quote lyrics directly — instead, capture the FEELING and LIFESTYLE they describe
+- Combine lyrical themes with the audio energy to create content that FEELS like being inside the song
+- Think about what REAL-LIFE SCENES the lyrics describe (driving with friends, late night sessions, flexing, heartbreak, loyalty) — those scenes ARE your video concepts
+- The best viral content makes viewers think "this is exactly my life" — find that universal feeling in the lyrics` : ''}
 ${audioFeatures && audioFeatures.analyzed ? `
 REAL AUDIO ANALYSIS DATA (from actual audio file - use these exact values, do NOT make up different numbers):
 - BPM: ${audioFeatures.bpm}
@@ -314,10 +314,16 @@ Energy: ${analysis.energy_percent || 50}%
 Tempo: ${analysis.tempo_bpm || 120} BPM
 Audience: ${analysis.audience_age || '18-28'}, ${analysis.audience_platforms || 'TikTok, Spotify'}
 ${track.lyrics ? `
-SONG LYRICS — use these to understand what the song is ABOUT:
+SONG LYRICS — READ THESE CAREFULLY before creating anything:
 ${track.lyrics}
 
-The promo plan MUST be built around the song's actual THEMES and EMOTIONS from the lyrics. Do NOT just use the title as a gimmick. The content strategy should capture the FEELING of the song and turn it into relatable, shareable moments.` : ''}
+CRITICAL INSTRUCTIONS FOR USING LYRICS:
+1. READ the lyrics WORD BY WORD. Understand slang, references, and double meanings. A word in the title might mean something completely different in context — for example "klikk" could mean a close friend group, not a clicking sound. ALWAYS let the lyrics define the meaning.
+2. Identify the REAL story: Who is the artist talking to? What situation are they in? What emotions are they expressing? What lifestyle or culture are they representing?
+3. Find the KEY PHRASES that fans would actually quote or use as captions — lines that are relatable, hard-hitting, or emotional.
+4. The promo plan must reflect what the song ACTUALLY says. Every content idea, every caption, every hashtag must come from the real meaning in the lyrics.
+5. DO NOT guess what the title means on its own — the lyrics ALWAYS define the title's meaning.
+6. Think about what LIFESTYLE the lyrics describe — that lifestyle IS the content strategy.` : ''}
 
 IMPORTANT RULES:
 - The song title can be used for hashtags, but content ideas must come from the song's MOOD, ENERGY and LYRICAL THEMES — not just wordplay on the title
