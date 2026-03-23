@@ -39,9 +39,30 @@ function callClaude(prompt, systemPrompt) {
 }
 
 function parseJSON(text) {
+  // Try direct parse first
+  try { return JSON.parse(text); } catch(e) {}
+  // Try to extract JSON block
   const match = text.match(/\{[\s\S]*\}/);
-  if (match) return JSON.parse(match[0]);
-  throw new Error('No JSON found');
+  if (!match) throw new Error('No JSON found');
+  let jsonStr = match[0];
+  // Fix common issues: trailing commas, unescaped quotes in strings
+  try { return JSON.parse(jsonStr); } catch(e) {
+    // Remove trailing commas before } or ]
+    jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
+    try { return JSON.parse(jsonStr); } catch(e2) {
+      // Try truncating at last complete property
+      const lastGoodBrace = jsonStr.lastIndexOf('}');
+      if (lastGoodBrace > 0) {
+        let truncated = jsonStr.substring(0, lastGoodBrace + 1);
+        // Balance braces
+        const openCount = (truncated.match(/{/g) || []).length;
+        const closeCount = (truncated.match(/}/g) || []).length;
+        for (let i = 0; i < openCount - closeCount; i++) truncated += '}';
+        try { return JSON.parse(truncated); } catch(e3) {}
+      }
+      throw new Error('Failed to parse JSON: ' + e2.message);
+    }
+  }
 }
 
 // ── TRACK ANALYSIS ──────────────────────────────────────
