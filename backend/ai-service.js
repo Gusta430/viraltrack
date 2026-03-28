@@ -122,6 +122,7 @@ ${track.genre ? `Genre: ${track.genre}` : ''}
 ${track.similar_artists ? `Similar artists: ${track.similar_artists}` : ''}
 ${track.main_goal ? `Main goal: ${track.main_goal}` : ''}
 ${track.social_vibe ? `Content style: ${track.social_vibe}` : ''}
+${track.target_region ? `Target region: ${track.target_region}. ALL content must be optimized for THIS market. Use trends, hashtags, slang and cultural references that work in ${track.target_region}. Consider what time zones to post in, which local influencers and playlists to target, and what content style resonates with audiences in ${track.target_region}.` : ''}
 ${track.want_tiktok_content ? 'Wants TikTok/Reels content.' : ''}
 ${track.lyrics ? `
 
