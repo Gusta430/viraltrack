@@ -159,6 +159,10 @@ const server = http.createServer(async (req, res) => {
       await db.updateAnalysis(analysisId, result);
       await db.updateTrack(track.id, { status: 'analyzed' });
       await db.createReport({ id: uuid(), track_id: track.id, analysis_id: analysisId, type: 'analysis', title: `${track.title} - Analysis`, status: 'complete' });
+      // Delete uploaded audio file after analysis — we never keep artist music
+      if (track.filename) {
+        try { fs.unlinkSync(path.join(UPLOADS_DIR, track.filename)); } catch(e) {}
+      }
       return json(res, { track: await db.getTrack(track.id), analysis: await db.getAnalysis(analysisId) });
     }
 
