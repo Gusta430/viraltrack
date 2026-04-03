@@ -160,8 +160,8 @@ class Database {
 
   // Tracks
   async createTrack(t) {
-    await run('INSERT INTO tracks (id, user_id, title, artist, genre, similar_artists, filename, original_name, file_size, spotify_url, want_tiktok_content, main_goal, lyrics, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [t.id, t.user_id, t.title, t.artist, t.genre, t.similar_artists, t.filename, t.original_name, t.file_size, t.spotify_url, t.want_tiktok_content, t.main_goal, t.lyrics, t.status]);
+    await run('INSERT INTO tracks (id, user_id, title, artist, genre, similar_artists, filename, original_name, file_size, spotify_url, want_tiktok_content, main_goal, lyrics, social_vibe, no_social, target_region, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [t.id, t.user_id, t.title, t.artist, t.genre, t.similar_artists, t.filename, t.original_name, t.file_size, t.spotify_url, t.want_tiktok_content, t.main_goal, t.lyrics, t.social_vibe, t.no_social, t.target_region, t.status]);
     return t;
   }
 
