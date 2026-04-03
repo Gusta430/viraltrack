@@ -711,11 +711,13 @@ function showAn(t,an){
   document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
   initVideoButtons(t, vids);
   // Hide social media sections if artist chose no-social
-  if (t.want_tiktok_content === '0' || t.want_tiktok_content === 0) {
-    const vidSection = document.querySelector('#pg-analysis .sic.pu')?.closest('.cd');
-    const diySection = document.querySelector('#pg-analysis .sic.pi')?.closest('.cd');
-    if (vidSection) vidSection.style.display = 'none';
-    if (diySection) diySection.style.display = 'none';
+  if (t.no_social === '1' || t.no_social === 1) {
+    const allCards = document.querySelectorAll('#pg-analysis .cd');
+    allCards.forEach(card => {
+      if (card.textContent.includes('AI Video Suggestions') || card.textContent.includes('DIY Content Ideas')) {
+        card.style.display = 'none';
+      }
+    });
   }
 }
 
@@ -875,10 +877,10 @@ function pollVideoCard(videoId, prompt, vids) {
 
 // ── CHECKBOX TOGGLE ──
 document.getElementById('in-nosocial').addEventListener('change', function() {
-  if (this.checked) document.getElementById('in-tk').checked = false;
+  if (this.checked) { document.getElementById('in-tk').checked = false; }
 });
 document.getElementById('in-tk').addEventListener('change', function() {
-  if (this.checked) document.getElementById('in-nosocial').checked = false;
+  if (this.checked) { document.getElementById('in-nosocial').checked = false; }
 });
 
 // ── INIT ──
