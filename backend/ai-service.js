@@ -136,6 +136,7 @@ ${track.social_vibe ? `Content style: ${track.social_vibe}` : ''}
 ${track.target_region ? `Target region: ${track.target_region}. ALL content must be optimized for THIS market. Use trends, hashtags, slang and cultural references that work in ${track.target_region}. Consider what time zones to post in, which local influencers and playlists to target, and what content style resonates with audiences in ${track.target_region}.` : ''}
 ${track.want_tiktok_content ? 'Wants TikTok/Reels content.' : ''}
 ${track.no_social === '1' || track.no_social === 1 ? 'IMPORTANT: The artist does NOT want social media content. Do NOT suggest TikTok, Instagram, Reels or any social media posting. Focus ONLY on: Spotify playlists, music blogs, press/PR, sync licensing (TV/film/ads), live shows, radio, YouTube music channels, email lists, and artist collaborations. Build the entire strategy around these channels.' : ''}
+${track.no_social === '1' || track.no_social === 1 ? 'IMPORTANT: The artist does NOT want social media content. Do NOT suggest TikTok, Instagram, Reels or any social media posting. Focus ONLY on: Spotify playlists, music blogs, press/PR, sync licensing (TV/film/ads), live shows, radio, YouTube music channels, email lists, and artist collaborations. Build the entire strategy around these channels.' : ''}
 ${track.lyrics ? `
 
 SONG LYRICS — read these to understand the song's deeper meaning:
