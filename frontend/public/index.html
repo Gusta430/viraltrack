@@ -710,6 +710,13 @@ function showAn(t,an){
   pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
   document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
   initVideoButtons(t, vids);
+  // Hide social media sections if artist chose no-social
+  if (t.want_tiktok_content === '0' || t.want_tiktok_content === 0) {
+    const vidSection = document.querySelector('#pg-analysis .sic.pu')?.closest('.cd');
+    const diySection = document.querySelector('#pg-analysis .sic.pi')?.closest('.cd');
+    if (vidSection) vidSection.style.display = 'none';
+    if (diySection) diySection.style.display = 'none';
+  }
 }
 
 async function genPromo(trackId,track){showLoad(true,'Generating your promo plan... This can take a while');try{const res=await(await authFetch(A+'/tracks/'+trackId+'/promo-plan',{method:'POST'})).json();showLoad(false);if(res.plan)showPromoPlan(track,res.plan);else alert('Could not generate promo plan.')}catch(e){showLoad(false);alert('Error.');console.error(e)}}
