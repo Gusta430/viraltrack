@@ -1,5 +1,6 @@
 /**
  * AI Analysis Service + Promo Plan Generator
+ * Clean version — optimized prompts, no duplicates
  */
 
 import https from 'https';
@@ -39,185 +40,92 @@ function callClaude(prompt, systemPrompt) {
 }
 
 function parseJSON(text) {
-  // Try direct parse first
   try { return JSON.parse(text); } catch(e) {}
-  // Try to extract JSON block
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('No JSON found');
   let jsonStr = match[0];
-  // Fix common issues: trailing commas, unescaped quotes in strings
   try { return JSON.parse(jsonStr); } catch(e) {
-    // Remove trailing commas before } or ]
     jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
     try { return JSON.parse(jsonStr); } catch(e2) {
-      // Try truncating at last complete property
-      const lastGoodBrace = jsonStr.lastIndexOf('}');
-      if (lastGoodBrace > 0) {
-        let truncated = jsonStr.substring(0, lastGoodBrace + 1);
-        // Balance braces
-        const openCount = (truncated.match(/{/g) || []).length;
-        const closeCount = (truncated.match(/}/g) || []).length;
-        for (let i = 0; i < openCount - closeCount; i++) truncated += '}';
+      const lastBrace = jsonStr.lastIndexOf('}');
+      if (lastBrace > 0) {
+        let truncated = jsonStr.substring(0, lastBrace + 1);
+        const open = (truncated.match(/{/g) || []).length;
+        const close = (truncated.match(/}/g) || []).length;
+        for (let i = 0; i < open - close; i++) truncated += '}';
         try { return JSON.parse(truncated); } catch(e3) {}
       }
-      throw new Error('Failed to parse JSON: ' + e2.message);
+      throw new Error('JSON parse failed: ' + e2.message);
     }
   }
 }
 
-// ── TRACK ANALYSIS ──────────────────────────────────────
+// ── TRACK ANALYSIS ──
 export async function analyzeTrack(track, audioFeatures = null) {
-  const systemPrompt = `You are an extremely experienced music marketer with 15+ years in the music industry. You have worked with artists from bedroom pop to trap, and you know EXACTLY what separates generic advice from advice that actually delivers results. IMPORTANT: Always respond in English.
+  const noSocial = track.no_social === '1' || track.no_social === 1;
 
-RULES YOU MUST FOLLOW:
-- AUDIENCE FIRST: Before creating ANY content suggestion, identify the EXACT subculture and community that would love this song.
-- NOT EVERYONE WANTS SOCIAL MEDIA: If the artist's goal is NOT about TikTok/social media, focus on OTHER strategies:
-  * Playlist pitching (Spotify editorial + independent curators)
-  * Music blogs, online magazines and press coverage (name REAL blogs that cover this genre)
-  * Sync licensing opportunities (what type of TV shows, films, ads or games would use this sound?)
-  * Live performance strategy (what venues, open mics, festivals match this artist?)
-  * Radio (online and traditional — name specific stations or shows)
-  * YouTube music channels that feature independent artists (name real ones)
-  * Music forums and communities (Reddit, Discord servers, genre-specific forums)
-  * Email list building and direct-to-fan strategies
-  * Collaboration with other artists (not influencers)
-  Adapt the ENTIRE strategy to how the artist actually wants to promote — not everyone is a content creator. Not just "18-28 hip-hop fans" — be specific: "car meet TikTok", "gym motivation community", "late night stoners", "skate culture", "anime edit community", "streetwear Twitter". Every single suggestion must be designed to spread within THAT specific community.
-- For each video idea, name the SPECIFIC type of account that would repost it (e.g. "accounts like @carculture, @trapedits, @chilledcow")
-- Think about WHERE this song would naturally play in real life (car, gym, bedroom, party, walking alone at night) — that context IS the content
-- NEVER give generic advice like "post consistently" or "engage with your audience" — everyone knows this already
-- NEVER suggest "behind the scenes" videos or "studio session" clips unless you have a SPECIFIC, UNIQUE angle on it
-- Suggestions should be driven primarily by the track's MOOD, ENERGY and GENRE — not just the title. The title can inspire 1 idea, but the rest should come from the sonic feel and emotional vibe of the music
-- Video ideas must contain CONCRETE scenarios optimized for VIRALITY. Describe exactly what happens second by second. Think: what makes someone stop scrolling? What makes them watch again? What makes them share?
-- For each video idea, think about what TREND FORMAT it fits (POV, transition, reaction, slow reveal, etc.) — the format matters as much as the content
-- VIDEO VISUALS MUST MATCH THE SONG'S ENERGY AND SUBCULTURE:
-  * High-energy trap/drill/rage = cars drifting, dirt bikes doing wheelies, urban nightlife, fast cuts, aggressive energy
-  * Chill hip-hop/lo-fi = nature edits, slow-motion walks, sunset drives, peaceful city shots
-  * Dark/emo rap = moody lighting, rain, empty streets, cinematic noir, silhouettes
-  * Pop/dance = colorful, high-energy choreography, festival vibes, party scenes
-  * R&B/soul = intimate settings, soft lighting, couple moments, luxury minimalism
-  * Afrobeats/dancehall = dance challenges, vibrant colors, group energy, cultural celebration
-  Think about what visuals the TARGET AUDIENCE actually watches and shares.
-- NEVER suggest generic challenges like "loyalty test" or "hand sign challenge" unless it's truly unique. Instead, create content concepts that could ONLY exist for THIS specific song
-- Reference SPECIFIC lines or moments from the lyrics when suggesting content — don't just use the title
-- Every suggestion must pass the "would this look cringe?" test — if a Norwegian rapper would feel embarrassed posting it, don't suggest it
-- Prioritize content that looks EXPENSIVE and HIGH QUALITY even if it's cheap to make (good lighting, smooth transitions, cinematic angles) A trap fan shares car edits and street content, not nature videos. An indie fan shares aesthetic mood content, not party videos. MATCH THE CULTURE.
-- Hashtags skal inkludere NISJE-hashtags (under 1M innlegg) som faktisk treffer målgruppen, ikke bare store generiske tags
-- Captions skal ha en hook i første linje som får folk til å stoppe scrollingen
-- DIY-ideer skal være KREATIVE og OVERRASKENDE — ting artisten ikke ville tenkt på selv
-- Reference artists skal ikke bare være de mest åpenbare — inkluder minst 2 mindre kjente artister som har lignende sound men en unik markedsføringsstrategi å lære av
-- Key insight skal være EN spesifikk, kontraintuitiv innsikt — ikke en generisk observasjon
+  const systemPrompt = `You are an elite music marketer. Always respond in English. Respond ONLY with valid JSON.
 
-VIKTIG: ALWAYS respond with valid JSON og INGENTING annet.
+CORE RULES:
+1. Every suggestion must be UNIQUE to this specific song — if you can swap the song name and it still works, reject it
+2. If lyrics are provided, they define EVERYTHING. Read every line. Understand slang and double meanings. The title's meaning comes from the lyrics, not your assumption
+3. Content must look cinematic and expensive. Always specify lighting, camera angle, and edit style
+4. Match visuals to the song's subculture (trap=cars/street, chill=nature/sunset, dark=noir/rain, pop=color/dance)
+5. Never suggest: hand sign challenges, loyalty tests, generic transitions, "POV when the song hits different", or behind-the-scenes studio clips
+6. Reference specific lyrics or sonic moments in every suggestion — not just the title
+7. Ask yourself "would the artist actually post this?" — if it feels cringe, don't suggest it
 
-JSON-struktur:
+${noSocial ? 'THE ARTIST DOES NOT WANT SOCIAL MEDIA CONTENT. Replace video_edits with playlist pitching strategies and diy_content_ideas with offline strategies (blogs, sync licensing, live shows, radio, press, collaborations).' : ''}
+
+JSON structure:
 {
-  "tempo_bpm": <60-200>,
-  "tempo_description": "<beskrivelse>",
+  "tempo_bpm": <number>,
+  "tempo_description": "<short description>",
   "mood_tags": ["<tag1>", "<tag2>", "<tag3>"],
   "energy_percent": <1-100>,
-  "energy_description": "<beskrivelse>",
-  "genre_fit": "<sjanger>",
-  "audience_age": "<aldersgruppe>",
-  "audience_interests": "<interesser>",
-  "audience_platforms": "<plattformer>",
-  "audience_content_angle": "<vinkel>",
-  "audience_key_insight": "<innsikt>",
-  "reference_artists": [{"name":"<>","genre":"<>","description":"<>"},{"name":"<>","genre":"<>","description":"<>"},{"name":"<>","genre":"<>","description":"<>"},{"name":"<>","genre":"<>","description":"<>"}],
-  "video_edits": [{"title":"<>","caption":"<>","hashtags":"<>","duration":"<>","timestamp":"<>","platforms":["TikTok","Reels"]},{"title":"<>","caption":"<>","hashtags":"<>","duration":"<>","timestamp":"<>","platforms":["TikTok","Reels"]}],
-  "diy_content_ideas": [{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"},{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"},{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"},{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"}],
-  "pro_tip": "<one specific, actionable tip about content QUALITY — lighting, camera angles, editing style that makes content look professional>",
-  "creator_tip": "<one specific tip about posting CONSISTENCY — how often to post, best schedule, why consistency matters more than perfection>"
+  "energy_description": "<short description>",
+  "genre_fit": "<genre description>",
+  "audience_age": "<age range>",
+  "audience_interests": "<specific interests and subcultures>",
+  "audience_platforms": "<platforms>",
+  "audience_content_angle": "<content angle>",
+  "audience_key_insight": "<one counterintuitive insight>",
+  "reference_artists": [{"name":"","genre":"","description":""},{"name":"","genre":"","description":""},{"name":"","genre":"","description":""},{"name":"","genre":"","description":""}],
+  "video_edits": [{"title":"","caption":"","hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"]},{"title":"","caption":"","hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"]}],
+  "diy_content_ideas": [{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""}],
+  "pro_tip": "<specific tip about content quality — lighting, angles, editing>",
+  "creator_tip": "<specific tip about posting consistency and schedule>"
 }`;
 
-  const userPrompt = `Analyze this track and create a VIRAL STRATEGY:
+  const userPrompt = `Analyze this track and create a viral strategy:
 
 Title: "${track.title}"
 Artist: ${track.artist}
 ${track.genre ? `Genre: ${track.genre}` : ''}
 ${track.similar_artists ? `Similar artists: ${track.similar_artists}` : ''}
-${track.main_goal ? `Main goal: ${track.main_goal}` : ''}
-${track.social_vibe ? `Content style: ${track.social_vibe}` : ''}
-${track.target_region ? `Target region: ${track.target_region}. ALL content must be optimized for THIS market. Use trends, hashtags, slang and cultural references that work in ${track.target_region}. Consider what time zones to post in, which local influencers and playlists to target, and what content style resonates with audiences in ${track.target_region}.` : ''}
-${track.want_tiktok_content ? 'Wants TikTok/Reels content.' : ''}
-${track.no_social === '1' || track.no_social === 1 ? `IMPORTANT: The artist does NOT want social media content. Do NOT suggest TikTok, Instagram, Reels or any social media posting.
-
-Instead of video_edits, provide PLAYLIST PITCHING strategies in the same JSON field:
-- Each entry should be a specific playlist to target, with pitch approach and why the song fits
-
-Instead of diy_content_ideas, provide OFFLINE/NON-SOCIAL strategies:
-- Music blog submissions (name REAL blogs for this genre)
-- Sync licensing opportunities (what TV shows, films, games, ads would use this track?)
-- Live show strategy (what venues, open mics, festivals?)
-- Radio stations (online and traditional that play this genre)
-- Press/PR outreach (music magazines, podcasts that interview artists)
-- Email list / direct-to-fan strategies
-- Collaboration opportunities with other artists
-
-Make each suggestion as SPECIFIC and ACTIONABLE as the social media suggestions would be.` : ''}
-${track.no_social === '1' || track.no_social === 1 ? `IMPORTANT: The artist does NOT want social media content. Do NOT suggest TikTok, Instagram, Reels or any social media posting.
-
-Instead of video_edits, provide PLAYLIST PITCHING strategies in the same JSON field:
-- Each entry should be a specific playlist to target, with pitch approach and why the song fits
-
-Instead of diy_content_ideas, provide OFFLINE/NON-SOCIAL strategies:
-- Music blog submissions (name REAL blogs for this genre)
-- Sync licensing opportunities (what TV shows, films, games, ads would use this track?)
-- Live show strategy (what venues, open mics, festivals?)
-- Radio stations (online and traditional that play this genre)
-- Press/PR outreach (music magazines, podcasts that interview artists)
-- Email list / direct-to-fan strategies
-- Collaboration opportunities with other artists
-
-Make each suggestion as SPECIFIC and ACTIONABLE as the social media suggestions would be.` : ''}
+${track.main_goal ? `Goal: ${track.main_goal}` : ''}
+${track.social_vibe ? `On-camera preference: ${track.social_vibe}` : ''}
+${track.target_region ? `Target region: ${track.target_region} — optimize hashtags, trends, posting times and cultural references for this market` : ''}
+${track.want_tiktok_content && !noSocial ? 'Include TikTok/Reels content ideas.' : ''}
+${noSocial ? 'NO social media. Focus on: playlists, blogs, sync licensing, live shows, radio, press, artist collabs.' : ''}
 ${track.lyrics ? `
-
-SONG LYRICS — read these to understand the song's deeper meaning:
+LYRICS (this is the most important input — base everything on what the song actually says):
 ${track.lyrics}
 
-INSTRUCTIONS FOR USING LYRICS:
-- READ EVERY LINE. Understand slang, street language, cultural references and double meanings. Do NOT assume a word means what it looks like — let the CONTEXT of the lyrics define every meaning
-- The title might mean something completely different than you think — only the lyrics reveal the true meaning
-- Identify the CORE STORY: What situation is the artist in? Who are they talking about? What culture/lifestyle do they represent?
-- Find KEY LINES that would work as viral captions — hard-hitting, relatable, or emotional bars that fans would screenshot
-- DO NOT quote lyrics directly — instead, capture the FEELING and LIFESTYLE they describe
-- Combine lyrical themes with the audio energy to create content that FEELS like being inside the song
-- Think about what REAL-LIFE SCENES the lyrics describe (driving with friends, late night sessions, flexing, heartbreak, loyalty) — those scenes ARE your video concepts
-- The best viral content makes viewers think "this is exactly my life" — find that universal feeling in the lyrics` : ''}
-${audioFeatures && audioFeatures.analyzed ? `
-REAL AUDIO ANALYSIS DATA (from actual audio file - use these exact values, do NOT make up different numbers):
-- BPM: ${audioFeatures.bpm}
-- Key: ${audioFeatures.key}
-- Energy: ${audioFeatures.energy}% (0=very calm, 100=very intense)
-- Danceability: ${audioFeatures.danceability}% (0=not danceable, 100=very danceable)
-- Duration: ${audioFeatures.duration} seconds
+Understand the real meaning. Find key lines for captions. Create content that captures the lifestyle and emotions described.` : ''}
+${audioFeatures?.analyzed ? `
+AUDIO DATA (real, from the file — use these exact values):
+BPM: ${audioFeatures.bpm} | Key: ${audioFeatures.key} | Energy: ${audioFeatures.energy}% | Danceability: ${audioFeatures.danceability}%
+Peak moments: ${audioFeatures.peakMoments?.map(p => p.label).join(', ') || 'unknown'}
+Use peak moment timestamps for video suggestions.` : 'No audio file uploaded — estimate BPM/energy from genre.'}
 
-- Peak energy moments (best for TikTok clips): ${audioFeatures.peakMoments ? audioFeatures.peakMoments.map(p => p.label).join(', ') : 'unknown'}
-
-IMPORTANT: Use the EXACT BPM and energy values above. These are from the actual audio file.
-For video suggestions, recommend using the PEAK MOMENTS timestamps above — these are the most intense, energetic parts of the song with the highest viral potential. Each video idea should reference a specific timestamp from these peaks.` : 'NOTE: No audio file was uploaded. Estimate BPM and energy based on genre and similar artists, and mark them as estimates.'}
-${track.social_vibe ? `Social media vibe: ${track.social_vibe}. ALL content suggestions must match this vibe. The artist wants their social presence to feel ${track.social_vibe}.` : ''}
-
-THINK THROUGH THIS BEFORE ANSWERING:
-1. What is the MOOD, ENERGY and VIBE of this track? What visuals, colors, settings and emotions does the music evoke? This should drive MOST of your suggestions.
-2. What SPECIFIC TikTok/Reels trend formats could this track fit? Think about current viral formats: POVs, transitions, slow reveals, reaction videos, "watch till the end" hooks. Match the format to the track's energy.
-3. The title "${track.title}" — can it inspire ONE creative concept? But don't force all ideas around the title.
-4. What do artists in this niche do WRONG with marketing, and how can we do the OPPOSITE?
-
-For video ideas: VIRALITY IS THE #1 PRIORITY. For each video, explain:
-- The hook (first 1-2 seconds that stop the scroll)
-- The payoff (why someone watches to the end)
-- The share trigger (why someone sends it to a friend)
-Think like a viral content creator, not a marketer. At least 1 video should use a currently trending format.
-
-For DIY ideas: Think outside the box. No "film yourself in the studio" unless it has a COMPLETELY NEW TWIST. What can the artist do that is surprising, funny, emotional, or controversial (in a good way)? Focus on what has the highest chance of going viral.
-
-Svar KUN med JSON.`;
+Respond ONLY with JSON.`;
 
   try {
-    console.log('🤖 Analyserer låt...');
+    console.log('🤖 Analyzing track...');
     const response = await callClaude(userPrompt, systemPrompt);
     const result = parseJSON(response);
-    console.log('✅ Analyse fullført!');
+    console.log('✅ Analysis complete!');
     return {
       tempo_bpm: result.tempo_bpm || 120, tempo_description: result.tempo_description || '',
       mood_tags: JSON.stringify(result.mood_tags || []),
@@ -230,163 +138,84 @@ Svar KUN med JSON.`;
       video_edits: JSON.stringify(result.video_edits || []),
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
       pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
-      model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null, audio_danceability: audioFeatures?.danceability || null, audio_analyzed: audioFeatures?.analyzed || false, status: 'completed', completed_at: new Date().toISOString(),
+      model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
+      audio_danceability: audioFeatures?.danceability || null,
+      audio_analyzed: audioFeatures?.analyzed || false,
+      status: 'completed', completed_at: new Date().toISOString(),
     };
   } catch (err) {
-    console.error('❌ Analyse feilet:', err.message);
-    return getFallback('Analyse feilet: ' + err.message);
+    console.error('❌ Analysis failed:', err.message);
+    return getFallback('Analysis failed: ' + err.message);
   }
 }
 
-// ── PROMO PLAN GENERATOR ────────────────────────────────
+// ── PROMO PLAN GENERATOR ──
 export async function generatePromoPlan(track, analysis) {
   const moods = JSON.parse(analysis.mood_tags || '[]');
   const refs = JSON.parse(analysis.reference_artists || '[]');
+  const noSocial = track.no_social === '1' || track.no_social === 1;
 
-  const systemPrompt = `You are an elite music marketer who has helped artists go from 0 to 100K+ monthly listeners. You do NOT create generic launch plans — you create tailored, surprising strategies adapted to this one specific track. IMPORTANT: Always respond in English.
+  const systemPrompt = `You are an elite music marketer. Create a specific, actionable 4-week launch plan. Always respond in English. Respond ONLY with valid JSON.
 
 RULES:
-- EVERY task must be so specific that the artist can do it immediately without thinking "but what does that actually mean?"
-- DO NOT write "post engaging content" — write EXACTLY what they should post, with example captions and visual descriptions
-- Playlist strategy must mention REAL playlist names that exist on Spotify, not generic categories
-- Collaboration ideas must include SPECIFIC types of creators to contact (not just "influencers"), with suggestions for what the collaboration should contain
-- Budget-tips skal ha REELLE tall basert på hva som faktisk fungerer i ${new Date().getFullYear()}
-- Unngå disse klisjeene: "consistency is key", "engage with your community", "post regularly", "be authentic"
-- Tenk på hva som er KONTRAINTUITIVT — hvilke strategier VIRKER rare men faktisk fungerer?
-- Inkluder minst én "growth hack" som utnytter en plattform-mekanikk de fleste ikke vet om
+1. Every task must be so specific the artist can do it immediately without googling
+2. If lyrics are provided, build the strategy around the song's actual themes and emotions
+3. Don't use the title as a gimmick — let the lyrics define the content strategy
+4. Name REAL playlists, blogs, and platforms — not generic categories
+5. Include a complete Meta Ads section with ready-to-paste ad copy
+${noSocial ? '6. NO social media tasks. Focus entirely on playlists, blogs, sync, live, radio, press, collaborations.' : '6. Include specific social media content with exact descriptions of what to post'}
 
-VIKTIG: ALWAYS respond with valid JSON og INGENTING annet.
-
-JSON-struktur:
+JSON structure:
 {
-  "plan_title": "<tittel på planen>",
-  "plan_summary": "<2-3 setninger som oppsummerer strategien>",
-  "target_audience": {
-    "description": "<detaljert beskrivelse av målgruppen>",
-    "best_platforms": ["<plattform1>", "<plattform2>", "<plattform3>"],
-    "best_posting_times": "<konkrete tidspunkter for posting>",
-    "content_style": "<hvilken type innhold som treffer denne gruppen>"
-  },
+  "plan_title": "",
+  "plan_summary": "",
+  "target_audience": {"description":"","best_platforms":["","",""],"best_posting_times":"","content_style":""},
   "weeks": [
-    {
-      "week_number": 1,
-      "title": "<tittel for uken>",
-      "goal": "<mål for denne uken>",
-      "tasks": [
-        {"day": "<dag/dager>", "task": "<konkret oppgave>", "platform": "<plattform>", "details": "<detaljer>"},
-        {"day": "<dag/dager>", "task": "<oppgave>", "platform": "<plattform>", "details": "<detaljer>"},
-        {"day": "<dag/dager>", "task": "<oppgave>", "platform": "<plattform>", "details": "<detaljer>"}
-      ]
-    },
-    {
-      "week_number": 2,
-      "title": "<tittel>",
-      "goal": "<mål>",
-      "tasks": [
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"},
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"},
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"}
-      ]
-    },
-    {
-      "week_number": 3,
-      "title": "<tittel>",
-      "goal": "<mål>",
-      "tasks": [
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"},
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"},
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"}
-      ]
-    },
-    {
-      "week_number": 4,
-      "title": "<tittel>",
-      "goal": "<mål>",
-      "tasks": [
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"},
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"},
-        {"day": "<>", "task": "<>", "platform": "<>", "details": "<>"}
-      ]
-    }
+    {"week_number":1,"title":"","goal":"","tasks":[{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]},
+    {"week_number":2,"title":"","goal":"","tasks":[{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]},
+    {"week_number":3,"title":"","goal":"","tasks":[{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]},
+    {"week_number":4,"title":"","goal":"","tasks":[{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]}
   ],
   "playlist_strategy": {
-    "approach": "<detailed strategy for getting on playlists>",
-    "editorial_playlists": [{"name": "<real Spotify editorial playlist>", "why": "<why this song fits>", "follower_estimate": "<approx followers>"}],
-    "independent_playlists": [{"name": "<real independent/user playlist>", "curator_contact": "<how to find/contact curator>", "why": "<why this fits>"},{"name": "<playlist>", "curator_contact": "<contact method>", "why": "<why>"}],
-    "pitch_template": "<a ready-to-send pitch email/message for playlist curators — specific to this song>",
-    "pitch_tips": "<additional tips>",
-    "spotify_for_artists_pitch": "<exact text to paste into Spotify for Artists editorial pitch tool>"
+    "approach":"",
+    "editorial_playlists":[{"name":"","why":"","follower_estimate":""}],
+    "independent_playlists":[{"name":"","curator_contact":"","why":""},{"name":"","curator_contact":"","why":""}],
+    "pitch_template":"<ready-to-send pitch message>",
+    "pitch_tips":"",
+    "spotify_for_artists_pitch":"<text to paste into Spotify for Artists>"
   },
-  "collaboration_ideas": [
-    {"type": "<type samarbeid>", "description": "<beskrivelse>", "expected_impact": "<forventet effekt>"},
-    {"type": "<type>", "description": "<beskrivelse>", "expected_impact": "<effekt>"}
-  ],
-  "budget_tips": {
-    "free_tactics": ["<gratis taktikk 1>", "<gratis taktikk 2>", "<gratis taktikk 3>"],
-    "paid_options": [
-      {"tactic": "<betalt taktikk>", "estimated_cost": "<kostnad>", "expected_result": "<resultat>"},
-      {"tactic": "<taktikk>", "estimated_cost": "<kostnad>", "expected_result": "<resultat>"}
-    ]
-  },
+  "collaboration_ideas": [{"type":"","description":"","expected_impact":""},{"type":"","description":"","expected_impact":""}],
+  "budget_tips": {"free_tactics":["","",""],"paid_options":[{"tactic":"","estimated_cost":"","expected_result":""}]},
   "meta_ads": {
-    "campaign_objective": "<best Meta Ads objective for this track>",
-    "ad_copy_variations": [
-      {"headline": "<headline>", "primary_text": "<primary text>", "cta": "<call to action>"},
-      {"headline": "<headline>", "primary_text": "<primary text>", "cta": "<call to action>"}
-    ],
-    "targeting": {
-      "age_range": "<age range>",
-      "interests": ["<interest1>", "<interest2>", "<interest3>", "<interest4>"],
-      "lookalike_suggestion": "<lookalike audience suggestion>",
-      "excluded_audiences": "<who to exclude>"
-    },
-    "budget_recommendation": "<daily budget recommendation with reasoning>",
-    "ad_format": "<recommended ad format (video, carousel, etc.)>",
-    "creative_direction": "<specific visual direction for the ad>"
+    "campaign_objective":"",
+    "ad_copy_variations":[{"headline":"","primary_text":"","cta":""},{"headline":"","primary_text":"","cta":""}],
+    "targeting":{"age_range":"","interests":["","","",""],"lookalike_suggestion":"","excluded_audiences":""},
+    "budget_recommendation":"",
+    "ad_format":"",
+    "creative_direction":""
   },
-  "key_metrics": ["<metrikk å følge med på 1>", "<metrikk 2>", "<metrikk 3>", "<metrikk 4>"],
-  "common_mistakes": ["<feil å unngå 1>", "<feil 2>", "<feil 3>"]
+  "key_metrics": ["","","",""],
+  "common_mistakes": ["","",""]
 }`;
 
-  const userPrompt = `Create a detailed 4-week launch plan for this track. Be EXTREMELY specific — the artist should be able to follow it day by day without googling anything.
+  const userPrompt = `Create a 4-week launch plan:
 
 Title: "${track.title}"
 Artist: ${track.artist}
 Genre: ${track.genre || analysis.genre_fit || 'Unknown'}
 Similar artists: ${track.similar_artists || refs.map(r => r.name).join(', ') || 'Unknown'}
-Main goal: ${track.main_goal || 'Get the most streams possible'}
+Goal: ${track.main_goal || 'Get the most streams possible'}
 Mood: ${moods.join(', ') || 'Unknown'}
 Energy: ${analysis.energy_percent || 50}%
-Tempo: ${analysis.tempo_bpm || 120} BPM
+BPM: ${analysis.tempo_bpm || 120}
 Audience: ${analysis.audience_age || '18-28'}, ${analysis.audience_platforms || 'TikTok, Spotify'}
+${track.target_region ? `Target region: ${track.target_region}` : ''}
+${noSocial ? 'NO social media. Playlists, blogs, sync, live, radio, press only.' : ''}
 ${track.lyrics ? `
-SONG LYRICS — READ THESE CAREFULLY before creating anything:
+LYRICS — build the entire strategy around what this song actually says:
 ${track.lyrics}
 
-CRITICAL INSTRUCTIONS FOR USING LYRICS:
-1. READ the lyrics WORD BY WORD. Understand slang, references, and double meanings. A word in the title might mean something completely different in context — for example "klikk" could mean a close friend group, not a clicking sound. ALWAYS let the lyrics define the meaning.
-2. Identify the REAL story: Who is the artist talking to? What situation are they in? What emotions are they expressing? What lifestyle or culture are they representing?
-3. Find the KEY PHRASES that fans would actually quote or use as captions — lines that are relatable, hard-hitting, or emotional.
-4. The promo plan must reflect what the song ACTUALLY says. Every content idea, every caption, every hashtag must come from the real meaning in the lyrics.
-5. DO NOT guess what the title means on its own — the lyrics ALWAYS define the title's meaning.
-6. Think about what LIFESTYLE the lyrics describe — that lifestyle IS the content strategy.` : ''}
-
-IMPORTANT RULES:
-- The song title can be used for hashtags, but content ideas must come from the song's MOOD, ENERGY and LYRICAL THEMES — not just wordplay on the title
-- Which SPECIFIC Spotify playlists (name real ones) match this song's mood and genre?
-- What is the SMARTEST rollout sequence? Not just "tease, release, promote"
-- What unexpected platforms or communities could this music reach?
-- What should the artist NOT do that most new artists get wrong?
-
-For each day-task: Give a complete recipe. Not just "make a TikTok" — describe the concept, the hook (first 2 seconds), and the visual style. Every piece of content should be designed to make viewers FEEL the same emotion as the song.
-
-For Meta Ads: Create ad copy that captures the song's emotional core, not just promotes it generically. Target audiences who would relate to the themes in the lyrics.
-
-IMPORTANT: Include a complete Meta Ads section with:
-- 2 ad copy variations (headline + primary text + CTA) ready to paste into Meta Ads Manager
-- Specific audience targeting (age, interests, lookalikes, exclusions)
-- Daily budget recommendation with reasoning
-- Recommended ad format and creative direction
+Use the themes, emotions and lifestyle from the lyrics to shape every task, ad copy, and playlist pitch.` : ''}
 
 Respond ONLY with JSON.`;
 
@@ -402,7 +231,7 @@ Respond ONLY with JSON.`;
   }
 }
 
-// ── FALLBACK ────────────────────────────────────────────
+// ── FALLBACK ──
 function getFallback(msg) {
   return {
     tempo_bpm: 124, tempo_description: 'Danceable, mid-energy pace',
@@ -412,7 +241,7 @@ function getFallback(msg) {
     audience_interests: 'indie pop, aesthetics, late-night playlists',
     audience_platforms: 'TikTok, Instagram Reels, Spotify',
     audience_content_angle: 'relatable lyrics + mood-based visuals',
-    audience_key_insight: msg || 'Fallback demo-data.',
+    audience_key_insight: msg || 'Fallback data.',
     reference_artists: JSON.stringify([
       { name: 'Girl in Red', genre: 'Indie pop', description: 'Emotional indie storytelling' },
       { name: 'Clairo', genre: 'Bedroom pop', description: 'Lo-fi intimate production' },
@@ -424,12 +253,12 @@ function getFallback(msg) {
       { title: 'Atmospheric Intro', caption: 'New track 🌌', hashtags: '#newrelease', duration: '0:30', timestamp: '1:15-1:45', platforms: ['TikTok','Reels'] },
     ]),
     diy_content_ideas: JSON.stringify([
-      { title: 'Studio Process', difficulty: 'Easy', duration: '30-60 sec', virality: 85, description: 'Film yourself working.', howTo: ['Cameras','Speed up','Authentic'], hashtags: '#studiolife' },
-      { title: 'Before vs. After', difficulty: 'Medium', duration: '15-30 sec', virality: 78, description: 'Split-screen comparison.', howTo: ['Two versions','CapCut','Text'], hashtags: '#beforeandafter' },
-      { title: 'Lyric Writing', difficulty: 'Easy', duration: '15-30 sec', virality: 72, description: 'Top-down lyric writing.', howTo: ['Overhead','Natural','Close-up'], hashtags: '#songwriter' },
-      { title: 'First Reaction', difficulty: 'Easy', duration: '30-60 sec', virality: 68, description: 'Friends react.', howTo: ['Authentic','Timestamps','Anticipation'], hashtags: '#reaction' },
+      { title: 'Studio Process', difficulty: 'Easy', duration: '30-60 sec', virality: 85, description: 'Film yourself working.', howTo: ['Camera setup','Speed up','Keep authentic'], hashtags: '#studiolife' },
+      { title: 'Before vs. After', difficulty: 'Medium', duration: '15-30 sec', virality: 78, description: 'Split-screen comparison.', howTo: ['Two versions','CapCut','Text overlay'], hashtags: '#beforeandafter' },
     ]),
-    pro_tip: 'Fallback-data.', creator_tip: 'Sjekk Terminal for feilmelding.',
-    model_used: 'fallback', status: 'completed', completed_at: new Date().toISOString(),
+    pro_tip: 'Use natural lighting or cheap LED strips for cinematic look.',
+    creator_tip: 'Post 3-4 times per week at consistent times for algorithm momentum.',
+    model_used: 'fallback', audio_key: null, audio_danceability: null, audio_analyzed: false,
+    status: 'completed', completed_at: new Date().toISOString(),
   };
 }
