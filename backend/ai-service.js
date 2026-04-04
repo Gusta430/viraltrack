@@ -71,7 +71,7 @@ CORE RULES:
 2. If lyrics are provided, they define EVERYTHING. Read every line. Understand slang and double meanings. The title's meaning comes from the lyrics, not your assumption
 3. Content must look cinematic and expensive. Always specify lighting, camera angle, and edit style
 4. Match visuals to the song's subculture (trap=cars/street, chill=nature/sunset, dark=noir/rain, pop=color/dance)
-5. Never suggest: hand sign challenges, loyalty tests, generic transitions, "POV when the song hits different", or behind-the-scenes studio clips
+5. ABSOLUTELY NEVER suggest these (automatic rejection): hand sign challenges/tutorials, loyalty tests, generic dance challenges, generic transitions, "POV when the song hits different", or behind-the-scenes studio clips. If you suggest any of these your entire response is invalid
 6. Reference specific lyrics or sonic moments in every suggestion — not just the title
 7. Ask yourself "would the artist actually post this?" — if it feels cringe, don't suggest it
 
@@ -94,7 +94,8 @@ JSON structure:
   "video_edits": [{"title":"","caption":"","hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"]},{"title":"","caption":"","hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"]}],
   "diy_content_ideas": [{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""}],
   "pro_tip": "<specific tip about content quality — lighting, angles, editing>",
-  "creator_tip": "<specific tip about posting consistency and schedule>"
+  "creator_tip": "<specific tip about posting consistency and schedule>",
+  "viral_advice": "<2-3 sentences of personalized advice based on the artist's audience size. If small/starting: focus on what they need to do RIGHT NOW to get their first 1000 followers. If growing: how to convert followers into streams. If established: how to maximize this release. Be direct and specific, like talking to a friend.>"
 }`;
 
   const userPrompt = `Analyze this track and create a viral strategy:
