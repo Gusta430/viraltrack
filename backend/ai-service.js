@@ -119,6 +119,8 @@ BPM: ${audioFeatures.bpm} | Key: ${audioFeatures.key} | Energy: ${audioFeatures.
 Peak moments: ${audioFeatures.peakMoments?.map(p => p.label).join(', ') || 'unknown'}
 Use peak moment timestamps for video suggestions.` : 'No audio file uploaded — estimate BPM/energy from genre.'}
 
+BANNED IDEAS (instant rejection): hand sign challenges, loyalty tests, generic transitions, "POV when the song hits different", any idea that works for ANY song.
+
 Respond ONLY with JSON.`;
 
   try {
@@ -219,7 +221,14 @@ ${track.lyrics}
 
 Use the themes, emotions and lifestyle from the lyrics to shape every task, ad copy, and playlist pitch.` : ''}
 
-Respond ONLY with JSON. Be concise — no filler text in descriptions. Every word must add value.`;
+BANNED IDEAS (if you include any of these, the response is invalid):
+- Hand sign challenges or tutorials
+- Generic dance challenges
+- Repetitive luxury posting tasks
+- "Post behind the scenes" without a unique angle
+- Any task that could apply to ANY song
+
+Respond ONLY with JSON. Be concise — every word must add value.`;
 
   try {
     console.log('📋 Generating promo plan...');
