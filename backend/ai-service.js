@@ -162,7 +162,9 @@ RULES:
 2. If lyrics are provided, build the strategy around the song's actual themes and emotions
 3. Don't use the title as a gimmick — let the lyrics define the content strategy
 4. Name REAL playlists, blogs, and platforms — not generic categories
-5. Include a complete Meta Ads section with ready-to-paste ad copy
+5. Include a complete Meta Ads section with ready-to-paste ad copy and a specific daily budget recommendation with reasoning
+6. NEVER suggest: hand sign tutorials, generic dance challenges, or repetitive "post luxury content" tasks. Each day must have a DIFFERENT type of task
+7. Budget recommendation in meta_ads MUST include a specific dollar amount and reasoning
 ${noSocial ? '6. NO social media tasks. Focus entirely on playlists, blogs, sync, live, radio, press, collaborations.' : '6. Include specific social media content with exact descriptions of what to post'}
 
 JSON structure:
@@ -217,7 +219,7 @@ ${track.lyrics}
 
 Use the themes, emotions and lifestyle from the lyrics to shape every task, ad copy, and playlist pitch.` : ''}
 
-Respond ONLY with JSON.`;
+Respond ONLY with JSON. Be concise — no filler text in descriptions. Every word must add value.`;
 
   try {
     console.log('📋 Generating promo plan...');
