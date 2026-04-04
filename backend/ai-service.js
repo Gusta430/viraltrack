@@ -96,7 +96,11 @@ RULES YOU MUST FOLLOW:
   * Pop/dance = colorful, high-energy choreography, festival vibes, party scenes
   * R&B/soul = intimate settings, soft lighting, couple moments, luxury minimalism
   * Afrobeats/dancehall = dance challenges, vibrant colors, group energy, cultural celebration
-  Think about what visuals the TARGET AUDIENCE actually watches and shares. A trap fan shares car edits and street content, not nature videos. An indie fan shares aesthetic mood content, not party videos. MATCH THE CULTURE.
+  Think about what visuals the TARGET AUDIENCE actually watches and shares.
+- NEVER suggest generic challenges like "loyalty test" or "hand sign challenge" unless it's truly unique. Instead, create content concepts that could ONLY exist for THIS specific song
+- Reference SPECIFIC lines or moments from the lyrics when suggesting content — don't just use the title
+- Every suggestion must pass the "would this look cringe?" test — if a Norwegian rapper would feel embarrassed posting it, don't suggest it
+- Prioritize content that looks EXPENSIVE and HIGH QUALITY even if it's cheap to make (good lighting, smooth transitions, cinematic angles) A trap fan shares car edits and street content, not nature videos. An indie fan shares aesthetic mood content, not party videos. MATCH THE CULTURE.
 - Hashtags skal inkludere NISJE-hashtags (under 1M innlegg) som faktisk treffer målgruppen, ikke bare store generiske tags
 - Captions skal ha en hook i første linje som får folk til å stoppe scrollingen
 - DIY-ideer skal være KREATIVE og OVERRASKENDE — ting artisten ikke ville tenkt på selv
@@ -121,8 +125,8 @@ JSON-struktur:
   "reference_artists": [{"name":"<>","genre":"<>","description":"<>"},{"name":"<>","genre":"<>","description":"<>"},{"name":"<>","genre":"<>","description":"<>"},{"name":"<>","genre":"<>","description":"<>"}],
   "video_edits": [{"title":"<>","caption":"<>","hashtags":"<>","duration":"<>","timestamp":"<>","platforms":["TikTok","Reels"]},{"title":"<>","caption":"<>","hashtags":"<>","duration":"<>","timestamp":"<>","platforms":["TikTok","Reels"]}],
   "diy_content_ideas": [{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"},{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"},{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"},{"title":"<>","difficulty":"Easy|Medium|Hard","duration":"<>","virality":<1-100>,"description":"<>","howTo":["<>","<>","<>"],"hashtags":"<>"}],
-  "pro_tip": "<tips>",
-  "creator_tip": "<tips>"
+  "pro_tip": "<one specific, actionable tip about content QUALITY — lighting, camera angles, editing style that makes content look professional>",
+  "creator_tip": "<one specific tip about posting CONSISTENCY — how often to post, best schedule, why consistency matters more than perfection>"
 }`;
 
   const userPrompt = `Analyze this track and create a VIRAL STRATEGY:

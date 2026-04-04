@@ -143,7 +143,7 @@ export async function analyzeAudio(filepath) {
       bpm,
       key: `${key} ${scale}`,
       energy: Math.round(energy * 100),
-      danceability: Math.round(danceability * 100),
+      danceability: Math.min(100, Math.round(danceability * 100)),
       loudness: Math.round(loudness * 10) / 10,
       duration: Math.round(duration),
       peakMoments: peakMoments,
