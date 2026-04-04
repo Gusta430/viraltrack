@@ -105,6 +105,7 @@ ${track.genre ? `Genre: ${track.genre}` : ''}
 ${track.similar_artists ? `Similar artists: ${track.similar_artists}` : ''}
 ${track.main_goal ? `Goal: ${track.main_goal}` : ''}
 ${track.social_vibe ? `On-camera preference: ${track.social_vibe}` : ''}
+${track.audience_size ? `Audience size: ${track.audience_size}. CRITICAL: Adapt ALL suggestions to this level. For small/starting artists: focus on growth tactics (commenting on bigger artists, joining communities, collaborating with similar-sized artists, using trending sounds). Do NOT suggest things that only work with an existing audience (like "repost fan content" when they have no fans, or "host a live session" when nobody would join). For small artists, every suggestion must GROW their audience, not engage an audience they don't have.` : ''}
 ${track.target_region ? `Target region: ${track.target_region} — optimize hashtags, trends, posting times and cultural references for this market` : ''}
 ${track.want_tiktok_content && !noSocial ? 'Include TikTok/Reels content ideas.' : ''}
 ${noSocial ? 'NO social media. Focus on: playlists, blogs, sync licensing, live shows, radio, press, artist collabs.' : ''}
@@ -213,6 +214,7 @@ Mood: ${moods.join(', ') || 'Unknown'}
 Energy: ${analysis.energy_percent || 50}%
 BPM: ${analysis.tempo_bpm || 120}
 Audience: ${analysis.audience_age || '18-28'}, ${analysis.audience_platforms || 'TikTok, Spotify'}
+${track.audience_size ? `Audience size: ${track.audience_size}. CRITICAL: Adapt ALL suggestions to this level. For small/starting artists: focus on growth tactics (commenting on bigger artists, joining communities, collaborating with similar-sized artists, using trending sounds). Do NOT suggest things that only work with an existing audience (like "repost fan content" when they have no fans, or "host a live session" when nobody would join). For small artists, every suggestion must GROW their audience, not engage an audience they don't have.` : ''}
 ${track.target_region ? `Target region: ${track.target_region}` : ''}
 ${noSocial ? 'NO social media. Playlists, blogs, sync, live, radio, press only.' : ''}
 ${track.lyrics ? `

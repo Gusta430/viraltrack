@@ -103,6 +103,7 @@ async function initDB() {
   try { await run('ALTER TABLE analyses ADD COLUMN audio_danceability INTEGER'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN target_region TEXT'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN no_social TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE tracks ADD COLUMN audience_size TEXT'); } catch(e) {}
   console.log('✅ Database ready!');
 }
 
