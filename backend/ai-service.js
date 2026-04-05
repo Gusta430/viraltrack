@@ -141,7 +141,7 @@ Respond ONLY with JSON.`;
       reference_artists: JSON.stringify(result.reference_artists || []),
       video_edits: JSON.stringify(result.video_edits || []),
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
-      pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
+      pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '', viral_advice: result.viral_advice || '',
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_analyzed: audioFeatures?.analyzed || false,
