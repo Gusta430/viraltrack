@@ -715,6 +715,16 @@ function showAn(t,an){
   pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
   document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
   initVideoButtons(t, vids);
+
+  // Show viral advice if available
+  if (an.viral_advice) {
+    const adviceBox = document.createElement('div');
+    adviceBox.className = 'cd';
+    adviceBox.style.cssText = 'margin-bottom:24px;padding:24px;background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(139,92,246,.06));border:1px solid rgba(34,197,94,.2)';
+    adviceBox.innerHTML = '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Your #1 priority right now</div><div style="font-size:14px;color:var(--t2);line-height:1.7">' + an.viral_advice + '</div>';
+    const grid = pg.querySelector('.ag');
+    if (grid) pg.insertBefore(adviceBox, grid);
+  }
   // Hide social media sections if artist chose no-social
   if (t.no_social === '1' || t.no_social === 1) {
     const allCards = document.querySelectorAll('#pg-analysis .cd');
