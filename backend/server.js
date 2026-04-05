@@ -304,6 +304,19 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ── ADMIN (only your account) ──
+    if (p === '/api/admin/trends' && method === 'GET') {
+      if (user.email !== 'andre.s.gustad@gmail.com') return json(res, { error: 'Not authorized' }, 403);
+      const trends = await db.getTrends();
+      return json(res, trends || { trends: [], trending_hashtags: [] });
+    }
+
+    if (p === '/api/admin/trends' && method === 'POST') {
+      if (user.email !== 'andre.s.gustad@gmail.com') return json(res, { error: 'Not authorized' }, 403);
+      const body = await parseBody(req);
+      await db.saveTrends(body);
+      return json(res, { success: true });
+    }
+
     if (p === '/api/admin/users' && method === 'GET') {
       if (user.email !== 'andre.s.gustad@gmail.com') return json(res, { error: 'Not authorized' }, 403);
       const users = await db.getAllUsers();

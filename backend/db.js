@@ -105,6 +105,7 @@ async function initDB() {
   try { await run('ALTER TABLE tracks ADD COLUMN no_social TEXT'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN audience_size TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN viral_advice TEXT'); } catch(e) {}
+  await run('CREATE TABLE IF NOT EXISTS trends (id INTEGER PRIMARY KEY, data TEXT, updated_at TEXT DEFAULT (CURRENT_TIMESTAMP))');
   console.log('✅ Database ready!');
 }
 
@@ -277,6 +278,18 @@ class Database {
   async getUserCount() {
     const rows = await execute("SELECT COUNT(*) as c FROM users");
     return parseInt(rows[0]?.c || 0);
+  }
+
+  // Trends (admin-managed)
+  async getTrends() {
+    const rows = await execute('SELECT data FROM trends ORDER BY updated_at DESC LIMIT 1');
+    if (rows.length === 0) return null;
+    try { return JSON.parse(rows[0].data); } catch { return null; }
+  }
+
+  async saveTrends(data) {
+    await run('DELETE FROM trends');
+    await run('INSERT INTO trends (id, data) VALUES (1, ?)', [JSON.stringify(data)]);
   }
 
   // Dashboard
