@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import db from './db.js';
 import { analyzeTrack, generatePromoPlan } from './ai-service.js';
 import { analyzeAudio } from './audio-analysis.js';
+import { getTrends } from './trend-service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(__dirname, '..', 'frontend', 'public');
@@ -155,7 +156,8 @@ const server = http.createServer(async (req, res) => {
           audioFeatures = await analyzeAudio(path.join(UPLOADS_DIR, track.filename));
         } catch (e) { console.error('Audio analysis failed:', e.message); }
       }
-      const result = await analyzeTrack(track, audioFeatures);
+      const trends = await getTrends();
+      const result = await analyzeTrack(track, audioFeatures, trends);
       await db.updateAnalysis(analysisId, result);
       await db.updateTrack(track.id, { status: 'analyzed' });
       await db.createReport({ id: uuid(), track_id: track.id, analysis_id: analysisId, type: 'analysis', title: `${track.title} - Analysis`, status: 'complete' });

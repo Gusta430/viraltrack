@@ -61,7 +61,7 @@ function parseJSON(text) {
 }
 
 // ── TRACK ANALYSIS ──
-export async function analyzeTrack(track, audioFeatures = null) {
+export async function analyzeTrack(track, audioFeatures = null, trends = null) {
   const noSocial = track.no_social === '1' || track.no_social === 1;
 
   const systemPrompt = `You are an elite music marketer. Always respond in English. Respond ONLY with valid JSON.
@@ -120,6 +120,8 @@ AUDIO DATA (real, from the file — use these exact values):
 BPM: ${audioFeatures.bpm} | Key: ${audioFeatures.key} | Energy: ${audioFeatures.energy}% | Danceability: ${audioFeatures.danceability}%
 Peak moments: ${audioFeatures.peakMoments?.map(p => p.label).join(', ') || 'unknown'}
 Use peak moment timestamps for video suggestions.` : 'No audio file uploaded — estimate BPM/energy from genre.'}
+
+${ trends && trends.trends && trends.trends.length > 0 ? 'CURRENT TRENDING FORMATS (match 1-2 suggestions to these):\n' + trends.trends.slice(0, 6).map(t => '- ' + t.name + ': ' + t.description).join('\n') + '\nTrending hashtags: ' + (trends.trending_hashtags || []).join(', ') : ''}
 
 BANNED IDEAS (instant rejection): hand sign challenges, loyalty tests, generic transitions, "POV when the song hits different", any idea that works for ANY song.
 
