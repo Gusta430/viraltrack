@@ -157,6 +157,7 @@ const server = http.createServer(async (req, res) => {
         } catch (e) { console.error('Audio analysis failed:', e.message); }
       }
       const trends = await getTrends();
+      console.log('Trends loaded:', JSON.stringify(trends).substring(0, 200));
       const result = await analyzeTrack(track, audioFeatures, trends);
       await db.updateAnalysis(analysisId, result);
       await db.updateTrack(track.id, { status: 'analyzed' });
