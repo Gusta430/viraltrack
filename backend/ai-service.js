@@ -95,7 +95,12 @@ JSON structure:
   "diy_content_ideas": [{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""},{"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":<1-100>,"description":"","howTo":["","",""],"hashtags":""}],
   "pro_tip": "<specific tip about content quality — lighting, angles, editing>",
   "creator_tip": "<specific tip about posting consistency and schedule>",
-  "viral_advice": "<2-3 sentences of personalized advice based on the artist's audience size. If small/starting: focus on what they need to do RIGHT NOW to get their first 1000 followers. If growing: how to convert followers into streams. If established: how to maximize this release. Be direct and specific, like talking to a friend.>"
+  "viral_advice": "<2-3 sentences of personalized advice based on the artist's audience size>",
+  "viral_keys": {
+    "hook": "<specific hook idea for THIS song — describe the exact first 1-2 seconds that would stop the scroll. Reference a specific lyric, sound, or visual moment from this track>",
+    "relatability": "<specific angle for THIS song — what universal feeling or experience does it capture that the target audience will recognize as 'so me'>",
+    "share_trigger": "<specific reason someone would send THIS song's content to a friend — based on the song's themes, emotions, or standout moments>"
+  }
 }`;
 
   const userPrompt = `Analyze this track and create a viral strategy:
@@ -143,7 +148,7 @@ Respond ONLY with JSON.`;
       reference_artists: JSON.stringify(result.reference_artists || []),
       video_edits: JSON.stringify(result.video_edits || []),
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
-      pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '', viral_advice: result.viral_advice || '',
+      pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '', viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_analyzed: audioFeatures?.analyzed || false,
