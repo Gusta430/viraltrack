@@ -706,6 +706,7 @@ document.getElementById('demo-btn').addEventListener('click',async()=>{showLoad(
 function showAn(t,an){
   currentTrackId=t.id;
   const moods=JSON.parse(an.mood_tags||'[]'),refs=JSON.parse(an.reference_artists||'[]'),vids=JSON.parse(an.video_edits||'[]'),diys=JSON.parse(an.diy_content_ideas||'[]');
+  let vk={};try{vk=JSON.parse(an.viral_keys||'{}');}catch(e){}
   const bars=Array.from({length:50},()=>`<div class="wb" style="height:${Math.random()*30+5}px"></div>`).join('');
   const pg=document.getElementById('pg-analysis');
   pg.innerHTML=`<h1 class="pt">Track Analysis</h1><p class="ps">AI-powered insights about your music</p>
