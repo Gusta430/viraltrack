@@ -143,8 +143,90 @@ AVOID:
   return tiers[audienceSize] || tiers.small;
 }
 
+// ── PRODUCER TIER STRATEGY ──
+function getProducerTierPrompt(audienceSize) {
+  const tiers = {
+    starting: `PRODUCER TIER: JUST STARTING (0-500 followers)
+Every suggestion must be a DISCOVERY tactic — getting beats in front of artists and listeners who don't know you exist.
+
+WHAT WORKS AT 0-500:
+- Type beat SEO: Title format matters: "[Artist] Type Beat - [Mood Word]" — study what ranks on YouTube, not what sounds creative
+- Volume publishing: Upload 2-3 beats/week to YouTube. The algorithm needs volume to learn who to recommend you to.
+- BeatStars/Airbit storefront: Free beats with tags + license options. Give away 5-10 beats to build a catalog people browse.
+- Comment on rapper/singer videos with genuine reactions — never "check my beats"
+- Find underground artists on SoundCloud/IG who are clearly looking for beats. DM with a free beat that matches their style — be specific about why it fits them.
+- "Cook-up" content: Screen recordings of making a beat in 60 seconds. Show the process, not just the result.
+- Tag other producers for engagement — remix challenges, beat flips.
+- Reddit communities: r/makinghiphop, r/trapproduction — share knowledge, not just links.
+
+NEVER SUGGEST:
+- Paid ads before you have organic proof
+- "DM Drake" or cold-pitching A-list artists
+- Hosting live sessions — nobody will join
+- "Run a giveaway" — attracts freebie hunters, not buyers
+- Waiting for beats to sell themselves — active outreach is mandatory`,
+
+    small: `PRODUCER TIER: SMALL (500-5,000 followers)
+Strategy splits between growing the audience and converting listeners to beat buyers/collaborators.
+
+WHAT WORKS AT 500-5K:
+- You have proof of concept now. Double down on what got you here.
+- Beat preview hooks: The first 5 seconds of a beat preview decide everything on TikTok/Reels. Start with the most interesting element.
+- "The Drop" format: Build tension for 5-8 seconds, then hit the main pattern. High completion rate = more reach.
+- Open verse challenges: Post a beat with space for vocals, invite artists to use it. Tag original.
+- Collab with artists in the 1K-10K range — offer free beats in exchange for credit + shared promotion.
+- BeatStars optimization: Update tags, thumbnails, preview lengths. A/B test pricing.
+- Making-of tutorials: "How I made this beat in [DAW]" — teach something, not just show off.
+- Engage in producer communities for networking, not self-promotion.
+
+AVOID:
+- Only posting beat previews with no variety — mix in tutorials, process content, collaborations
+- Pricing too high too early — volume and reputation first
+- Ignoring YouTube SEO — proper titles, tags, and thumbnails matter more than the beat sometimes`,
+
+    growing: `PRODUCER TIER: GROWING (5,000-25,000 followers)
+Focus on converting followers into customers, getting placements, and building a recognizable brand.
+
+WHAT WORKS AT 5K-25K:
+- Exclusive/premium beats: Create a tier system (free/basic/premium/exclusive) with clear value differences.
+- Placement hunting: You have enough cred to pitch to management and A&R. Build a one-page producer portfolio site.
+- Beat packs and bundles: Sell themed packs (e.g., "Dark Trap Pack" or "R&B Vibes Vol. 2") at a discount.
+- Email list for beat drops: Notify subscribers of new uploads before they go public.
+- YouTube channel branding: Consistent thumbnails, intros, visual identity. This is your storefront.
+- Strategic paid promotion: Boost best-performing organic posts only.
+- Networking at industry events, beat battles, production meetups.
+- Sync licensing: Register beats with sync libraries (Musicbed, Artlist, Epidemic Sound).
+
+AVOID:
+- Giving everything away for free — your audience is ready to pay
+- Ignoring business infrastructure (contracts, license terms, invoicing)`,
+
+    established: `PRODUCER TIER: ESTABLISHED (25,000+ followers)
+Focus on brand deals, major placements, and scaling the business.
+
+WHAT WORKS AT 25K+:
+- You're a brand now. Think like a business.
+- Multiple revenue streams: beat sales, placements, sample packs, tutorials/courses, sync licensing.
+- A&R relationships: Maintain regular contact with labels and managers who buy beats.
+- Mentorship content: "How I built my producer career" — establishes authority.
+- Premium sample packs: Your sound has value, sell it as an instrument.
+- IRL industry presence: Studio sessions, co-writes, production camps.
+- Cross-platform content strategy: YouTube (long form), TikTok (hooks), IG (brand), Twitter (industry networking).
+
+AVOID:
+- Losing the personal touch — your early supporters remember when you were small
+- Racing to the bottom on pricing — your brand commands premium rates now`
+  };
+  return tiers[audienceSize] || tiers.small;
+}
+
 // ── TRACK ANALYSIS ──
 export async function analyzeTrack(track, audioFeatures = null, trends = null) {
+  // Branch to producer analysis if content_type is producer
+  if (track.content_type === 'producer') {
+    return analyzeProducerBeat(track, audioFeatures, trends);
+  }
+
   const noSocial = track.no_social === '1' || track.no_social === 1;
   const audienceSize = track.audience_size || 'small';
 
@@ -328,8 +410,176 @@ Respond ONLY with JSON.`;
   }
 }
 
+// ── PRODUCER BEAT ANALYSIS ──
+async function analyzeProducerBeat(track, audioFeatures = null, trends = null) {
+  const audienceSize = track.audience_size || 'small';
+  const tierPrompt = getProducerTierPrompt(audienceSize);
+
+  const systemPrompt = `You are an elite beat marketing strategist who understands how producers actually sell beats and get placements in ${new Date().getFullYear()}. You think like a successful type beat YouTuber and BeatStars seller, not a marketing textbook. Always respond in English. Respond ONLY with valid JSON.
+
+YOUR PROCESS:
+1. SONIC IDENTITY: Analyze the beat's sound — BPM, energy, mood, arrangement. What type of artist would use this beat? What subgenre does it serve?
+2. TYPE BEAT POSITIONING: What "type beat" search terms would artists use to find this beat? This is the #1 discovery mechanism.
+3. TARGET ARTISTS: Who is actively looking for this sound? Not "rappers" — specific niches of artists at specific career stages.
+4. CONTENT STRATEGY: How to make this beat go viral as content, not just as a product listing.
+
+WHAT MAKES BEAT CONTENT VIRAL:
+- "The Drop" format: 5-8 seconds of buildup → hard-hitting drop. Completion rate skyrockets.
+- Making-of timelapses: Watching a beat come together in 30-60 seconds is mesmerizing.
+- A/B format: "Which version is better?" — drives comments and engagement.
+- Open verse challenges: Leave space for vocals, invite artists to hop on it. Creates user-generated content.
+- Beat switch: Play a simple loop → flip it into something fire. The transformation is the hook.
+- Screen recordings of the DAW: People love watching the process. Show the mixer, the arrangement, the sound selection.
+- Song reference recreations: "How [famous song] was probably made" — drives search traffic.
+
+BEAT MARKETING REALITY:
+- YouTube type beat SEO is the #1 organic discovery channel for selling beats
+- Title format matters: "[Artist] Type Beat 2025 - [Mood/Vibe Word]" — study what ranks
+- BeatStars/Airbit are storefronts, not marketing channels — you drive traffic TO them
+- Instagram Reels and TikTok drive awareness, YouTube drives sales
+- Free beats with tags build catalog trust — artists come back for exclusives
+- 80% of beat sales happen because an artist already trusts the producer's brand
+
+HARD BANNED:
+- "Just post beats and wait" — passive marketing never works
+- Generic "fire beat" captions
+- Spamming rapper DMs with beat links
+- Copying another producer's brand/visual identity
+- "Run ads" for producers under 5K followers
+- Hand signs or custom gestures
+- Loyalty tests or "comment if you're a real producer"
+
+JSON structure:
+{
+  "tempo_bpm": <number>,
+  "tempo_description": "<what the tempo FEELS like for an artist recording on this>",
+  "mood_tags": ["<tag1>", "<tag2>", "<tag3>"],
+  "energy_percent": <1-100>,
+  "energy_description": "<physical vibe — how does this beat make you move?>",
+  "genre_fit": "<specific subgenre: dark trap, melodic drill, pluggnb, etc.>",
+  "lyric_themes": {
+    "core_story": "<what kind of song would an artist write on this beat? What mood/topic does it pull out?>",
+    "quotable_lines": ["<type beat title variation 1>", "<variation 2>", "<variation 3>"],
+    "emotional_core": "<the vibe/feeling this beat creates>",
+    "visual_world": "<colors, settings, time of day, textures matching this beat's mood>"
+  },
+  "audience_age": "<age range of artists who'd buy this + listeners>",
+  "audience_interests": "<2-3 specific producer/artist communities>",
+  "audience_platforms": "<platforms ranked: where do artists find beats?>",
+  "audience_content_angle": "<what type of content this audience engages with>",
+  "audience_key_insight": "<one insight about reaching beat buyers in this niche>",
+  "reference_artists": [
+    {"name": "<producer>", "genre": "<genre>", "description": "<what marketing tactic to learn from>"},
+    {"name": "<producer>", "genre": "<genre>", "description": "<reason>"},
+    {"name": "<lesser-known producer>", "genre": "<genre>", "description": "<what they do differently>"},
+    {"name": "<artist who uses this style of beat>", "genre": "<genre>", "description": "<why targeting this artist's fans works>"}
+  ],
+  "video_edits": [
+    {
+      "title": "<beat preview / content concept>",
+      "caption": "<sounds like a real producer — not ad copy. Reference the beat's vibe>",
+      "hashtags": "<niche tags: #typebeat #[genre]beats + discovery tags>",
+      "duration": "<7-15 sec for previews, 30-60 sec for making-of>",
+      "timestamp": "<which part of the beat to feature — the drop, the melody, etc.>",
+      "platforms": ["TikTok", "Reels", "YouTube Shorts"],
+      "concept": "<FULL brief: what to show, how to edit, what makes this stop the scroll. Include DAW screenshots, waveform visuals, etc.>",
+      "song_moment": "<which sonic element this is built around — the 808 pattern, the melody, the drum bounce>",
+      "share_trigger": "<why a producer or artist sends this to someone>"
+    },
+    {"title":"","caption":"","hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"concept":"","song_moment":"","share_trigger":""}
+  ],
+  "diy_content_ideas": [
+    {
+      "title": "<content idea>",
+      "difficulty": "Easy|Medium|Hard",
+      "duration": "<length>",
+      "virality": <1-100>,
+      "description": "<FULL brief: what to create, how to edit, what the viewer experiences. Must connect to THIS beat's specific sound>",
+      "hook": "<what stops the scroll in first 1-2 seconds>",
+      "relatability": "<what universal producer/artist experience this taps into>",
+      "share_trigger": "<why someone shares this>",
+      "howTo": ["<step 1>", "<step 2>", "<step 3>"],
+      "hashtags": "<tags>",
+      "why_it_works": "<psychological trigger>"
+    },
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""}
+  ],
+  "pro_tip": "<one specific production/visual tip for THIS beat's content>",
+  "creator_tip": "<one growth tactic for this producer's tier>",
+  "viral_advice": "<2-3 sentences of specific advice for this producer at their current level>",
+  "viral_keys": {
+    "hook": "<specific hook for THIS beat — what sonic moment stops the scroll>",
+    "relatability": "<what universal producer/artist experience will the audience recognize?>",
+    "share_trigger": "<specific reason someone sends this to a friend>"
+  }
+}`;
+
+  const userPrompt = `Analyze this beat and build a marketing strategy this producer can actually execute:
+
+Title: "${track.title}"
+Producer: ${track.artist}
+${track.genre ? `Genre: ${track.genre}` : ''}
+${track.similar_artists ? `Similar producers/references: ${track.similar_artists}` : ''}
+${track.producer_goal || track.main_goal ? `Goal: ${track.producer_goal || track.main_goal}` : ''}
+${track.social_vibe ? `On-camera preference: ${track.social_vibe}. ALL content must respect this. If "no-face" or "minimal-face", focus on screen recordings, DAW visuals, waveforms — never talking-to-camera.` : ''}
+${track.target_region ? `Target region: ${track.target_region} — posting times and cultural context must match this region.` : ''}
+${track.beat_store_url ? `Beat store: ${track.beat_store_url}` : ''}
+
+${tierPrompt}
+
+${audioFeatures?.analyzed ? `
+AUDIO DATA (use exactly):
+BPM: ${audioFeatures.bpm} | Key: ${audioFeatures.key} | Energy: ${audioFeatures.energy}% | Danceability: ${audioFeatures.danceability}%
+Duration: ${audioFeatures.duration}s
+Peak moments: ${audioFeatures.peakMoments?.map(p => p.label).join(', ') || 'unknown'}` : 'No audio uploaded — estimate from genre. Mark as estimates.'}
+
+${trends && trends.trends && trends.trends.length > 0 ? `TRENDING FORMATS (adapt 1-2 to beat content):
+${trends.trends.slice(0, 6).map(t => '- ' + t.name + ': ' + t.description).join('\n')}
+Trending hashtags: ${(trends.trending_hashtags || []).join(', ')}` : ''}
+
+SELF-CHECK: For each suggestion — "if I swap this beat for any random beat, does this still work?" If yes → rewrite with specific references to THIS beat's sound, vibe, or arrangement.
+
+Respond ONLY with JSON.`;
+
+  try {
+    console.log('🤖 Analyzing beat (producer mode)...');
+    const response = await callClaude(userPrompt, systemPrompt);
+    const result = parseJSON(response);
+    console.log('✅ Beat analysis complete!');
+    return {
+      tempo_bpm: result.tempo_bpm || 120, tempo_description: result.tempo_description || '',
+      mood_tags: JSON.stringify(result.mood_tags || []),
+      energy_percent: result.energy_percent || 50, energy_description: result.energy_description || '',
+      genre_fit: result.genre_fit || '',
+      lyric_themes: JSON.stringify(result.lyric_themes || {}),
+      audience_age: result.audience_age || '', audience_interests: result.audience_interests || '',
+      audience_platforms: result.audience_platforms || '', audience_content_angle: result.audience_content_angle || '',
+      audience_key_insight: result.audience_key_insight || '',
+      reference_artists: JSON.stringify(result.reference_artists || []),
+      video_edits: JSON.stringify(result.video_edits || []),
+      diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
+      pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
+      viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
+      model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
+      audio_danceability: audioFeatures?.danceability || null,
+      audio_analyzed: audioFeatures?.analyzed || false,
+      status: 'completed', completed_at: new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error('❌ Beat analysis failed:', err.message);
+    return getFallback('Beat analysis failed: ' + err.message);
+  }
+}
+
 // ── PROMO PLAN GENERATOR ──
 export async function generatePromoPlan(track, analysis) {
+  // Branch to producer promo plan if content_type is producer
+  if (track.content_type === 'producer') {
+    return generateProducerPromoPlan(track, analysis);
+  }
+
   const moods = JSON.parse(analysis.mood_tags || '[]');
   const refs = JSON.parse(analysis.reference_artists || '[]');
   const lyricThemes = (() => { try { return JSON.parse(analysis.lyric_themes || '{}'); } catch(e) { return {}; } })();
@@ -488,6 +738,161 @@ Respond ONLY with JSON.`;
     return plan;
   } catch (err) {
     console.error('❌ Promo plan failed:', err.message);
+    return null;
+  }
+}
+
+// ── PRODUCER PROMO PLAN ──
+async function generateProducerPromoPlan(track, analysis) {
+  const moods = JSON.parse(analysis.mood_tags || '[]');
+  const refs = JSON.parse(analysis.reference_artists || '[]');
+  const lyricThemes = (() => { try { return JSON.parse(analysis.lyric_themes || '{}'); } catch(e) { return {}; } })();
+  const audienceSize = track.audience_size || 'small';
+  const tierPrompt = getProducerTierPrompt(audienceSize);
+
+  const systemPrompt = `You are an elite beat marketing strategist who creates plans producers execute day-by-day to sell beats, get placements, and grow their brand. Always respond in English. Respond ONLY with valid JSON.
+
+YOUR APPROACH:
+1. Every task is a complete recipe — exact concept, hook, visual direction, caption, hashtags, platform-specific instructions.
+2. Momentum arc: Week 1 = establish the beat's identity + seed content. Week 2 = drive engagement + artist outreach. Week 3 = push for sales/placements. Week 4 = sustain + scale what worked.
+3. Every task connects to THIS beat's specific sound, vibe, and target artist niche.
+4. Tasks must be realistic for this producer's audience tier.
+5. At least 40% of tasks must be GROWTH tactics (reaching new artists/listeners).
+
+BEAT MARKETING REALITY IN ${new Date().getFullYear()}:
+- YouTube type beat SEO is still the #1 organic channel for beat sales
+- Title format: "[Artist] Type Beat ${new Date().getFullYear()} - [Mood/Vibe Word]" — study what ranks
+- TikTok/Reels drive awareness but YouTube drives actual sales
+- "The Drop" format (buildup → drop) gets 3-5x the completion rate of flat beat previews
+- Open verse challenges create free marketing from artists using your beats
+- BeatStars/Airbit are storefronts, not marketing — you drive traffic TO them
+- Free beats with tags build trust → artists come back for premium/exclusive
+- 80% of beat sales come from artists who already trust the producer brand
+- Making-of content performs 2x better than pure beat previews
+- A/B format ("which version?") drives 4x more comments than regular posts
+
+QUALITY RULES:
+- Each day MUST have a DIFFERENT type of task — variety is mandatory
+- Task types: content creation (different format each time), artist outreach (targeted DMs, not spam), platform optimization (SEO, tags, thumbnails), community (producer forums, collabs), strategic (email list, pricing strategy, catalog organization)
+- Name REAL platforms, REAL communities, REAL tools
+- Outreach messages must be ready to copy-paste, written for THIS beat's style
+- Posting times MUST match the target region's timezone
+
+HARD BANNED:
+- "Just upload beats and wait"
+- Spamming artist DMs with beat links
+- Generic "fire beat 🔥" captions
+- Hand signs, custom gestures, loyalty tests
+- "Run ads" for producers under 5K followers
+- Any task that works for any random beat — every task MUST reference this beat's sound
+- "Celebrate milestones" as content if under 10K followers
+- Posting times in wrong timezone for target region
+
+JSON structure:
+{
+  "plan_title": "<creative title referencing the beat's vibe>",
+  "plan_summary": "<2-3 sentences: what makes THIS plan specific to this beat and producer>",
+  "target_audience": {
+    "description": "<specific type of artists who need this beat — not just 'rappers'>",
+    "best_platforms": ["<platform1>", "<platform2>", "<platform3>"],
+    "best_posting_times": "<specific times in TARGET REGION timezone>",
+    "content_style": "<visual/tonal direction matching the beat's world>"
+  },
+  "weeks": [
+    {
+      "week_number": 1, "title": "<thematic>", "goal": "<specific, measurable>",
+      "tasks": [
+        {"day": "<day>", "task": "<name>", "platform": "<platform>", "details": "<COMPLETE brief: exact concept, visual direction, caption ready to paste, hashtags, timing. Must reference this beat's specific sound. Producer executes immediately.>"},
+        {"day": "<day>", "task": "<>", "platform": "<>", "details": "<>"},
+        {"day": "<day>", "task": "<>", "platform": "<>", "details": "<>"}
+      ]
+    },
+    {"week_number": 2, "title": "", "goal": "", "tasks": [{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]},
+    {"week_number": 3, "title": "", "goal": "", "tasks": [{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]},
+    {"week_number": 4, "title": "", "goal": "", "tasks": [{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]}
+  ],
+  "playlist_strategy": {
+    "approach": "<beat placement strategy — YouTube SEO, BeatStars optimization, type beat playlists>",
+    "editorial_playlists": [{"name": "<real type beat playlist or channel>", "why": "<why this beat fits>", "follower_estimate": "<approx>"}],
+    "independent_playlists": [{"name": "<real beat curator/channel>", "curator_contact": "<how to reach>", "why": "<reason>"}],
+    "pitch_template": "<ready-to-send message to artist/manager pitching this beat for placement>",
+    "pitch_tips": "<tips for this genre and tier>",
+    "spotify_for_artists_pitch": "<YouTube SEO title + description template optimized for this beat's type beat keywords>"
+  },
+  "collaboration_ideas": [
+    {"type": "<type>", "description": "<specific: artist collab, producer collab, beat flip challenge, open verse>", "expected_impact": "<realistic>"},
+    {"type": "<>", "description": "<>", "expected_impact": "<>"}
+  ],
+  "budget_tips": {
+    "free_tactics": ["<specific free tactic>", "<>", "<>"],
+    "paid_options": [{"tactic": "<specific>", "estimated_cost": "<real cost>", "expected_result": "<realistic>"}]
+  },
+  "meta_ads": {
+    "campaign_objective": "<objective — or 'Skip ads for now' if under 5K>",
+    "ad_copy_variations": [
+      {"headline": "<captures the beat's vibe>", "primary_text": "<speaks to target artists>", "cta": "<>"},
+      {"headline": "<different angle>", "primary_text": "<>", "cta": "<>"}
+    ],
+    "targeting": {
+      "age_range": "<>",
+      "interests": ["<specific: bedroom producers, independent rappers, etc.>", "<>", "<>", "<>"],
+      "lookalike_suggestion": "<>",
+      "excluded_audiences": "<>"
+    },
+    "budget_recommendation": "<specific amount or 'Don't spend yet' for small producers>",
+    "ad_format": "<>",
+    "creative_direction": "<specific visual direction from the beat's sonic world>"
+  },
+  "key_metrics": ["<metric relevant to tier>", "<>", "<>", "<>"],
+  "common_mistakes": ["<mistake specific to beat sellers in this genre>", "<>", "<>"]
+}`;
+
+  const userPrompt = `Create a 4-week beat promotion plan. Every task must be immediately executable.
+
+Title: "${track.title}"
+Producer: ${track.artist}
+Genre: ${track.genre || analysis.genre_fit || 'Unknown'}
+Similar producers/references: ${track.similar_artists || refs.map(r => r.name || r).join(', ') || 'Unknown'}
+Goal: ${track.producer_goal || track.main_goal || 'Sell more beats online'}
+Mood: ${moods.join(', ') || 'Unknown'}
+Energy: ${analysis.energy_percent || 50}%
+BPM: ${analysis.tempo_bpm || 120}
+Target artists: ${analysis.audience_age || '18-30'}, ${analysis.audience_platforms || 'YouTube, BeatStars, TikTok'}
+${track.target_region ? `Target region: ${track.target_region} — ALL posting times must be in this region's timezone` : ''}
+${track.beat_store_url ? `Beat store: ${track.beat_store_url} — include this link in relevant tasks` : ''}
+
+${tierPrompt}
+
+${lyricThemes.core_story ? `
+BEAT IDENTITY (from analysis):
+Vibe: ${lyricThemes.core_story}
+Emotional core: ${lyricThemes.emotional_core || ''}
+Visual world: ${lyricThemes.visual_world || ''}
+Type beat keywords: ${(lyricThemes.quotable_lines || []).join(' | ')}
+
+Every task must connect to this beat's specific identity.` : ''}
+
+TASK MIX REQUIREMENT:
+Your 12 tasks across 4 weeks must include at least:
+- 3 CONTENT tasks (each a completely different format: beat preview, making-of, A/B comparison, open verse, beat switch, etc.)
+- 3 OUTREACH tasks (finding artists, DMing with purpose, engaging in communities)
+- 2 PLATFORM OPTIMIZATION tasks (YouTube SEO, BeatStars tags/pricing, thumbnail design)
+- 2 COMMUNITY tasks (producer forums, collab posts, networking)
+- 2 STRATEGIC tasks (email list, catalog organization, pricing strategy, analytics review)
+Do NOT make 12 "post a beat preview" tasks. Variety is mandatory.
+
+SELF-CHECK: For every task — "could any producer use this for any beat?" If yes, rewrite with specific references to THIS beat's sound, vibe, and target audience.
+
+Respond ONLY with JSON.`;
+
+  try {
+    console.log('📋 Generating producer promo plan...');
+    const response = await callClaude(userPrompt, systemPrompt);
+    const plan = parseJSON(response);
+    console.log('✅ Producer promo plan generated!');
+    return plan;
+  } catch (err) {
+    console.error('❌ Producer promo plan failed:', err.message);
     return null;
   }
 }

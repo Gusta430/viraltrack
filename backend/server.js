@@ -121,7 +121,9 @@ const server = http.createServer(async (req, res) => {
         filename: file?.filename || null, original_name: file?.originalname || null,
         file_size: file?.size || null, spotify_url: fields.spotify_url || null,
         want_tiktok_content: fields.want_tiktok_content === '1' ? 1 : 0,
-        main_goal: fields.main_goal || null, lyrics: fields.lyrics || null, social_vibe: fields.social_vibe || null, no_social: fields.no_social || '0', audience_size: fields.audience_size || null, target_region: fields.target_region || null, status: fields.status || 'uploaded',
+        main_goal: fields.main_goal || null, lyrics: fields.lyrics || null, social_vibe: fields.social_vibe || null, no_social: fields.no_social || '0', audience_size: fields.audience_size || null, target_region: fields.target_region || null,
+        content_type: fields.content_type || 'artist', beat_store_url: fields.beat_store_url || null, producer_goal: fields.producer_goal || null,
+        status: fields.status || 'uploaded',
       };
       return json(res, await db.createTrack(track), 201);
     }

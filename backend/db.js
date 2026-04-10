@@ -106,6 +106,10 @@ async function initDB() {
   try { await run('ALTER TABLE tracks ADD COLUMN audience_size TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN viral_advice TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN viral_keys TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE analyses ADD COLUMN lyric_themes TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE tracks ADD COLUMN content_type TEXT DEFAULT \'artist\''); } catch(e) {}
+  try { await run('ALTER TABLE tracks ADD COLUMN beat_store_url TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE tracks ADD COLUMN producer_goal TEXT'); } catch(e) {}
   await run('CREATE TABLE IF NOT EXISTS trends (id INTEGER PRIMARY KEY, data TEXT, updated_at TEXT DEFAULT (CURRENT_TIMESTAMP))');
   console.log('✅ Database ready!');
 }
@@ -164,8 +168,8 @@ class Database {
 
   // Tracks
   async createTrack(t) {
-    await run('INSERT INTO tracks (id, user_id, title, artist, genre, similar_artists, filename, original_name, file_size, spotify_url, want_tiktok_content, main_goal, lyrics, social_vibe, no_social, target_region, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [t.id, t.user_id, t.title, t.artist, t.genre, t.similar_artists, t.filename, t.original_name, t.file_size, t.spotify_url, t.want_tiktok_content, t.main_goal, t.lyrics, t.social_vibe, t.no_social, t.target_region, t.status]);
+    await run('INSERT INTO tracks (id, user_id, title, artist, genre, similar_artists, filename, original_name, file_size, spotify_url, want_tiktok_content, main_goal, lyrics, social_vibe, no_social, target_region, audience_size, content_type, beat_store_url, producer_goal, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [t.id, t.user_id, t.title, t.artist, t.genre, t.similar_artists, t.filename, t.original_name, t.file_size, t.spotify_url, t.want_tiktok_content, t.main_goal, t.lyrics, t.social_vibe, t.no_social, t.target_region, t.audience_size, t.content_type || 'artist', t.beat_store_url, t.producer_goal, t.status]);
     return t;
   }
 
@@ -207,8 +211,8 @@ class Database {
   }
 
   async updateAnalysis(id, u) {
-    await run(`UPDATE analyses SET tempo_bpm=?, tempo_description=?, mood_tags=?, energy_percent=?, energy_description=?, genre_fit=?, audience_age=?, audience_interests=?, audience_platforms=?, audience_content_angle=?, audience_key_insight=?, reference_artists=?, video_edits=?, diy_content_ideas=?, pro_tip=?, creator_tip=?, model_used=?, audio_key=?, audio_danceability=?, viral_advice=?, viral_keys=?, status=?, completed_at=? WHERE id=?`,
-      [u.tempo_bpm, u.tempo_description, u.mood_tags, u.energy_percent, u.energy_description, u.genre_fit, u.audience_age, u.audience_interests, u.audience_platforms, u.audience_content_angle, u.audience_key_insight, u.reference_artists, u.video_edits, u.diy_content_ideas, u.pro_tip, u.creator_tip, u.model_used, u.audio_key, u.audio_danceability, u.viral_advice, u.viral_keys, u.status, u.completed_at, id]);
+    await run(`UPDATE analyses SET tempo_bpm=?, tempo_description=?, mood_tags=?, energy_percent=?, energy_description=?, genre_fit=?, audience_age=?, audience_interests=?, audience_platforms=?, audience_content_angle=?, audience_key_insight=?, reference_artists=?, video_edits=?, diy_content_ideas=?, pro_tip=?, creator_tip=?, model_used=?, audio_key=?, audio_danceability=?, viral_advice=?, viral_keys=?, lyric_themes=?, status=?, completed_at=? WHERE id=?`,
+      [u.tempo_bpm, u.tempo_description, u.mood_tags, u.energy_percent, u.energy_description, u.genre_fit, u.audience_age, u.audience_interests, u.audience_platforms, u.audience_content_angle, u.audience_key_insight, u.reference_artists, u.video_edits, u.diy_content_ideas, u.pro_tip, u.creator_tip, u.model_used, u.audio_key, u.audio_danceability, u.viral_advice, u.viral_keys, u.lyric_themes, u.status, u.completed_at, id]);
     return this.getAnalysis(id);
   }
 
