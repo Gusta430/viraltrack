@@ -235,6 +235,9 @@ JSON structure:
       "duration": "<length>",
       "virality": <1-100>,
       "description": "<FULL brief: what to film, how to edit, what the viewer experiences. Must reference a specific lyric theme or sonic element>",
+      "hook": "<what stops the scroll in first 1-2 seconds>",
+      "relatability": "<what universal feeling viewers recognize>",
+      "share_trigger": "<why someone sends this to a friend>",
       "howTo": ["<step 1 — specific>", "<step 2>", "<step 3>"],
       "hashtags": "<niche + broad mix>",
       "why_it_works": "<psychological trigger — relatability, curiosity, emotion, humor?>"
