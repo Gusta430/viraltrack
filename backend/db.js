@@ -112,6 +112,7 @@ async function initDB() {
   try { await run('ALTER TABLE tracks ADD COLUMN producer_goal TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN discovery_tags TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN posting_strategy TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE video_generations ADD COLUMN lyric_lines TEXT'); } catch(e) {}
   await run('CREATE TABLE IF NOT EXISTS trends (id INTEGER PRIMARY KEY, data TEXT, updated_at TEXT DEFAULT (CURRENT_TIMESTAMP))');
   console.log('✅ Database ready!');
 }
@@ -243,8 +244,8 @@ class Database {
 
   // Video generations
   async createVideoGeneration(v) {
-    await run('INSERT INTO video_generations (id, user_id, prompt, status, request_id) VALUES (?,?,?,?,?)',
-      [v.id, v.user_id, v.prompt, v.status, v.request_id]);
+    await run('INSERT INTO video_generations (id, user_id, prompt, status, request_id, lyric_lines) VALUES (?,?,?,?,?,?)',
+      [v.id, v.user_id, v.prompt, v.status, v.request_id, v.lyric_lines || '[]']);
     return v;
   }
 

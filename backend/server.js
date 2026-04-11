@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { execFile } from 'child_process';
 import db from './db.js';
 import { analyzeTrack, generatePromoPlan } from './ai-service.js';
 import { analyzeAudio } from './audio-analysis.js';
@@ -12,7 +13,85 @@ import { getTrends } from './trend-service.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(__dirname, '..', 'frontend', 'public');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const VIDS_DIR = path.join(__dirname, 'data', 'videos');
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+fs.mkdirSync(VIDS_DIR, { recursive: true });
+
+// ── LYRICS VIDEO OVERLAY (FFmpeg) ──
+function downloadFile(url, dest) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    const mod = url.startsWith('https') ? https : http;
+    mod.get(url, (resp) => {
+      if (resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+        file.close(); fs.unlinkSync(dest);
+        return downloadFile(resp.headers.location, dest).then(resolve).catch(reject);
+      }
+      resp.pipe(file);
+      file.on('finish', () => { file.close(); resolve(dest); });
+    }).on('error', (err) => { fs.unlink(dest, () => {}); reject(err); });
+  });
+}
+
+function overlayLyricsOnVideo(inputPath, outputPath, lyricLines, videoDuration = 6) {
+  return new Promise((resolve, reject) => {
+    if (!lyricLines || lyricLines.length === 0) {
+      fs.copyFileSync(inputPath, outputPath);
+      return resolve(outputPath);
+    }
+
+    // Distribute lyric lines evenly across the video, with fade in/out
+    const lineCount = lyricLines.length;
+    const displayTime = Math.max(1.5, videoDuration / lineCount); // seconds per line
+    const filters = [];
+
+    lyricLines.forEach((line, i) => {
+      const startTime = i * displayTime;
+      const endTime = Math.min(startTime + displayTime, videoDuration);
+      const fadeIn = startTime;
+      const fadeOut = Math.max(startTime, endTime - 0.3);
+
+      // Escape special chars for FFmpeg drawtext
+      const escapedLine = line
+        .replace(/\\/g, '\\\\\\\\')
+        .replace(/'/g, "'\\\\\\''")
+        .replace(/:/g, '\\\\:')
+        .replace(/%/g, '%%')
+        .replace(/\[/g, '\\\\[').replace(/\]/g, '\\\\]');
+
+      filters.push(
+        `drawtext=text='${escapedLine}':fontsize=42:fontcolor=white:borderw=3:bordercolor=black:` +
+        `x=(w-text_w)/2:y=h*0.72:` +
+        `enable='between(t,${startTime.toFixed(2)},${endTime.toFixed(2)})':` +
+        `alpha='if(lt(t,${(fadeIn + 0.25).toFixed(2)}),(t-${fadeIn.toFixed(2)})/0.25,if(gt(t,${fadeOut.toFixed(2)}),(${endTime.toFixed(2)}-t)/0.3,1))'`
+      );
+    });
+
+    // Add artist/title watermark at the top
+    const filterChain = filters.join(',');
+
+    const args = [
+      '-y', '-i', inputPath,
+      '-vf', filterChain,
+      '-codec:a', 'copy',
+      '-codec:v', 'libx264', '-preset', 'fast', '-crf', '23',
+      outputPath
+    ];
+
+    console.log('🎬 Overlaying lyrics with FFmpeg...');
+    execFile('ffmpeg', args, { timeout: 60000 }, (err, stdout, stderr) => {
+      if (err) {
+        console.error('FFmpeg error:', stderr);
+        // If overlay fails, return original video
+        fs.copyFileSync(inputPath, outputPath);
+        resolve(outputPath);
+      } else {
+        console.log('✅ Lyrics overlay complete');
+        resolve(outputPath);
+      }
+    });
+  });
+}
 
 const uuid = () => crypto.randomUUID();
 const MIME_TYPES = { '.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon' };
@@ -217,8 +296,11 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       if (!body.prompt || body.prompt.trim().length < 5) return json(res, { error: 'Prompt must be at least 5 characters' }, 400);
 
+      // Store lyrics lines for overlay after generation
+      const lyricLines = body.lyric_lines || [];
+
       const videoId = uuid();
-      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: body.prompt.trim(), status: 'queued', request_id: null });
+      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: body.prompt.trim(), status: 'queued', request_id: null, lyric_lines: JSON.stringify(lyricLines) });
 
       // Submit to fal.ai queue
       try {
@@ -249,6 +331,19 @@ const server = http.createServer(async (req, res) => {
         await db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message });
         return json(res, { error: 'Video generation failed: ' + err.message }, 500);
       }
+    }
+
+    // Serve processed lyrics video file
+    const videoFileMatch = p.match(/^\/api\/videos\/([^/]+)\/file$/);
+    if (videoFileMatch && method === 'GET') {
+      const videoFile = path.join(VIDS_DIR, videoFileMatch[1] + '-lyrics.mp4');
+      if (fs.existsSync(videoFile)) {
+        const stat = fs.statSync(videoFile);
+        res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Length': stat.size, 'Content-Disposition': 'inline' });
+        fs.createReadStream(videoFile).pipe(res);
+        return;
+      }
+      return json(res, { error: 'Video file not found' }, 404);
     }
 
     const videoStatusMatch = p.match(/^\/api\/videos\/([^/]+)\/status$/);
@@ -290,8 +385,25 @@ const server = http.createServer(async (req, res) => {
             });
             const videoUrl = resultRes.video?.url || resultRes.data?.video?.url || null;
             if (videoUrl) {
-              await db.updateVideoGeneration(video.id, { status: 'completed', video_url: videoUrl });
-              return json(res, { ...video, status: 'completed', video_url: videoUrl });
+              // Check if lyrics overlay is needed
+              let finalUrl = videoUrl;
+              try {
+                const lyricLines = JSON.parse(video.lyric_lines || '[]');
+                if (lyricLines.length > 0) {
+                  const inputPath = path.join(VIDS_DIR, video.id + '-raw.mp4');
+                  const outputPath = path.join(VIDS_DIR, video.id + '-lyrics.mp4');
+                  await downloadFile(videoUrl, inputPath);
+                  await overlayLyricsOnVideo(inputPath, outputPath, lyricLines);
+                  // Serve the processed file from our server
+                  finalUrl = '/api/videos/' + video.id + '/file';
+                  // Clean up raw file
+                  fs.unlink(inputPath, () => {});
+                }
+              } catch (overlayErr) {
+                console.error('Lyrics overlay error (using original):', overlayErr.message);
+              }
+              await db.updateVideoGeneration(video.id, { status: 'completed', video_url: finalUrl });
+              return json(res, { ...video, status: 'completed', video_url: finalUrl });
             }
           } else if (statusRes.status === 'FAILED') {
             await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation failed' });
