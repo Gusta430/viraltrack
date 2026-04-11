@@ -305,16 +305,34 @@ JSON structure:
   "video_edits": [
     {
       "title": "<title>",
-      "caption": "<sounds like a real person typed it — tweet energy, not ad copy. Reference or paraphrase a lyric if available>",
-      "hashtags": "<2-3 niche tags under 1M + 1-2 discovery tags the subculture actually uses>",
+      "caption_structured": {
+        "hook_line": "<first line — the scroll-stopper. Question, bold claim, or mystery. This is the ONLY line most people read>",
+        "body": "<1-2 lines of story/context — tweet energy, reference a lyric>",
+        "cta": "<call to action that drives the algorithm signal you want — e.g. 'tag someone who needs this' (shares), 'wait for it...' (completion), 'save this for later' (saves)>",
+        "full_caption": "<the complete caption as one string, ready to paste>"
+      },
+      "hashtags": "<ORDERED: 2 niche tags under 500K first (higher chance of ranking) → 2 mid-size 500K-5M → 1 broad discovery tag. Order matters — TikTok weights earlier tags more>",
       "duration": "<7-15 sec for max completion>",
       "timestamp": "<specific song section to use>",
       "platforms": ["TikTok", "Reels"],
-      "concept": "<FULL second-by-second brief: First 2 sec = hook (what stops scroll). Middle = tension or payoff. End = share trigger. Include camera angle, lighting, edit style — 'handheld warm tungsten slow push-in with grain' not 'cinematic'>",
+      "concept": "<FULL second-by-second brief: First 2 sec = hook (what stops scroll). Middle = tension or payoff. End = share trigger or loop point. Include camera angle, lighting, edit style — 'handheld warm tungsten slow push-in with grain' not 'cinematic'>",
+      "cover_frame": "<EXACT frame to use as thumbnail/cover: describe the visual, text overlay if any, and why this frame makes people tap from the profile grid. The cover frame is your second chance to get views — 60% of views come from profile visits, not the feed>",
       "song_moment": "<which lyric line, beat drop, or energy shift this is built around>",
-      "share_trigger": "<why someone sends this to a friend>"
+      "share_trigger": "<why someone sends this to a friend>",
+      "algorithm_score": {
+        "estimated_completion": "<percentage estimate + why — e.g. '82% — short duration + curiosity hook holds attention'>",
+        "rewatch_potential": "<Low/Medium/High + reason — e.g. 'High — hidden detail viewers catch on second watch'>",
+        "comment_trigger": "<what will make people comment — e.g. 'The lyric reference will make fans debate the meaning'>",
+        "save_trigger": "<why someone saves this — e.g. 'Tutorial element people want to reference later'>",
+        "share_trigger": "<why someone sends this to a friend>"
+      },
+      "cross_post_strategy": {
+        "post_first_on": "<which platform to post on FIRST and why — usually whichever has stronger organic reach for this content type>",
+        "wait_before_repost": "<hours to wait before posting on second platform — typically 24-48h. Posting simultaneously kills reach on both>",
+        "platform_tweaks": "<what to change between platforms — e.g. 'TikTok: add trending sound as secondary. Reels: use original audio only. Shorts: add end screen to channel'>"
+      }
     },
-    {"title":"","caption":"","hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"concept":"","song_moment":"","share_trigger":""}
+    {"title":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"concept":"","cover_frame":"","song_moment":"","share_trigger":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":"","share_trigger":""},"cross_post_strategy":{"post_first_on":"","wait_before_repost":"","platform_tweaks":""}}
   ],
   "diy_content_ideas": [
     {
@@ -328,12 +346,42 @@ JSON structure:
       "share_trigger": "<why someone sends this to a friend>",
       "howTo": ["<step 1 — specific>", "<step 2>", "<step 3>"],
       "hashtags": "<niche + broad mix>",
-      "why_it_works": "<psychological trigger — relatability, curiosity, emotion, humor?>"
+      "why_it_works": "<psychological trigger — relatability, curiosity, emotion, humor?>",
+      "caption_structured": {
+        "hook_line": "<scroll-stopping first line>",
+        "body": "<story/context>",
+        "cta": "<action that drives algorithm signal>",
+        "full_caption": "<complete caption ready to paste>"
+      },
+      "cover_frame": "<what the thumbnail/cover should show>",
+      "algorithm_score": {
+        "estimated_completion": "<% + reason>",
+        "rewatch_potential": "<Low/Medium/High + reason>",
+        "comment_trigger": "<what drives comments>",
+        "save_trigger": "<why someone saves>"
+      }
     },
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""}
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}}
   ],
+  "posting_strategy": {
+    "best_days": ["<day1>", "<day2>", "<day3>"],
+    "best_times": {
+      "tiktok": "<exact time in TARGET REGION timezone + reasoning — e.g. '18:30 CET — post 30 min before the 19:00-21:00 peak so the algorithm has time to test it during high-traffic hours'>",
+      "reels": "<exact time + reasoning>",
+      "youtube_shorts": "<exact time + reasoning>"
+    },
+    "posting_frequency": "<how many posts per week + spacing — e.g. '4x/week, never two days in a row on the same platform. Mon/Wed/Fri/Sun rotation'>",
+    "engagement_window": {
+      "first_5_min": "<what to do immediately after posting — e.g. 'Share to Stories with a poll sticker. Send to 3-5 close friends for early engagement signal'>",
+      "first_30_min": "<stay active and reply to EVERY comment within 30 min — this tells the algorithm the post is generating conversation. Pin a comment that asks a question to drive more replies>",
+      "first_2_hours": "<check analytics: if completion rate is above 60%, share to additional platforms. If below 40%, the hook isn't working — note for next post>",
+      "pin_comment": "<exact comment to pin on the post — should ask a question or create debate to drive reply chains>"
+    },
+    "cross_posting_order": "<which platform first, second, third + time gaps — e.g. 'TikTok first (strongest organic). Wait 24h. Reels second (slightly different crop/caption). Wait 48h. Shorts last (add end screen).'>",
+    "avoid_times": "<when NOT to post and why — e.g. 'Never post Friday 22:00+ in Norway — audience is out, content dies before morning'>"
+  },
   "pro_tip": "<one specific production tip for THIS song's visual style — not generic>",
   "creator_tip": "<one growth tactic for this artist's audience tier>",
   "viral_advice": "<2-3 sentences of specific advice for this artist at their current level>",
@@ -406,6 +454,7 @@ Respond ONLY with JSON.`;
       pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
       viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
       discovery_tags: JSON.stringify(result.discovery_tags || {}),
+      posting_strategy: JSON.stringify(result.posting_strategy || {}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_analyzed: audioFeatures?.analyzed || false,
@@ -491,16 +540,34 @@ JSON structure:
   "video_edits": [
     {
       "title": "<beat preview / content concept>",
-      "caption": "<sounds like a real producer — not ad copy. Reference the beat's vibe>",
-      "hashtags": "<niche tags: #typebeat #[genre]beats + discovery tags>",
+      "caption_structured": {
+        "hook_line": "<first line scroll-stopper — question, bold claim, or mystery>",
+        "body": "<1-2 lines — reference the beat's vibe, not ad copy>",
+        "cta": "<action that drives algorithm signal — 'tag a rapper who needs this' (shares), 'wait for the drop...' (completion)>",
+        "full_caption": "<complete caption ready to paste>"
+      },
+      "hashtags": "<ORDERED: 2 niche tags under 500K first → 2 mid 500K-5M → 1 broad. Order matters>",
       "duration": "<7-15 sec for previews, 30-60 sec for making-of>",
-      "timestamp": "<which part of the beat to feature — the drop, the melody, etc.>",
+      "timestamp": "<which part of the beat to feature>",
       "platforms": ["TikTok", "Reels", "YouTube Shorts"],
-      "concept": "<FULL brief: what to show, how to edit, what makes this stop the scroll. Include DAW screenshots, waveform visuals, etc.>",
-      "song_moment": "<which sonic element this is built around — the 808 pattern, the melody, the drum bounce>",
-      "share_trigger": "<why a producer or artist sends this to someone>"
+      "concept": "<FULL brief: what to show, how to edit, DAW screenshots, waveform visuals, etc.>",
+      "cover_frame": "<exact frame for thumbnail — describe visual + any text overlay. This determines clicks from profile grid>",
+      "song_moment": "<which sonic element this is built around>",
+      "share_trigger": "<why a producer or artist sends this to someone>",
+      "algorithm_score": {
+        "estimated_completion": "<% + reason>",
+        "rewatch_potential": "<Low/Medium/High + reason>",
+        "comment_trigger": "<what drives comments>",
+        "save_trigger": "<why someone saves>",
+        "share_trigger": "<why someone shares>"
+      },
+      "cross_post_strategy": {
+        "post_first_on": "<platform + why>",
+        "wait_before_repost": "<hours between platforms>",
+        "platform_tweaks": "<what to change per platform>"
+      }
     },
-    {"title":"","caption":"","hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"concept":"","song_moment":"","share_trigger":""}
+    {"title":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"concept":"","cover_frame":"","song_moment":"","share_trigger":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":"","share_trigger":""},"cross_post_strategy":{"post_first_on":"","wait_before_repost":"","platform_tweaks":""}}
   ],
   "diy_content_ideas": [
     {
@@ -508,18 +575,38 @@ JSON structure:
       "difficulty": "Easy|Medium|Hard",
       "duration": "<length>",
       "virality": <1-100>,
-      "description": "<FULL brief: what to create, how to edit, what the viewer experiences. Must connect to THIS beat's specific sound>",
+      "description": "<FULL brief: what to create, how to edit. Must connect to THIS beat's specific sound>",
       "hook": "<what stops the scroll in first 1-2 seconds>",
       "relatability": "<what universal producer/artist experience this taps into>",
       "share_trigger": "<why someone shares this>",
       "howTo": ["<step 1>", "<step 2>", "<step 3>"],
       "hashtags": "<tags>",
-      "why_it_works": "<psychological trigger>"
+      "why_it_works": "<psychological trigger>",
+      "caption_structured": {"hook_line": "<>", "body": "<>", "cta": "<>", "full_caption": "<>"},
+      "cover_frame": "<thumbnail description>",
+      "algorithm_score": {"estimated_completion": "<>", "rewatch_potential": "<>", "comment_trigger": "<>", "save_trigger": "<>"}
     },
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":""}
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}}
   ],
+  "posting_strategy": {
+    "best_days": ["<day1>", "<day2>", "<day3>"],
+    "best_times": {
+      "tiktok": "<exact time in TARGET REGION timezone + reasoning>",
+      "reels": "<exact time + reasoning>",
+      "youtube_shorts": "<exact time + reasoning>"
+    },
+    "posting_frequency": "<posts per week + spacing>",
+    "engagement_window": {
+      "first_5_min": "<what to do immediately after posting>",
+      "first_30_min": "<reply strategy + pin comment>",
+      "first_2_hours": "<analytics check + next steps>",
+      "pin_comment": "<exact comment to pin>"
+    },
+    "cross_posting_order": "<platform order + time gaps>",
+    "avoid_times": "<when NOT to post and why>"
+  },
   "pro_tip": "<one specific production/visual tip for THIS beat's content>",
   "creator_tip": "<one growth tactic for this producer's tier>",
   "viral_advice": "<2-3 sentences of specific advice for this producer at their current level>",
@@ -577,6 +664,7 @@ Respond ONLY with JSON.`;
       pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
       viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
       discovery_tags: JSON.stringify(result.discovery_tags || {}),
+      posting_strategy: JSON.stringify(result.posting_strategy || {}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_analyzed: audioFeatures?.analyzed || false,
@@ -938,7 +1026,7 @@ function getFallback(msg) {
     ]),
     pro_tip: 'Use warm low-angle lighting (desk lamp on the floor) for moody cinematic feel matching introspective music.',
     creator_tip: 'Fallback data — analyze a real track for audience-specific growth tactics.',
-    viral_advice: '', viral_keys: JSON.stringify({}), discovery_tags: JSON.stringify({}),
+    viral_advice: '', viral_keys: JSON.stringify({}), discovery_tags: JSON.stringify({}), posting_strategy: JSON.stringify({}),
     model_used: 'fallback', audio_key: null, audio_danceability: null, audio_analyzed: false,
     status: 'completed', completed_at: new Date().toISOString(),
   };
