@@ -291,11 +291,17 @@ JSON structure:
   "audience_content_angle": "<what this audience actually watches and shares>",
   "audience_key_insight": "<one counterintuitive insight about reaching this audience>",
   "reference_artists": [
-    {"name": "<artist>", "genre": "<genre>", "description": "<what marketing tactic or audience overlap to learn from — not just 'similar sound'>"},
-    {"name": "<artist>", "genre": "<genre>", "description": "<reason>"},
-    {"name": "<lesser-known artist under 100K listeners>", "genre": "<genre>", "description": "<what they do differently that works>"},
-    {"name": "<artist>", "genre": "<genre>", "description": "<reason>"}
+    {"name": "<artist>", "genre": "<genre>", "description": "<WHY tagging this artist helps discovery — e.g. 'Use #[artist] in TikTok bio and captions — their fans actively search this tag and your sound fits their taste'>"},
+    {"name": "<artist>", "genre": "<genre>", "description": "<discovery reason + specific tag usage tip>"},
+    {"name": "<lesser-known artist under 100K listeners>", "genre": "<genre>", "description": "<why this niche tag works — less competition, highly engaged fanbase>"},
+    {"name": "<artist>", "genre": "<genre>", "description": "<tag/hashtag strategy for this reference>"}
   ],
+  "discovery_tags": {
+    "artist_tags": ["#<artist1>", "#<artist2>", "#<artist3>", "#<artist4>"],
+    "genre_tags": ["#<subgenre>", "#<mood>music", "#<scene>"],
+    "trending_tags": ["#<relevant trending tag>", "#<another>"],
+    "bio_suggestion": "<one-line bio/description using these references — e.g. 'If you like [artist1] and [artist2], you'll love this'>"
+  },
   "video_edits": [
     {
       "title": "<title>",
@@ -399,6 +405,7 @@ Respond ONLY with JSON.`;
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
       pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
       viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
+      discovery_tags: JSON.stringify(result.discovery_tags || {}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_analyzed: audioFeatures?.analyzed || false,
@@ -469,11 +476,18 @@ JSON structure:
   "audience_content_angle": "<what type of content this audience engages with>",
   "audience_key_insight": "<one insight about reaching beat buyers in this niche>",
   "reference_artists": [
-    {"name": "<producer>", "genre": "<genre>", "description": "<what marketing tactic to learn from>"},
-    {"name": "<producer>", "genre": "<genre>", "description": "<reason>"},
-    {"name": "<lesser-known producer>", "genre": "<genre>", "description": "<what they do differently>"},
-    {"name": "<artist who uses this style of beat>", "genre": "<genre>", "description": "<why targeting this artist's fans works>"}
+    {"name": "<producer/artist>", "genre": "<genre>", "description": "<WHY using this name as a type beat tag drives sales — e.g. '#metroboomintypebeat gets 50K+ monthly searches, your beat fits this lane'>"},
+    {"name": "<producer/artist>", "genre": "<genre>", "description": "<type beat SEO value + tag usage>"},
+    {"name": "<lesser-known producer/artist>", "genre": "<genre>", "description": "<niche type beat tag with less competition but targeted buyers>"},
+    {"name": "<artist who raps/sings on this style>", "genre": "<genre>", "description": "<why '[artist] type beat' tag attracts their fanbase of aspiring artists>"}
   ],
+  "discovery_tags": {
+    "type_beat_tags": ["<artist1> type beat", "<artist2> type beat", "<artist3> type beat"],
+    "genre_tags": ["#<subgenre>beats", "#<mood>beats", "#<style>producer"],
+    "trending_tags": ["#typebeat${new Date().getFullYear()}", "#<relevant trending tag>"],
+    "youtube_title": "<optimized YouTube title: '[Artist] Type Beat ${new Date().getFullYear()} - [Mood Word]' format>",
+    "bio_suggestion": "<one-line producer bio using these references — e.g. 'Dark trap & drill beats inspired by Metro Boomin x Southside'>"
+  },
   "video_edits": [
     {
       "title": "<beat preview / content concept>",
@@ -562,6 +576,7 @@ Respond ONLY with JSON.`;
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
       pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
       viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
+      discovery_tags: JSON.stringify(result.discovery_tags || {}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_analyzed: audioFeatures?.analyzed || false,
@@ -923,7 +938,7 @@ function getFallback(msg) {
     ]),
     pro_tip: 'Use warm low-angle lighting (desk lamp on the floor) for moody cinematic feel matching introspective music.',
     creator_tip: 'Fallback data — analyze a real track for audience-specific growth tactics.',
-    viral_advice: '', viral_keys: JSON.stringify({}),
+    viral_advice: '', viral_keys: JSON.stringify({}), discovery_tags: JSON.stringify({}),
     model_used: 'fallback', audio_key: null, audio_danceability: null, audio_analyzed: false,
     status: 'completed', completed_at: new Date().toISOString(),
   };
