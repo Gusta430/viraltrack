@@ -322,7 +322,7 @@ const server = http.createServer(async (req, res) => {
         });
 
         if (falRes.request_id) {
-          await db.updateVideoGeneration(videoId, { request_id: falRes.request_id, status: 'processing' });
+          await db.updateVideoGeneration(videoId, { request_id: falRes.request_id, status: 'processing', status_url: falRes.status_url, response_url: falRes.response_url });
           return json(res, { id: videoId, request_id: falRes.request_id, status: 'processing', remaining: 0 });
         } else {
           await db.updateVideoGeneration(videoId, { status: 'error', error_message: falRes.detail || 'Failed to queue' });
@@ -356,8 +356,10 @@ const server = http.createServer(async (req, res) => {
         const FAL_KEY = process.env.FAL_API_KEY;
         try {
           const statusRes = await new Promise((resolve, reject) => {
+            const statusUrl = video.status_url || `https://queue.fal.run/fal-ai/minimax/video-01-live/requests/${video.request_id}/status`;
+            const u = new URL(statusUrl);
             const opts = {
-              hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01-live/requests/${video.request_id}/status`, method: 'GET',
+              hostname: u.hostname, path: u.pathname + u.search, method: 'GET',
               headers: { 'Authorization': 'Key ' + FAL_KEY }
             };
             const r = https.request(opts, (resp) => {
@@ -372,8 +374,10 @@ const server = http.createServer(async (req, res) => {
           if (statusRes.status === 'COMPLETED') {
             // Fetch the result
             const resultRes = await new Promise((resolve, reject) => {
+              const responseUrl = video.response_url || `https://queue.fal.run/fal-ai/minimax/video-01-live/requests/${video.request_id}`;
+              const u2 = new URL(responseUrl);
               const opts = {
-                hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01-live/requests/${video.request_id}`, method: 'GET',
+                hostname: u2.hostname, path: u2.pathname + u2.search, method: 'GET',
                 headers: { 'Authorization': 'Key ' + FAL_KEY }
               };
               const r = https.request(opts, (resp) => {

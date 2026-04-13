@@ -106,6 +106,8 @@ async function initDB() {
   try { await run('ALTER TABLE tracks ADD COLUMN audience_size TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN viral_advice TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN viral_keys TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE video_generations ADD COLUMN status_url TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE video_generations ADD COLUMN response_url TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN lyric_themes TEXT'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN content_type TEXT DEFAULT \'artist\''); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN beat_store_url TEXT'); } catch(e) {}
