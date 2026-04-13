@@ -283,7 +283,7 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/videos' && method === 'GET') {
       const videos = await db.getUserVideos(user.id);
       const todayCount = await db.getUserVideoCountToday(user.id);
-      return json(res, { videos, today_count: todayCount, daily_limit: 1 });
+      return json(res, { videos, today_count: todayCount, daily_limit: 999 });
     }
 
     if (p === '/api/videos/generate' && method === 'POST') {
@@ -291,7 +291,7 @@ const server = http.createServer(async (req, res) => {
       if (!FAL_KEY) return json(res, { error: 'Video generation not configured' }, 500);
 
       const todayCount = await db.getUserVideoCountToday(user.id);
-      if (todayCount >= 1) return json(res, { error: 'Daily limit reached. You can generate 1 video per day.', remaining: 0 }, 429);
+      // No daily limit
 
       const body = await parseBody(req);
       if (!body.prompt || body.prompt.trim().length < 5) return json(res, { error: 'Prompt must be at least 5 characters' }, 400);
