@@ -408,6 +408,10 @@ const server = http.createServer(async (req, res) => {
           } else if (statusRes.status === 'FAILED') {
             await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation failed' });
             return json(res, { ...video, status: 'error', error_message: 'Generation failed' });
+          } else if (statusRes.detail || statusRes.status === undefined) {
+            // fal.ai returned an error (e.g. 404 - request not found)
+            await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Request expired or invalid' });
+            return json(res, { ...video, status: 'error', error_message: 'Request expired or invalid' });
           }
           // Still processing
           return json(res, { ...video, status: 'processing', queue_position: statusRes.queue_position });
