@@ -300,7 +300,8 @@ const server = http.createServer(async (req, res) => {
       const lyricLines = body.lyric_lines || [];
 
       const videoId = uuid();
-      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: body.prompt.trim(), status: 'queued', request_id: null, lyric_lines: JSON.stringify(lyricLines) });
+      const truncatedPrompt = body.prompt.trim().substring(0, 1500);
+      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: truncatedPrompt, status: 'queued', request_id: null, lyric_lines: JSON.stringify(lyricLines) });
 
       // Submit to fal.ai queue
       try {
