@@ -40,24 +40,25 @@ function callClaude(prompt, systemPrompt) {
 }
 
 function parseJSON(text) {
+  text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
   try { return JSON.parse(text); } catch(e) {}
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('No JSON found');
   let jsonStr = match[0];
-  try { return JSON.parse(jsonStr); } catch(e) {
-    jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
-    try { return JSON.parse(jsonStr); } catch(e2) {
-      const lastBrace = jsonStr.lastIndexOf('}');
-      if (lastBrace > 0) {
-        let truncated = jsonStr.substring(0, lastBrace + 1);
-        const open = (truncated.match(/{/g) || []).length;
-        const close = (truncated.match(/}/g) || []).length;
-        for (let i = 0; i < open - close; i++) truncated += '}';
-        try { return JSON.parse(truncated); } catch(e3) {}
-      }
-      throw new Error('JSON parse failed: ' + e2.message);
-    }
+  try { return JSON.parse(jsonStr); } catch(e) {}
+  jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
+  try { return JSON.parse(jsonStr); } catch(e) {}
+  for (let cut = 50; cut < jsonStr.length; cut += 50) {
+    const truncated = jsonStr.substring(0, jsonStr.length - cut);
+    const lastBrace = truncated.lastIndexOf('}');
+    if (lastBrace === -1) break;
+    let attempt = truncated.substring(0, lastBrace + 1).replace(/,(\s*[}\]])/g, '$1');
+    const opens = (attempt.match(/\{/g) || []).length;
+    const closes = (attempt.match(/\}/g) || []).length;
+    for (let i = 0; i < opens - closes; i++) attempt += '}';
+    try { return JSON.parse(attempt); } catch(e) {}
   }
+  throw new Error('JSON parse failed after recovery');
 }
 
 // ── AUDIENCE TIER STRATEGY ──
