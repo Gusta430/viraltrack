@@ -308,7 +308,7 @@ const server = http.createServer(async (req, res) => {
         const falBody = JSON.stringify({ prompt: body.prompt.trim(), duration: "6" });
         const falRes = await new Promise((resolve, reject) => {
           const opts = {
-            hostname: 'queue.fal.run', path: '/fal-ai/minimax/video-01/live', method: 'POST',
+            hostname: 'queue.fal.run', path: '/fal-ai/minimax/video-01-live', method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + FAL_KEY, 'Content-Length': Buffer.byteLength(falBody) }
           };
           const r = https.request(opts, (resp) => {
@@ -357,7 +357,7 @@ const server = http.createServer(async (req, res) => {
         try {
           const statusRes = await new Promise((resolve, reject) => {
             const opts = {
-              hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01/live/requests/${video.request_id}/status`, method: 'GET',
+              hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01-live/requests/${video.request_id}/status`, method: 'GET',
               headers: { 'Authorization': 'Key ' + FAL_KEY }
             };
             const r = https.request(opts, (resp) => {
@@ -373,7 +373,7 @@ const server = http.createServer(async (req, res) => {
             // Fetch the result
             const resultRes = await new Promise((resolve, reject) => {
               const opts = {
-                hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01/live/requests/${video.request_id}`, method: 'GET',
+                hostname: 'queue.fal.run', path: `/fal-ai/minimax/video-01-live/requests/${video.request_id}`, method: 'GET',
                 headers: { 'Authorization': 'Key ' + FAL_KEY }
               };
               const r = https.request(opts, (resp) => {
