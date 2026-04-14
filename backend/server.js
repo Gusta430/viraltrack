@@ -316,7 +316,7 @@ const server = http.createServer(async (req, res) => {
         const falBody = JSON.stringify({ prompt: body.prompt.trim(), duration: "6", aspect_ratio: "9:16" });
         const falRes = await new Promise((resolve, reject) => {
           const opts = {
-            hostname: 'queue.fal.run', path: '/fal-ai/minimax/video-01/live', method: 'POST',
+            hostname: 'queue.fal.run', path: '/fal-ai/minimax/video-01-live', method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + FAL_KEY, 'Content-Length': Buffer.byteLength(falBody) }
           };
           const r = https.request(opts, (resp) => {
@@ -364,7 +364,7 @@ const server = http.createServer(async (req, res) => {
         const FAL_KEY = process.env.FAL_API_KEY;
         try {
           const statusRes = await new Promise((resolve, reject) => {
-            const statusUrl = video.status_url || `https://queue.fal.run/fal-ai/minimax/video-01/live/requests/${video.request_id}/status`;
+            const statusUrl = video.status_url || `https://queue.fal.run/fal-ai/minimax/video-01-live/requests/${video.request_id}/status`;
             const u = new URL(statusUrl);
             const opts = {
               hostname: u.hostname, path: u.pathname + u.search, method: 'GET',
@@ -382,7 +382,7 @@ const server = http.createServer(async (req, res) => {
           if (statusRes.status === 'COMPLETED') {
             // Fetch the result
             const resultRes = await new Promise((resolve, reject) => {
-              const responseUrl = video.response_url || `https://queue.fal.run/fal-ai/minimax/video-01/live/requests/${video.request_id}`;
+              const responseUrl = video.response_url || `https://queue.fal.run/fal-ai/minimax/video-01-live/requests/${video.request_id}`;
               const u2 = new URL(responseUrl);
               const opts = {
                 hostname: u2.hostname, path: u2.pathname + u2.search, method: 'GET',
