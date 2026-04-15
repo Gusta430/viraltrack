@@ -17,7 +17,7 @@ const VIDS_DIR = path.join(__dirname, 'data', 'videos');
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 fs.mkdirSync(VIDS_DIR, { recursive: true });
 
-// ── LYRICS VIDEO OVERLAY (FFmpeg) ──
+// ── LYRICS SLIDESHOW VIDEO (fal.ai FLUX images + FFmpeg) ──
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
@@ -27,78 +27,222 @@ function downloadFile(url, dest) {
         file.close(); fs.unlinkSync(dest);
         return downloadFile(resp.headers.location, dest).then(resolve).catch(reject);
       }
+      if (resp.statusCode >= 400) {
+        file.close(); fs.unlink(dest, () => {});
+        return reject(new Error(`Download failed: HTTP ${resp.statusCode}`));
+      }
       resp.pipe(file);
       file.on('finish', () => { file.close(); resolve(dest); });
     }).on('error', (err) => { fs.unlink(dest, () => {}); reject(err); });
   });
 }
 
-function overlayLyricsOnVideo(inputPath, outputPath, lyricLines, videoDuration = 6) {
+// Generate a single image via fal.ai FLUX schnell (sync API, ~1-2 sec)
+function generateImage(falKey, prompt) {
   return new Promise((resolve, reject) => {
-    if (!lyricLines || lyricLines.length === 0) {
-      fs.copyFileSync(inputPath, outputPath);
-      return resolve(outputPath);
-    }
-
-    // One bar at a time — each line gets equal screen time with clean transitions
-    const lineCount = lyricLines.length;
-    const gap = 0.15; // small gap between bars
-    const displayTime = Math.max(1.2, (videoDuration - gap * lineCount) / lineCount);
-    const filters = [];
-
-    lyricLines.forEach((line, i) => {
-      const startTime = i * (displayTime + gap);
-      const endTime = Math.min(startTime + displayTime, videoDuration);
-      const fadeInEnd = startTime + 0.2;
-      const fadeOutStart = Math.max(startTime, endTime - 0.2);
-
-      // Escape special chars for FFmpeg drawtext
-      const escapedLine = line
-        .replace(/\\/g, '\\\\\\\\')
-        .replace(/'/g, "'\\\\\\''")
-        .replace(/:/g, '\\\\:')
-        .replace(/%/g, '%%')
-        .replace(/\[/g, '\\\\[').replace(/\]/g, '\\\\]');
-
-      // Dark semi-transparent background box behind text for readability
-      filters.push(
-        `drawbox=x=0:y=h*0.62:w=iw:h=h*0.16:color=black@0.55:t=fill:` +
-        `enable='between(t,${startTime.toFixed(2)},${endTime.toFixed(2)})'`
-      );
-
-      // Large bold white text, centered, with strong outline
-      filters.push(
-        `drawtext=text='${escapedLine}':` +
-        `fontsize=64:fontcolor=white:borderw=4:bordercolor=black:` +
-        `x=(w-text_w)/2:y=h*0.67:` +
-        `enable='between(t,${startTime.toFixed(2)},${endTime.toFixed(2)})':` +
-        `alpha='if(lt(t,${fadeInEnd.toFixed(2)}),(t-${startTime.toFixed(2)})/0.2,if(gt(t,${fadeOutStart.toFixed(2)}),(${endTime.toFixed(2)}-t)/0.2,1))'`
-      );
+    const body = JSON.stringify({
+      prompt,
+      image_size: { width: 1080, height: 1920 },
+      num_images: 1
     });
+    const opts = {
+      hostname: 'fal.run',
+      path: '/fal-ai/flux/schnell',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Key ' + falKey,
+        'Content-Length': Buffer.byteLength(body)
+      }
+    };
+    const r = https.request(opts, (resp) => {
+      const chunks = [];
+      resp.on('data', c => chunks.push(c));
+      resp.on('end', () => {
+        try {
+          const data = JSON.parse(Buffer.concat(chunks).toString());
+          const url = data.images?.[0]?.url;
+          if (url) resolve(url);
+          else reject(new Error('No image URL: ' + JSON.stringify(data).substring(0, 300)));
+        } catch(e) { reject(e); }
+      });
+    });
+    r.on('error', reject);
+    r.write(body);
+    r.end();
+  });
+}
 
-    const filterChain = filters.join(',');
+// Build FFmpeg lyrics slideshow in 2 passes for reliability:
+// Pass 1: concat images into slideshow video
+// Pass 2: overlay lyrics with fade-in/fade-out
+function createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration) {
+  return new Promise(async (resolve, reject) => {
+    const numImages = imagePaths.length;
+    const durationPerImage = totalDuration / numImages;
+    const tempSlideshow = outputPath.replace('.mp4', '-slideshow.mp4');
 
-    const args = [
-      '-y', '-i', inputPath,
-      '-vf', filterChain,
-      '-codec:a', 'copy',
-      '-codec:v', 'libx264', '-preset', 'fast', '-crf', '20',
-      outputPath
+    try {
+      // ── Pass 1: Create slideshow from images ──
+      await new Promise((res, rej) => {
+        const inputs = [];
+        const scaleFilters = [];
+        const concatInputs = [];
+
+        imagePaths.forEach((imgPath, i) => {
+          inputs.push('-loop', '1', '-t', durationPerImage.toFixed(2), '-i', imgPath);
+          scaleFilters.push(
+            `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
+          );
+          concatInputs.push(`[v${i}]`);
+        });
+
+        const filterComplex = [
+          ...scaleFilters,
+          `${concatInputs.join('')}concat=n=${numImages}:v=1:a=0,fps=25[outv]`
+        ].join(';');
+
+        const args = [
+          '-y', ...inputs,
+          '-filter_complex', filterComplex,
+          '-map', '[outv]',
+          '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p',
+          tempSlideshow
+        ];
+
+        console.log('🎬 Pass 1: Creating slideshow from images...');
+        execFile('ffmpeg', args, { timeout: 120000 }, (err, stdout, stderr) => {
+          if (err) { console.error('FFmpeg pass 1 error:', stderr); rej(err); }
+          else { console.log('✅ Pass 1 done'); res(); }
+        });
+      });
+
+      // ── Pass 2: Overlay lyrics one bar at a time ──
+      if (lyricLines && lyricLines.length > 0) {
+        await new Promise((res, rej) => {
+          const lineCount = lyricLines.length;
+          const gap = 0.5;
+          const displayTime = Math.max(2.0, (totalDuration - gap * (lineCount + 1)) / lineCount);
+          const filters = [];
+
+          lyricLines.forEach((line, i) => {
+            const startTime = gap + i * (displayTime + gap);
+            const endTime = Math.min(startTime + displayTime, totalDuration - 0.3);
+            const fadeInEnd = startTime + 0.3;
+            const fadeOutStart = Math.max(startTime, endTime - 0.3);
+
+            // Escape for FFmpeg drawtext
+            const escaped = line
+              .replace(/\\/g, '\\\\\\\\')
+              .replace(/'/g, '\u2019')
+              .replace(/:/g, '\\:')
+              .replace(/%/g, '%%');
+
+            // Dark background box (use ih for input height in drawbox)
+            filters.push(
+              `drawbox=x=0:y=ih*0.58:w=iw:h=ih*0.20:color=black@0.6:t=fill:` +
+              `enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
+            );
+
+            // Large white text with fade in/out
+            filters.push(
+              `drawtext=text='${escaped}':` +
+              `fontsize=58:fontcolor=white:borderw=4:bordercolor=black:` +
+              `x=(w-text_w)/2:y=h*0.65:` +
+              `enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})':` +
+              `alpha='if(lt(t\\,${fadeInEnd.toFixed(2)})\\,(t-${startTime.toFixed(2)})/0.3\\,if(gt(t\\,${fadeOutStart.toFixed(2)})\\,(${endTime.toFixed(2)}-t)/0.3\\,1))'`
+            );
+          });
+
+          const args = [
+            '-y', '-i', tempSlideshow,
+            '-vf', filters.join(','),
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
+            '-movflags', '+faststart',
+            outputPath
+          ];
+
+          console.log('🎬 Pass 2: Overlaying lyrics...');
+          execFile('ffmpeg', args, { timeout: 120000 }, (err, stdout, stderr) => {
+            if (err) { console.error('FFmpeg pass 2 error:', stderr); rej(err); }
+            else { console.log('✅ Pass 2 done — lyrics overlaid'); res(); }
+          });
+        });
+      } else {
+        // No lyrics — just rename slideshow to output
+        fs.renameSync(tempSlideshow, outputPath);
+      }
+
+      // Cleanup temp slideshow
+      fs.unlink(tempSlideshow, () => {});
+      resolve(outputPath);
+
+    } catch (err) {
+      // Cleanup on error
+      fs.unlink(tempSlideshow, () => {});
+      reject(new Error('FFmpeg failed: ' + err.message));
+    }
+  });
+}
+
+// Background process: generate images → build slideshow → update DB
+async function processVideoGeneration(videoId, lyricLines, falKey, genre) {
+  try {
+    console.log(`🎬 Starting slideshow generation ${videoId}: ${lyricLines.length} lyrics, genre: ${genre}`);
+
+    // Generate abstract background images in parallel (one per lyric line, max 4)
+    const numImages = Math.min(Math.max(3, lyricLines.length), 5);
+    const palettes = [
+      'deep purple and blue neon glow, floating bokeh orbs',
+      'warm orange and gold light trails, ember particles',
+      'cool cyan and teal soft waves, misty atmosphere',
+      'pink and magenta gradients, crystal reflections',
+      'dark green and emerald aurora, smoke tendrils'
     ];
 
-    console.log('🎬 Overlaying lyrics with FFmpeg...');
-    execFile('ffmpeg', args, { timeout: 60000 }, (err, stdout, stderr) => {
-      if (err) {
-        console.error('FFmpeg error:', stderr);
-        // If overlay fails, return original video
-        fs.copyFileSync(inputPath, outputPath);
-        resolve(outputPath);
-      } else {
-        console.log('✅ Lyrics overlay complete');
-        resolve(outputPath);
-      }
+    const imagePromises = [];
+    for (let i = 0; i < numImages; i++) {
+      const imgPrompt = `Abstract dark cinematic background for ${genre || 'music'} aesthetic. ${palettes[i % palettes.length]}. Moody atmospheric, soft focus, no text, no people, no faces, no letters. Vertical 9:16 phone format.`;
+      imagePromises.push(generateImage(falKey, imgPrompt));
+    }
+
+    console.log(`📸 Generating ${numImages} background images via FLUX...`);
+    const imageUrls = await Promise.all(imagePromises);
+    console.log(`📸 All ${numImages} images generated, downloading...`);
+
+    // Download all images
+    const imagePaths = [];
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+      await downloadFile(imageUrls[i], imgPath);
+      imagePaths.push(imgPath);
+    }
+
+    // Create slideshow: ~3.5 sec per lyric line, minimum 12 sec for short lyrics
+    const totalDuration = Math.max(12, lyricLines.length * 3.5);
+    const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
+    await createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration);
+
+    // Verify output exists
+    if (!fs.existsSync(outputPath)) {
+      throw new Error('FFmpeg produced no output file');
+    }
+    const fileSize = fs.statSync(outputPath).size;
+    console.log(`✅ Video ${videoId} completed (${(fileSize / 1024 / 1024).toFixed(1)}MB, ${totalDuration.toFixed(0)}s)`);
+
+    // Update DB — video is ready
+    await db.updateVideoGeneration(videoId, {
+      status: 'completed',
+      video_url: `/api/videos/${videoId}/file`
     });
-  });
+
+    // Cleanup temp images
+    imagePaths.forEach(p => fs.unlink(p, () => {}));
+
+  } catch (err) {
+    console.error(`❌ Video ${videoId} failed:`, err.message);
+    await db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message });
+  }
 }
 
 const uuid = () => crypto.randomUUID();
@@ -298,48 +442,18 @@ const server = http.createServer(async (req, res) => {
       const FAL_KEY = process.env.FAL_API_KEY;
       if (!FAL_KEY) return json(res, { error: 'Video generation not configured' }, 500);
 
-      const todayCount = await db.getUserVideoCountToday(user.id);
-      // No daily limit
-
       const body = await parseBody(req);
-      if (!body.prompt || body.prompt.trim().length < 5) return json(res, { error: 'Prompt must be at least 5 characters' }, 400);
-
-      // Store lyrics lines for overlay after generation
       const lyricLines = body.lyric_lines || [];
+      if (!lyricLines.length) return json(res, { error: 'No lyrics provided for video' }, 400);
 
       const videoId = uuid();
-      const truncatedPrompt = body.prompt.trim().substring(0, 1500);
-      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: truncatedPrompt, status: 'queued', request_id: null, lyric_lines: JSON.stringify(lyricLines) });
+      const genre = body.genre || '';
+      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines) });
 
-      // Submit to fal.ai queue
-      try {
-        const falBody = JSON.stringify({ prompt: body.prompt.trim(), duration: "6", aspect_ratio: "9:16" });
-        const falRes = await new Promise((resolve, reject) => {
-          const opts = {
-            hostname: 'queue.fal.run', path: '/fal-ai/minimax/video-01-live', method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Key ' + FAL_KEY, 'Content-Length': Buffer.byteLength(falBody) }
-          };
-          const r = https.request(opts, (resp) => {
-            const chunks = [];
-            resp.on('data', c => chunks.push(c));
-            resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
-          });
-          r.on('error', reject);
-          r.write(falBody);
-          r.end();
-        });
+      // Fire background process: generate images → build slideshow → update DB
+      processVideoGeneration(videoId, lyricLines, FAL_KEY, genre).catch(() => {});
 
-        if (falRes.request_id) {
-          await db.updateVideoGeneration(videoId, { request_id: falRes.request_id, status: 'processing', status_url: falRes.status_url, response_url: falRes.response_url });
-          return json(res, { id: videoId, request_id: falRes.request_id, status: 'processing', remaining: 0 });
-        } else {
-          await db.updateVideoGeneration(videoId, { status: 'error', error_message: falRes.detail || 'Failed to queue' });
-          return json(res, { error: falRes.detail || 'Failed to queue video' }, 500);
-        }
-      } catch (err) {
-        await db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message });
-        return json(res, { error: 'Video generation failed: ' + err.message }, 500);
-      }
+      return json(res, { id: videoId, status: 'processing' });
     }
 
     // Serve processed lyrics video file
@@ -348,7 +462,12 @@ const server = http.createServer(async (req, res) => {
       const videoFile = path.join(VIDS_DIR, videoFileMatch[1] + '-lyrics.mp4');
       if (fs.existsSync(videoFile)) {
         const stat = fs.statSync(videoFile);
-        res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Length': stat.size, 'Content-Disposition': 'inline' });
+        res.writeHead(200, {
+          'Content-Type': 'video/mp4', 'Content-Length': stat.size,
+          'Content-Disposition': 'inline; filename="viraltrack-lyrics.mp4"',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=86400'
+        });
         fs.createReadStream(videoFile).pipe(res);
         return;
       }
@@ -359,97 +478,6 @@ const server = http.createServer(async (req, res) => {
     if (videoStatusMatch && method === 'GET') {
       const video = await db.getVideoGeneration(videoStatusMatch[1]);
       if (!video || video.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
-
-      if (video.status === 'processing' && video.request_id) {
-        const FAL_KEY = process.env.FAL_API_KEY;
-        try {
-          const statusRes = await new Promise((resolve, reject) => {
-            const statusUrl = video.status_url || `https://queue.fal.run/fal-ai/minimax/video-01-live/requests/${video.request_id}/status`;
-            const u = new URL(statusUrl);
-            const opts = {
-              hostname: u.hostname, path: u.pathname + u.search, method: 'GET',
-              headers: { 'Authorization': 'Key ' + FAL_KEY }
-            };
-            const r = https.request(opts, (resp) => {
-              const chunks = [];
-              resp.on('data', c => chunks.push(c));
-              resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
-            });
-            r.on('error', reject);
-            r.end();
-          });
-
-          if (statusRes.status === 'COMPLETED') {
-            // Fetch the result
-            const resultRes = await new Promise((resolve, reject) => {
-              const responseUrl = video.response_url || `https://queue.fal.run/fal-ai/minimax/video-01-live/requests/${video.request_id}`;
-              const u2 = new URL(responseUrl);
-              const opts = {
-                hostname: u2.hostname, path: u2.pathname + u2.search, method: 'GET',
-                headers: { 'Authorization': 'Key ' + FAL_KEY }
-              };
-              const r = https.request(opts, (resp) => {
-                const chunks = [];
-                resp.on('data', c => chunks.push(c));
-                resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
-              });
-              r.on('error', reject);
-              r.end();
-            });
-            // fal.ai can return video URL in different response shapes
-            console.log('📥 fal.ai result keys:', Object.keys(resultRes));
-            const videoUrl = resultRes.video?.url || resultRes.data?.video?.url || resultRes.output?.video?.url || resultRes.url || null;
-            console.log('📥 Extracted video URL:', videoUrl ? videoUrl.substring(0, 80) + '...' : 'NONE');
-            if (videoUrl) {
-              // Check if lyrics overlay is needed
-              let finalUrl = videoUrl;
-              try {
-                const lyricLines = JSON.parse(video.lyric_lines || '[]');
-                if (lyricLines.length > 0) {
-                  const inputPath = path.join(VIDS_DIR, video.id + '-raw.mp4');
-                  const outputPath = path.join(VIDS_DIR, video.id + '-lyrics.mp4');
-                  console.log('📥 Downloading video from fal.ai...');
-                  await downloadFile(videoUrl, inputPath);
-                  const fileSize = fs.statSync(inputPath).size;
-                  console.log(`📥 Downloaded ${(fileSize / 1024 / 1024).toFixed(1)}MB, overlaying lyrics...`);
-                  await overlayLyricsOnVideo(inputPath, outputPath, lyricLines);
-                  // Serve the processed file from our server
-                  finalUrl = '/api/videos/' + video.id + '/file';
-                  // Clean up raw file
-                  fs.unlink(inputPath, () => {});
-                } else {
-                  // No lyrics — still download and serve locally for reliability
-                  const inputPath = path.join(VIDS_DIR, video.id + '-lyrics.mp4');
-                  console.log('📥 Downloading video (no lyrics overlay)...');
-                  await downloadFile(videoUrl, inputPath);
-                  finalUrl = '/api/videos/' + video.id + '/file';
-                }
-              } catch (overlayErr) {
-                console.error('Video processing error (using fal.ai URL):', overlayErr.message);
-                // Fall back to the direct fal.ai URL
-                finalUrl = videoUrl;
-              }
-              await db.updateVideoGeneration(video.id, { status: 'completed', video_url: finalUrl });
-              return json(res, { ...video, status: 'completed', video_url: finalUrl });
-            } else {
-              console.error('❌ Could not extract video URL from fal.ai response:', JSON.stringify(resultRes).substring(0, 500));
-              await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'No video URL in response' });
-              return json(res, { ...video, status: 'error', error_message: 'Video generated but URL not found' });
-            }
-          } else if (statusRes.status === 'FAILED') {
-            await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation failed' });
-            return json(res, { ...video, status: 'error', error_message: 'Generation failed' });
-          } else if (statusRes.detail || statusRes.status === undefined) {
-            // fal.ai returned an error (e.g. 404 - request not found)
-            await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Request expired or invalid' });
-            return json(res, { ...video, status: 'error', error_message: 'Request expired or invalid' });
-          }
-          // Still processing
-          return json(res, { ...video, status: 'processing', queue_position: statusRes.queue_position });
-        } catch (err) {
-          return json(res, { ...video, status: 'processing' });
-        }
-      }
       return json(res, video);
     }
 
