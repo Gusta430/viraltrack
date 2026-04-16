@@ -188,12 +188,12 @@ function createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration
   });
 }
 
-// Background process: generate images → build slideshow → update DB
+// Background process: generate images → save URLs → try FFmpeg slideshow → update DB
 async function processVideoGeneration(videoId, lyricLines, falKey, genre) {
   try {
-    console.log(`🎬 Starting slideshow generation ${videoId}: ${lyricLines.length} lyrics, genre: ${genre}`);
+    console.log(`🎬 Starting generation ${videoId}: ${lyricLines.length} lyrics, genre: ${genre}`);
 
-    // Generate abstract background images in parallel (one per lyric line, max 4)
+    // Generate abstract background images in parallel
     const numImages = Math.min(Math.max(3, lyricLines.length), 5);
     const palettes = [
       'deep purple and blue neon glow, floating bokeh orbs',
@@ -211,36 +211,48 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre) {
 
     console.log(`📸 Generating ${numImages} background images via FLUX...`);
     const imageUrls = await Promise.all(imagePromises);
-    console.log(`📸 All ${numImages} images generated, downloading...`);
+    console.log(`📸 All ${numImages} images generated:`, imageUrls.map(u => u.substring(0, 60)));
 
-    // Download all images
-    const imagePaths = [];
-    for (let i = 0; i < imageUrls.length; i++) {
-      const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
-      await downloadFile(imageUrls[i], imgPath);
-      imagePaths.push(imgPath);
-    }
-
-    // Create slideshow: ~3.5 sec per lyric line, minimum 12 sec for short lyrics
-    const totalDuration = Math.max(12, lyricLines.length * 3.5);
-    const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
-    await createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration);
-
-    // Verify output exists
-    if (!fs.existsSync(outputPath)) {
-      throw new Error('FFmpeg produced no output file');
-    }
-    const fileSize = fs.statSync(outputPath).size;
-    console.log(`✅ Video ${videoId} completed (${(fileSize / 1024 / 1024).toFixed(1)}MB, ${totalDuration.toFixed(0)}s)`);
-
-    // Update DB — video is ready
+    // ── IMMEDIATELY save image URLs so frontend can show slideshow ──
+    // This is the guaranteed fallback — no FFmpeg needed for this
     await db.updateVideoGeneration(videoId, {
       status: 'completed',
-      video_url: `/api/videos/${videoId}/file`
+      image_urls: JSON.stringify(imageUrls),
+      video_url: ''  // no video file yet, frontend will use image slideshow
     });
+    console.log(`✅ Image URLs saved for ${videoId} — frontend can show slideshow now`);
 
-    // Cleanup temp images
-    imagePaths.forEach(p => fs.unlink(p, () => {}));
+    // ── Try FFmpeg slideshow as bonus (if ffmpeg-static works on this host) ──
+    try {
+      if (!ffmpegPath) throw new Error('ffmpeg-static not available');
+
+      // Download all images to disk
+      const imagePaths = [];
+      for (let i = 0; i < imageUrls.length; i++) {
+        const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+        await downloadFile(imageUrls[i], imgPath);
+        imagePaths.push(imgPath);
+      }
+
+      // Create slideshow: ~3.5 sec per lyric line, minimum 12 sec
+      const totalDuration = Math.max(12, lyricLines.length * 3.5);
+      const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
+      await createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration);
+
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+        const fileSize = fs.statSync(outputPath).size;
+        console.log(`✅ Video file created (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
+        await db.updateVideoGeneration(videoId, {
+          video_url: `/api/videos/${videoId}/file`
+        });
+      }
+
+      // Cleanup temp images
+      imagePaths.forEach(p => fs.unlink(p, () => {}));
+    } catch (ffmpegErr) {
+      console.log(`⚠️ FFmpeg slideshow skipped (images still available): ${ffmpegErr.message}`);
+      // Not a fatal error — images are already saved and frontend will show slideshow
+    }
 
   } catch (err) {
     console.error(`❌ Video ${videoId} failed:`, err.message);

@@ -892,8 +892,107 @@ async function deleteTrack(trackId) {
   } catch(e) { alert('Failed to delete.'); console.error(e); }
 }
 
-// ── VIDEO GENERATION (per video card in analysis) ──
+// ── VIDEO / LYRICS SLIDESHOW GENERATION ──
 let vidPolling = null;
+let slideshowIntervals = {};
+
+// Show completed video result — either MP4 video player or animated image slideshow with lyrics
+function showVideoResult(row, data) {
+  row.querySelector('.vid-gen-progress').style.display = 'none';
+  row.querySelector('.vid-gen-btn').style.display = 'none';
+  const resEl = row.querySelector('.vid-gen-result');
+  resEl.innerHTML = ''; // Clear previous content
+  resEl.style.display = 'block';
+
+  // Parse lyrics from the record
+  let lyrics = [];
+  try { lyrics = JSON.parse(data.lyric_lines || '[]'); } catch(e) {}
+
+  // If we have a video file (FFmpeg worked), show video player
+  if (data.video_url && data.video_url.startsWith('/')) {
+    const vUrl = location.origin + data.video_url;
+    resEl.innerHTML = `
+      <video controls playsinline style="width:100%;border-radius:var(--rs);background:#000;max-height:500px" src="${vUrl}"></video>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <a class="bt bs" style="flex:1;text-align:center;text-decoration:none;font-size:12px;display:block" href="${vUrl}" download="viraltrack-lyrics.mp4">⬇ Download MP4</a>
+      </div>
+      <div style="font-size:11px;color:var(--t2);margin-top:6px;text-align:center">Add your song to this video on TikTok / Reels</div>`;
+    return;
+  }
+
+  // Otherwise, show animated image slideshow with lyrics overlay
+  let imageUrls = [];
+  try { imageUrls = JSON.parse(data.image_urls || '[]'); } catch(e) {}
+  if (imageUrls.length === 0) {
+    resEl.innerHTML = '<div style="color:var(--t2);font-size:12px;padding:12px">No images generated. Try again.</div>';
+    return;
+  }
+
+  const slideshowId = 'slideshow-' + data.id;
+  const secPerImage = 3.5;
+  const secPerLyric = lyrics.length > 0 ? Math.max(2.5, (imageUrls.length * secPerImage) / lyrics.length) : 999;
+
+  resEl.innerHTML = `
+    <div id="${slideshowId}" style="position:relative;width:100%;aspect-ratio:9/16;max-height:500px;border-radius:var(--rs);overflow:hidden;background:#000">
+      ${imageUrls.map((url, i) => `<img src="${url}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0?1:0};transition:opacity 0.8s ease" data-slide="${i}">`).join('')}
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 16px 32px;background:linear-gradient(transparent,rgba(0,0,0,0.85));text-align:center">
+        <div class="lyric-text" style="font-size:20px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.4;min-height:56px;display:flex;align-items:center;justify-content:center;transition:opacity 0.3s ease"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <a class="bt bs" style="flex:1;text-align:center;text-decoration:none;font-size:12px" href="${imageUrls[0]}" download="viraltrack-bg.png">⬇ Download images</a>
+    </div>
+    <div style="font-size:11px;color:var(--t2);margin-top:6px;text-align:center">Screen record this slideshow + add your song on TikTok / Reels</div>`;
+
+  // Animate the slideshow
+  let currentSlide = 0;
+  let currentLyric = 0;
+  let tick = 0;
+  const container = document.getElementById(slideshowId);
+  if (!container) return;
+  const slides = container.querySelectorAll('img[data-slide]');
+  const lyricEl = container.querySelector('.lyric-text');
+  if (lyrics.length > 0) lyricEl.textContent = lyrics[0];
+
+  // Clear any previous interval for this slideshow
+  if (slideshowIntervals[slideshowId]) clearInterval(slideshowIntervals[slideshowId]);
+
+  slideshowIntervals[slideshowId] = setInterval(() => {
+    tick++;
+    const totalTime = tick * 0.5; // every 500ms
+
+    // Switch slide
+    const targetSlide = Math.floor(totalTime / secPerImage) % imageUrls.length;
+    if (targetSlide !== currentSlide) {
+      slides[currentSlide].style.opacity = '0';
+      currentSlide = targetSlide;
+      slides[currentSlide].style.opacity = '1';
+    }
+
+    // Switch lyric
+    if (lyrics.length > 0) {
+      const targetLyric = Math.min(Math.floor(totalTime / secPerLyric), lyrics.length - 1);
+      if (targetLyric !== currentLyric) {
+        lyricEl.style.opacity = '0';
+        setTimeout(() => {
+          currentLyric = targetLyric;
+          lyricEl.textContent = lyrics[currentLyric];
+          lyricEl.style.opacity = '1';
+        }, 300);
+      }
+    }
+
+    // Loop after all lyrics shown
+    if (lyrics.length > 0 && totalTime > lyrics.length * secPerLyric + 1) {
+      tick = 0;
+      currentSlide = 0;
+      currentLyric = 0;
+      slides.forEach((s, i) => s.style.opacity = i === 0 ? '1' : '0');
+      lyricEl.textContent = lyrics[0];
+      lyricEl.style.opacity = '1';
+    }
+  }, 500);
+}
 
 async function initVideoButtons(track, vids, analysis) {
   let canGenerate = true;
@@ -904,26 +1003,19 @@ async function initVideoButtons(track, vids, analysis) {
       canGenerate = false;
       document.querySelectorAll('.vid-gen-btn').forEach(b => {
         b.disabled = true; b.style.opacity = '0.5';
-        b.textContent = 'Daily limit reached (resets midnight)';
+        b.textContent = 'Daily limit reached';
       });
     }
     // Show already-completed videos (most recent first)
-    const completedVids = data.videos.filter(dv => dv.status === 'completed' && dv.video_url);
+    const completedVids = data.videos.filter(dv => dv.status === 'completed');
     if (completedVids.length > 0) {
       const dv = completedVids[0];
       const row = document.getElementById('vid-row-0');
-      if (row) {
-        row.querySelector('.vid-gen-btn').style.display = 'none';
-        const res = row.querySelector('.vid-gen-result');
-        res.style.display = 'block';
-        const vUrl = dv.video_url.startsWith('/') ? (location.origin + dv.video_url) : dv.video_url;
-        res.querySelector('video').src = vUrl;
-        res.querySelector('a').href = vUrl;
-      }
+      if (row) showVideoResult(row, dv);
     }
     const proc = data.videos.find(v => v.status === 'processing' || v.status === 'queued');
     if (proc) pollVideoCard(proc.id, vids, 0);
-  } catch(e) {}
+  } catch(e) { console.error('initVideoButtons error:', e); }
 
   document.querySelectorAll('.vid-gen-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -946,7 +1038,6 @@ async function initVideoButtons(track, vids, analysis) {
       if (lyricLines.length === 0 && v.song_moment) {
         lyricLines = [v.song_moment];
       }
-      // Last fallback: use the video title
       if (lyricLines.length === 0) {
         lyricLines = [v.title || track.title || 'Music'];
       }
@@ -983,8 +1074,7 @@ function pollVideoCard(videoId, vids, rowIdx) {
   let attempts = 0;
   vidPolling = setInterval(async () => {
     attempts++;
-    // Timeout after 3 minutes (should take ~15-30 seconds)
-    if (attempts > 36) {
+    if (attempts > 60) {
       clearInterval(vidPolling); vidPolling = null;
       document.querySelectorAll('.vid-gen-progress').forEach(p => p.style.display = 'none');
       document.querySelectorAll('.vid-gen-btn').forEach(b => { b.style.display = 'block'; b.disabled = false; b.style.opacity = '1'; b.innerHTML = '🎬 Generate Lyrics Video'; });
@@ -994,30 +1084,20 @@ function pollVideoCard(videoId, vids, rowIdx) {
     }
     try {
       const data = await (await authFetch(A + '/videos/' + videoId + '/status')).json();
-      if (data.status === 'completed' && data.video_url) {
+      if (data.status === 'completed') {
         clearInterval(vidPolling); vidPolling = null;
         const row = document.getElementById('vid-row-' + rowIdx);
-        if (row) {
-          row.querySelector('.vid-gen-progress').style.display = 'none';
-          row.querySelector('.vid-gen-btn').style.display = 'none';
-          const res = row.querySelector('.vid-gen-result');
-          res.style.display = 'block';
-          // Build full URL for relative paths
-          const vUrl = data.video_url.startsWith('/') ? (location.origin + data.video_url) : data.video_url;
-          res.querySelector('video').src = vUrl;
-          res.querySelector('a').href = vUrl;
-        }
-        // Re-enable other buttons
+        if (row) showVideoResult(row, data);
         document.querySelectorAll('.vid-gen-btn').forEach(b => { b.disabled = false; b.style.opacity = '1'; b.innerHTML = '🎬 Generate Lyrics Video'; });
       } else if (data.status === 'error') {
         clearInterval(vidPolling); vidPolling = null;
         document.querySelectorAll('.vid-gen-progress').forEach(p => p.style.display = 'none');
         document.querySelectorAll('.vid-gen-btn').forEach(b => { b.style.display = 'block'; b.disabled = false; b.style.opacity = '1'; b.innerHTML = '🎬 Generate Lyrics Video'; });
         const row = document.getElementById('vid-row-' + rowIdx);
-        if (row) { const err = row.querySelector('.vid-gen-error'); err.textContent = data.error_message || 'Generation failed.'; err.classList.add('vis'); }
+        if (row) { const err = row.querySelector('.vid-gen-error'); err.textContent = data.error_message || 'Generation failed. Try again.'; err.classList.add('vis'); }
       }
     } catch(e) {}
-  }, 5000);
+  }, 3000);
 }
 
 // ── CHECKBOX TOGGLE ──

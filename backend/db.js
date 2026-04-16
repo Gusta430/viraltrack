@@ -115,6 +115,7 @@ async function initDB() {
   try { await run('ALTER TABLE analyses ADD COLUMN discovery_tags TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN posting_strategy TEXT'); } catch(e) {}
   try { await run('ALTER TABLE video_generations ADD COLUMN lyric_lines TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE video_generations ADD COLUMN image_urls TEXT'); } catch(e) {}
   await run('CREATE TABLE IF NOT EXISTS trends (id INTEGER PRIMARY KEY, data TEXT, updated_at TEXT DEFAULT (CURRENT_TIMESTAMP))');
   console.log('✅ Database ready!');
 }
@@ -264,9 +265,10 @@ class Database {
   async updateVideoGeneration(id, updates) {
     const sets = [], args = [];
     if (updates.status) { sets.push('status = ?'); args.push(updates.status); }
-    if (updates.video_url) { sets.push('video_url = ?'); args.push(updates.video_url); }
+    if (updates.video_url !== undefined) { sets.push('video_url = ?'); args.push(updates.video_url); }
     if (updates.request_id) { sets.push('request_id = ?'); args.push(updates.request_id); }
     if (updates.error_message) { sets.push('error_message = ?'); args.push(updates.error_message); }
+    if (updates.image_urls !== undefined) { sets.push('image_urls = ?'); args.push(updates.image_urls); }
     if (sets.length > 0) { args.push(id); await run(`UPDATE video_generations SET ${sets.join(', ')} WHERE id = ?`, args); }
     return this.getVideoGeneration(id);
   }
