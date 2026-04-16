@@ -901,10 +901,9 @@ function showVideoResult(row, data) {
   row.querySelector('.vid-gen-progress').style.display = 'none';
   row.querySelector('.vid-gen-btn').style.display = 'none';
   const resEl = row.querySelector('.vid-gen-result');
-  resEl.innerHTML = ''; // Clear previous content
+  resEl.innerHTML = '';
   resEl.style.display = 'block';
 
-  // Parse lyrics from the record
   let lyrics = [];
   try { lyrics = JSON.parse(data.lyric_lines || '[]'); } catch(e) {}
 
@@ -920,7 +919,7 @@ function showVideoResult(row, data) {
     return;
   }
 
-  // Otherwise, show animated image slideshow with lyrics overlay
+  // ── VIRAL SLIDESHOW with Ken Burns zoom, cinematic transitions, bold lyrics ──
   let imageUrls = [];
   try { imageUrls = JSON.parse(data.image_urls || '[]'); } catch(e) {}
   if (imageUrls.length === 0) {
@@ -928,70 +927,185 @@ function showVideoResult(row, data) {
     return;
   }
 
-  const slideshowId = 'slideshow-' + data.id;
+  const sid = 'vs-' + data.id;
   const secPerImage = 3.5;
-  const secPerLyric = lyrics.length > 0 ? Math.max(2.5, (imageUrls.length * secPerImage) / lyrics.length) : 999;
+  const secPerLyric = lyrics.length > 0 ? Math.max(2.0, (imageUrls.length * secPerImage) / lyrics.length) : 999;
+
+  // Inject slideshow CSS if not already present
+  if (!document.getElementById('viral-slideshow-css')) {
+    const style = document.createElement('style');
+    style.id = 'viral-slideshow-css';
+    style.textContent = `
+      @keyframes kenBurns1 { 0%{transform:scale(1) translate(0,0)} 100%{transform:scale(1.15) translate(-2%,-1%)} }
+      @keyframes kenBurns2 { 0%{transform:scale(1.1) translate(-1%,1%)} 100%{transform:scale(1) translate(1%,-1%)} }
+      @keyframes kenBurns3 { 0%{transform:scale(1) translate(1%,0)} 100%{transform:scale(1.12) translate(-1%,2%)} }
+      @keyframes kenBurns4 { 0%{transform:scale(1.08) translate(0,-1%)} 100%{transform:scale(1) translate(0,1%)} }
+      @keyframes lyricPop {
+        0%{transform:scale(0.7) translateY(12px);opacity:0;filter:blur(4px)}
+        50%{transform:scale(1.06) translateY(-2px);opacity:1;filter:blur(0)}
+        100%{transform:scale(1) translateY(0);opacity:1;filter:blur(0)}
+      }
+      @keyframes lyricGlow {
+        0%,100%{text-shadow:0 2px 20px rgba(255,255,255,0.3),0 0 40px rgba(139,92,246,0.2)}
+        50%{text-shadow:0 2px 30px rgba(255,255,255,0.5),0 0 60px rgba(139,92,246,0.4)}
+      }
+      @keyframes slideIn { 0%{clip-path:inset(0 100% 0 0)} 100%{clip-path:inset(0 0 0 0)} }
+      @keyframes fadeScale { 0%{opacity:0;transform:scale(1.1)} 100%{opacity:1;transform:scale(1)} }
+      .vs-slide {
+        position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;
+        will-change:transform,opacity;
+      }
+      .vs-slide.active { opacity:1; z-index:2; }
+      .vs-slide.prev { opacity:1; z-index:1; }
+      .vs-slide.hidden { opacity:0; z-index:0; }
+      .vs-lyric-wrap {
+        position:absolute;bottom:0;left:0;right:0;z-index:10;
+        padding:40px 20px 36px;
+        background:linear-gradient(transparent 0%,rgba(0,0,0,0.3) 20%,rgba(0,0,0,0.75) 60%,rgba(0,0,0,0.9) 100%);
+      }
+      .vs-lyric {
+        font-size:26px;font-weight:800;color:#fff;text-align:center;
+        line-height:1.35;letter-spacing:-0.02em;
+        text-shadow:0 2px 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);
+        animation:lyricGlow 3s ease-in-out infinite;
+        min-height:70px;display:flex;align-items:center;justify-content:center;
+        padding:0 8px;
+      }
+      .vs-lyric.pop { animation:lyricPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards, lyricGlow 3s ease-in-out infinite 0.45s; }
+      .vs-progress {
+        position:absolute;top:12px;left:12px;right:12px;z-index:10;
+        display:flex;gap:4px;
+      }
+      .vs-progress-bar {
+        flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.25);overflow:hidden;
+      }
+      .vs-progress-fill {
+        height:100%;background:#fff;border-radius:2px;width:0%;transition:width 0.3s linear;
+      }
+      .vs-vignette {
+        position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;pointer-events:none;
+        background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.4) 100%);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Ken Burns animation variants
+  const kbAnims = ['kenBurns1','kenBurns2','kenBurns3','kenBurns4'];
+  // Transition types for variety
+  const transitions = ['fade','slideIn','fadeScale'];
 
   resEl.innerHTML = `
-    <div id="${slideshowId}" style="position:relative;width:100%;aspect-ratio:9/16;max-height:500px;border-radius:var(--rs);overflow:hidden;background:#000">
-      ${imageUrls.map((url, i) => `<img src="${url}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0?1:0};transition:opacity 0.8s ease" data-slide="${i}">`).join('')}
-      <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 16px 32px;background:linear-gradient(transparent,rgba(0,0,0,0.85));text-align:center">
-        <div class="lyric-text" style="font-size:20px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.4;min-height:56px;display:flex;align-items:center;justify-content:center;transition:opacity 0.3s ease"></div>
+    <div id="${sid}" style="position:relative;width:100%;aspect-ratio:9/16;max-height:520px;border-radius:12px;overflow:hidden;background:#000;cursor:pointer" title="Click to pause/play">
+      <div class="vs-progress">${imageUrls.map(() => `<div class="vs-progress-bar"><div class="vs-progress-fill"></div></div>`).join('')}</div>
+      ${imageUrls.map((url, i) => `<img src="${url}" class="vs-slide ${i===0?'active':'hidden'}" data-idx="${i}" style="animation:${kbAnims[i%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate">`).join('')}
+      <div class="vs-vignette"></div>
+      <div class="vs-lyric-wrap">
+        <div class="vs-lyric"></div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <a class="bt bs" style="flex:1;text-align:center;text-decoration:none;font-size:12px" href="${imageUrls[0]}" download="viraltrack-bg.png">⬇ Download images</a>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <a class="bt bs" style="flex:1;text-align:center;text-decoration:none;font-size:12px" href="${imageUrls[0]}" download="viraltrack-bg.png" title="Download background image">⬇ Download</a>
     </div>
-    <div style="font-size:11px;color:var(--t2);margin-top:6px;text-align:center">Screen record this slideshow + add your song on TikTok / Reels</div>`;
+    <div style="font-size:11px;color:var(--t2);margin-top:6px;text-align:center">🎵 Screen record + add your song on TikTok / Reels for best results</div>`;
 
-  // Animate the slideshow
-  let currentSlide = 0;
-  let currentLyric = 0;
-  let tick = 0;
-  const container = document.getElementById(slideshowId);
+  const container = document.getElementById(sid);
   if (!container) return;
-  const slides = container.querySelectorAll('img[data-slide]');
-  const lyricEl = container.querySelector('.lyric-text');
-  if (lyrics.length > 0) lyricEl.textContent = lyrics[0];
+  const slides = container.querySelectorAll('.vs-slide');
+  const lyricEl = container.querySelector('.vs-lyric');
+  const progressBars = container.querySelectorAll('.vs-progress-fill');
 
-  // Clear any previous interval for this slideshow
-  if (slideshowIntervals[slideshowId]) clearInterval(slideshowIntervals[slideshowId]);
+  let currentSlide = 0;
+  let currentLyric = -1;
+  let tick = 0;
+  let paused = false;
 
-  slideshowIntervals[slideshowId] = setInterval(() => {
+  // Set initial lyric
+  if (lyrics.length > 0) {
+    lyricEl.textContent = lyrics[0];
+    lyricEl.classList.add('pop');
+    currentLyric = 0;
+  }
+  // Set initial progress
+  if (progressBars[0]) progressBars[0].style.width = '0%';
+
+  // Click to pause/play
+  container.addEventListener('click', () => { paused = !paused; });
+
+  if (slideshowIntervals[sid]) clearInterval(slideshowIntervals[sid]);
+
+  slideshowIntervals[sid] = setInterval(() => {
+    if (paused) return;
     tick++;
-    const totalTime = tick * 0.5; // every 500ms
+    const t = tick * 0.1; // every 100ms for smoother progress
 
-    // Switch slide
-    const targetSlide = Math.floor(totalTime / secPerImage) % imageUrls.length;
+    // Update progress bar for current slide
+    const slideProgress = ((t % secPerImage) / secPerImage) * 100;
+    if (progressBars[currentSlide]) progressBars[currentSlide].style.width = slideProgress + '%';
+
+    // Switch slide with transition effect
+    const targetSlide = Math.floor(t / secPerImage) % imageUrls.length;
     if (targetSlide !== currentSlide) {
-      slides[currentSlide].style.opacity = '0';
+      const prevSlide = currentSlide;
       currentSlide = targetSlide;
-      slides[currentSlide].style.opacity = '1';
-    }
 
-    // Switch lyric
-    if (lyrics.length > 0) {
-      const targetLyric = Math.min(Math.floor(totalTime / secPerLyric), lyrics.length - 1);
-      if (targetLyric !== currentLyric) {
-        lyricEl.style.opacity = '0';
-        setTimeout(() => {
-          currentLyric = targetLyric;
-          lyricEl.textContent = lyrics[currentLyric];
-          lyricEl.style.opacity = '1';
-        }, 300);
+      // Mark completed progress
+      if (progressBars[prevSlide]) progressBars[prevSlide].style.width = '100%';
+      // Reset upcoming bars
+      for (let j = currentSlide; j < progressBars.length; j++) {
+        if (j !== currentSlide) progressBars[j].style.width = '0%';
+      }
+
+      // Apply transition
+      const trans = transitions[currentSlide % transitions.length];
+      slides.forEach((s, idx) => {
+        s.className = 'vs-slide hidden';
+        s.style.animation = `${kbAnims[idx%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate`;
+      });
+      slides[prevSlide].className = 'vs-slide prev';
+      slides[currentSlide].className = 'vs-slide active';
+
+      if (trans === 'slideIn') {
+        slides[currentSlide].style.animation = `slideIn 0.6s ease-out forwards, ${kbAnims[currentSlide%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate 0.6s`;
+      } else if (trans === 'fadeScale') {
+        slides[currentSlide].style.animation = `fadeScale 0.5s ease-out forwards, ${kbAnims[currentSlide%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate 0.5s`;
+      } else {
+        slides[currentSlide].style.transition = 'opacity 0.6s ease';
       }
     }
 
-    // Loop after all lyrics shown
-    if (lyrics.length > 0 && totalTime > lyrics.length * secPerLyric + 1) {
+    // Switch lyric with pop animation
+    if (lyrics.length > 0) {
+      const targetLyric = Math.min(Math.floor(t / secPerLyric), lyrics.length - 1);
+      if (targetLyric !== currentLyric) {
+        currentLyric = targetLyric;
+        lyricEl.classList.remove('pop');
+        lyricEl.style.opacity = '0';
+        lyricEl.style.transform = 'translateY(8px)';
+        setTimeout(() => {
+          lyricEl.textContent = lyrics[currentLyric];
+          lyricEl.style.opacity = '1';
+          lyricEl.style.transform = 'translateY(0)';
+          lyricEl.classList.add('pop');
+        }, 200);
+      }
+    }
+
+    // Loop
+    if (lyrics.length > 0 && t > lyrics.length * secPerLyric + 2) {
       tick = 0;
       currentSlide = 0;
-      currentLyric = 0;
-      slides.forEach((s, i) => s.style.opacity = i === 0 ? '1' : '0');
+      currentLyric = -1;
+      slides.forEach((s, i) => {
+        s.className = i === 0 ? 'vs-slide active' : 'vs-slide hidden';
+        s.style.animation = `${kbAnims[i%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate`;
+      });
+      progressBars.forEach(b => b.style.width = '0%');
       lyricEl.textContent = lyrics[0];
-      lyricEl.style.opacity = '1';
+      lyricEl.classList.add('pop');
+      currentLyric = 0;
     }
-  }, 500);
+  }, 100); // 100ms ticks for smooth animation
 }
 
 async function initVideoButtons(track, vids, analysis) {
@@ -1046,7 +1160,9 @@ async function initVideoButtons(track, vids, analysis) {
       row.querySelector('.vid-gen-progress').style.display = 'block';
       row.querySelector('.vid-gen-error').classList.remove('vis');
       try {
-        const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ lyric_lines: lyricLines, genre: track.genre || '' }) });
+        let moodTags = [];
+        try { moodTags = JSON.parse(analysis?.mood_tags || '[]'); } catch(e) {}
+        const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ lyric_lines: lyricLines, genre: track.genre || '', title: track.title || '', artist: track.artist || '', mood_tags: moodTags }) });
         const data = await res.json();
         if (!res.ok) {
           row.querySelector('.vid-gen-progress').style.display = 'none';

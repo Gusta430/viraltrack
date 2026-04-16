@@ -189,23 +189,133 @@ function createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration
 }
 
 // Background process: generate images → save URLs → try FFmpeg slideshow → update DB
-async function processVideoGeneration(videoId, lyricLines, falKey, genre) {
-  try {
-    console.log(`🎬 Starting generation ${videoId}: ${lyricLines.length} lyrics, genre: ${genre}`);
+// Analyze lyrics to generate scene descriptions that match the song's vibe
+function buildScenePrompts(lyricLines, genre, title, artist, moodTags) {
+  const allLyrics = lyricLines.join(' ').toLowerCase();
+  const moods = (moodTags || []).join(' ').toLowerCase();
+  const genreLow = (genre || '').toLowerCase();
+  const titleLow = (title || '').toLowerCase();
 
-    // Generate abstract background images in parallel
-    const numImages = Math.min(Math.max(3, lyricLines.length), 5);
-    const palettes = [
-      'deep purple and blue neon glow, floating bokeh orbs',
-      'warm orange and gold light trails, ember particles',
-      'cool cyan and teal soft waves, misty atmosphere',
-      'pink and magenta gradients, crystal reflections',
-      'dark green and emerald aurora, smoke tendrils'
-    ];
+  // Detect vibes from lyrics content
+  const vibeKeywords = {
+    beach: /beach|ocean|wave|summer|sun|sand|coast|shore|surf|palm|island|tropical|paradise|swim/,
+    party: /party|club|dance|night|vip|bottle|champagne|lit|turnt|drink|bar|rave|dj|bass drop/,
+    luxury: /flex|money|cash|drip|ice|chain|watch|lambo|ferrari|gucci|designer|rich|band|stack|foreign|whip|benz|rolls|rolex/,
+    street: /trap|block|hood|street|gang|hustle|grind|plug|real|savage|pull up|slide|opps/,
+    love: /love|heart|kiss|baby|babe|hold|touch|feel|miss|forever|together|mine|yours|us/,
+    heartbreak: /cry|tears|gone|leave|lost|broke|pain|hurt|alone|empty|ghost|forget|remember/,
+    night: /night|dark|moon|star|city|light|glow|neon|downtown|drive|late/,
+    nature: /mountain|river|forest|rain|sky|cloud|wind|earth|field|flower|garden|tree/,
+    hype: /fire|flame|hot|burn|explode|boom|energy|power|beast|king|queen|goat|legend/,
+    chill: /chill|vibe|relax|smoke|high|float|dream|peace|calm|easy|slow|sunset/,
+  };
+
+  const detectedVibes = [];
+  for (const [vibe, regex] of Object.entries(vibeKeywords)) {
+    if (regex.test(allLyrics) || regex.test(moods) || regex.test(genreLow) || regex.test(titleLow)) {
+      detectedVibes.push(vibe);
+    }
+  }
+
+  // Genre-based scene defaults
+  const genreScenes = {
+    'hip hop': ['luxury car interior with ambient lighting', 'city skyline at night with neon lights', 'concert crowd with stage lights and smoke', 'designer clothing and jewelry on dark velvet', 'rooftop overlooking city at golden hour'],
+    'hip-hop': ['luxury car interior with ambient lighting', 'city skyline at night with neon lights', 'concert crowd with stage lights and smoke', 'designer clothing and jewelry on dark velvet', 'rooftop overlooking city at golden hour'],
+    'rap': ['studio session with mic and dim lights', 'expensive car on empty street at night', 'stack of money and watches on marble', 'crowd going wild at a rap concert', 'penthouse view of city lights'],
+    'trap': ['dark street with neon signs and fog', 'luxury sports car with glowing headlights', 'gold chains and designer on black background', 'concert moshpit with laser lights', 'trap house aesthetic with purple ambient light'],
+    'r&b': ['candlelit bedroom with silk sheets', 'couple silhouette at sunset beach', 'rain on window with city lights behind', 'slow dance with fairy lights', 'rose petals on dark surface with soft glow'],
+    'rnb': ['candlelit bedroom with silk sheets', 'couple silhouette at sunset beach', 'rain on window with city lights behind', 'slow dance with fairy lights', 'rose petals on dark surface with soft glow'],
+    'pop': ['colorful festival crowd with confetti', 'neon-lit dance floor', 'road trip through scenic highway', 'rooftop party at sunset', 'bright city street with movement'],
+    'reggaeton': ['beach club party with palm trees', 'neon nightclub dance floor', 'tropical sunset with ocean waves', 'convertible driving coastal road', 'pool party with colorful lights'],
+    'country': ['pickup truck on dirt road at sunset', 'bonfire under starry sky', 'open field with golden wheat', 'small town main street at dusk', 'acoustic guitar on porch with sunset'],
+    'rock': ['electric guitar with stage smoke', 'packed arena concert with spotlights', 'desert highway at sunset', 'abandoned warehouse with graffiti', 'band performing with dramatic lighting'],
+    'edm': ['massive festival stage with laser show', 'neon geometric patterns in dark space', 'rave crowd with glow sticks', 'futuristic city with holographic lights', 'dj booth overlooking huge crowd'],
+    'indie': ['vintage film aesthetic street photography', 'rain-soaked city street reflections', 'cozy coffee shop window view', 'wildflower field at golden hour', 'old record player in dim room'],
+    'afrobeats': ['vibrant african street market', 'beach party with colorful outfits', 'dance circle with dramatic sunset', 'luxury resort pool at night', 'festival with traditional and modern vibes'],
+    'latin': ['havana street with classic cars', 'salsa dance floor with warm lights', 'tropical beach with palm trees at sunset', 'colorful colonial buildings at night', 'outdoor festival with string lights'],
+  };
+
+  // Vibe-based scene pools
+  const vibeScenes = {
+    beach: ['crystal clear ocean waves crashing on white sand beach', 'palm trees silhouette against pink sunset sky', 'beach bonfire at night with sparks rising', 'surfer walking on beach at golden hour', 'aerial view of turquoise tropical coastline'],
+    party: ['nightclub dance floor with laser lights and smoke', 'vip booth with champagne bottles and sparklers', 'packed concert crowd going wild', 'dj mixing at festival main stage', 'rooftop party with city skyline behind'],
+    luxury: ['luxury sports car parked in front of mansion at night', 'designer watches and jewelry on marble surface', 'penthouse suite overlooking city lights', 'private jet interior with champagne', 'exotic car collection in underground garage with neon'],
+    street: ['dark city alley with neon signs and fog', 'street corner at night with car headlights', 'gritty urban rooftop with city backdrop', 'basketball court at night with harsh streetlights', 'lowrider cruising through city streets'],
+    love: ['couple hands intertwined at sunset', 'candlelit dinner table with roses', 'two silhouettes on empty beach at dusk', 'fairy lights wrapped around trees in garden', 'love lock bridge with soft bokeh lights'],
+    heartbreak: ['empty park bench in rain', 'shattered glass on dark floor reflecting light', 'single streetlight on empty road at night', 'withered roses on dark surface', 'window with raindrops and blurred city behind'],
+    night: ['city skyline reflected in water at night', 'empty neon-lit street at 3am', 'car driving through rain-soaked city at night', 'rooftop view of city with distant lightning', 'moonlit empty highway stretching to horizon'],
+    nature: ['dramatic mountain peak above clouds at sunrise', 'waterfall in lush green forest', 'field of wildflowers under dramatic sky', 'aurora borealis over still lake', 'massive oak tree in golden light'],
+    hype: ['explosion of fire and sparks on black background', 'fighter walking into arena with spotlight', 'crowd at concert with hands raised and pyrotechnics', 'lightning striking a dark landscape', 'champion celebration with confetti and gold'],
+    chill: ['sunset over calm ocean with purple sky', 'smoke trails in colored ambient light', 'vinyl record spinning in warm lit room', 'hammock between palm trees at sunset', 'city view from balcony at blue hour'],
+  };
+
+  // Build scene list: match lyrics line-by-line to scenes
+  const scenes = [];
+  const numImages = Math.min(Math.max(3, lyricLines.length), 6);
+
+  // First, try to match each lyric line to a vibe
+  for (let i = 0; i < numImages; i++) {
+    const line = lyricLines[i % lyricLines.length].toLowerCase();
+    let bestScene = null;
+
+    // Check which vibe this specific line matches
+    for (const [vibe, regex] of Object.entries(vibeKeywords)) {
+      if (regex.test(line) && vibeScenes[vibe]) {
+        const pool = vibeScenes[vibe];
+        bestScene = pool[i % pool.length];
+        break;
+      }
+    }
+
+    // Fall back to detected vibes from full song
+    if (!bestScene && detectedVibes.length > 0) {
+      const vibe = detectedVibes[i % detectedVibes.length];
+      if (vibeScenes[vibe]) {
+        bestScene = vibeScenes[vibe][i % vibeScenes[vibe].length];
+      }
+    }
+
+    // Fall back to genre scenes
+    if (!bestScene) {
+      const genreKey = Object.keys(genreScenes).find(g => genreLow.includes(g));
+      if (genreKey) {
+        bestScene = genreScenes[genreKey][i % genreScenes[genreKey].length];
+      }
+    }
+
+    // Ultimate fallback
+    if (!bestScene) {
+      const fallback = ['city skyline at night with dramatic lighting', 'concert crowd with colorful stage lights', 'moody street photography with neon reflections', 'dramatic sunset over landscape', 'smoke and light in dark cinematic setting', 'luxury aesthetic with dark background'];
+      bestScene = fallback[i % fallback.length];
+    }
+
+    scenes.push(bestScene);
+  }
+
+  // Make sure we don't repeat the exact same scene
+  const uniqueScenes = [...new Set(scenes)];
+  while (uniqueScenes.length < numImages) {
+    const vibe = detectedVibes[uniqueScenes.length % Math.max(1, detectedVibes.length)] || 'night';
+    const pool = vibeScenes[vibe] || vibeScenes.night;
+    uniqueScenes.push(pool[uniqueScenes.length % pool.length]);
+  }
+
+  return uniqueScenes.slice(0, numImages);
+}
+
+async function processVideoGeneration(videoId, lyricLines, falKey, genre, songContext) {
+  try {
+    const { title, artist, mood_tags } = songContext || {};
+    console.log(`🎬 Starting generation ${videoId}: ${lyricLines.length} lyrics, genre: ${genre}, title: ${title}`);
+
+    // Generate scene-matched images based on lyrics content
+    const scenePrompts = buildScenePrompts(lyricLines, genre, title, artist, mood_tags);
+    const numImages = scenePrompts.length;
 
     const imagePromises = [];
     for (let i = 0; i < numImages; i++) {
-      const imgPrompt = `Abstract dark cinematic background for ${genre || 'music'} aesthetic. ${palettes[i % palettes.length]}. Moody atmospheric, soft focus, no text, no people, no faces, no letters. Vertical 9:16 phone format.`;
+      const imgPrompt = `Cinematic photograph, ${scenePrompts[i]}. Ultra high quality, dramatic lighting, shot on RED camera, shallow depth of field, moody color grade. No text, no words, no letters, no watermarks. Vertical 9:16 phone format.`;
+      console.log(`📸 Image ${i}: ${scenePrompts[i]}`);
       imagePromises.push(generateImage(falKey, imgPrompt));
     }
 
@@ -463,10 +573,11 @@ const server = http.createServer(async (req, res) => {
 
       const videoId = uuid();
       const genre = body.genre || '';
+      const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [] };
       await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines) });
 
       // Fire background process: generate images → build slideshow → update DB
-      processVideoGeneration(videoId, lyricLines, FAL_KEY, genre).catch(err => {
+      processVideoGeneration(videoId, lyricLines, FAL_KEY, genre, songContext).catch(err => {
         console.error(`❌ Unhandled video error ${videoId}:`, err);
         db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message || 'Unknown error' }).catch(() => {});
       });
