@@ -5,10 +5,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { execFile } from 'child_process';
+import ffmpegPath from 'ffmpeg-static';
 import db from './db.js';
 import { analyzeTrack, generatePromoPlan } from './ai-service.js';
 import { analyzeAudio } from './audio-analysis.js';
 import { getTrends } from './trend-service.js';
+
+console.log('🎬 FFmpeg binary:', ffmpegPath);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(__dirname, '..', 'frontend', 'public');
@@ -111,7 +114,7 @@ function createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration
         ];
 
         console.log('🎬 Pass 1: Creating slideshow from images...');
-        execFile('ffmpeg', args, { timeout: 120000 }, (err, stdout, stderr) => {
+        execFile(ffmpegPath, args, { timeout: 120000 }, (err, stdout, stderr) => {
           if (err) { console.error('FFmpeg pass 1 error:', stderr); rej(err); }
           else { console.log('✅ Pass 1 done'); res(); }
         });
@@ -163,7 +166,7 @@ function createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration
           ];
 
           console.log('🎬 Pass 2: Overlaying lyrics...');
-          execFile('ffmpeg', args, { timeout: 120000 }, (err, stdout, stderr) => {
+          execFile(ffmpegPath, args, { timeout: 120000 }, (err, stdout, stderr) => {
             if (err) { console.error('FFmpeg pass 2 error:', stderr); rej(err); }
             else { console.log('✅ Pass 2 done — lyrics overlaid'); res(); }
           });
@@ -451,7 +454,10 @@ const server = http.createServer(async (req, res) => {
       await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines) });
 
       // Fire background process: generate images → build slideshow → update DB
-      processVideoGeneration(videoId, lyricLines, FAL_KEY, genre).catch(() => {});
+      processVideoGeneration(videoId, lyricLines, FAL_KEY, genre).catch(err => {
+        console.error(`❌ Unhandled video error ${videoId}:`, err);
+        db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message || 'Unknown error' }).catch(() => {});
+      });
 
       return json(res, { id: videoId, status: 'processing' });
     }
@@ -478,6 +484,14 @@ const server = http.createServer(async (req, res) => {
     if (videoStatusMatch && method === 'GET') {
       const video = await db.getVideoGeneration(videoStatusMatch[1]);
       if (!video || video.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
+      // Auto-timeout: if stuck processing for >5 min, mark as error
+      if (video.status === 'processing' && video.created_at) {
+        const age = Date.now() - new Date(video.created_at).getTime();
+        if (age > 5 * 60 * 1000) {
+          await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation timed out — try again' });
+          return json(res, { ...video, status: 'error', error_message: 'Generation timed out — try again' });
+        }
+      }
       return json(res, video);
     }
 
