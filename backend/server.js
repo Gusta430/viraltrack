@@ -45,12 +45,12 @@ function generateImage(falKey, prompt) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       prompt,
-      image_size: { width: 1080, height: 1920 },
+      aspect_ratio: "9:16",
       num_images: 1
     });
     const opts = {
       hostname: 'fal.run',
-      path: '/fal-ai/flux/schnell',
+      path: '/fal-ai/flux-pro/v1.1-ultra',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
