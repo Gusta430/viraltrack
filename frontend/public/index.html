@@ -895,7 +895,7 @@ async function deleteTrack(trackId) {
 // ── VIDEO / LYRICS VIDEO GENERATION ──
 let vidPolling = null;
 
-// Show completed video — MP4 player with download button
+// Show completed video — MP4 player with download, or image gallery fallback
 function showVideoResult(row, data) {
   row.querySelector('.vid-gen-progress').style.display = 'none';
   row.querySelector('.vid-gen-btn').style.display = 'none';
@@ -903,7 +903,10 @@ function showVideoResult(row, data) {
   resEl.innerHTML = '';
   resEl.style.display = 'block';
 
-  // Video file ready — show player + download
+  let lyrics = [];
+  try { lyrics = JSON.parse(data.lyric_lines || '[]'); } catch(e) {}
+
+  // Best case: MP4 video file ready — show player + download
   if (data.video_url && data.video_url.startsWith('/')) {
     const vUrl = location.origin + data.video_url;
     resEl.innerHTML = `
@@ -922,17 +925,58 @@ function showVideoResult(row, data) {
     return;
   }
 
-  // No video yet — show error/retry
+  // Fallback: show images with lyrics as a nice visual preview
+  let imageUrls = [];
+  try { imageUrls = JSON.parse(data.image_urls || '[]'); } catch(e) {}
+  if (imageUrls.length === 0) {
+    resEl.innerHTML = '<div style="color:var(--t2);font-size:12px;padding:12px">Generation failed. Try again.</div>';
+    return;
+  }
+
+  // Image gallery with lyrics overlay — still useful even without MP4
+  const sid = 'vg-' + data.id;
   resEl.innerHTML = `
-    <div style="color:var(--t2);font-size:13px;padding:16px;text-align:center;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)">
-      Video is still processing. Refresh to check again.
+    <div id="${sid}" style="position:relative;width:100%;aspect-ratio:9/16;max-height:480px;border-radius:12px;overflow:hidden;background:#000">
+      ${imageUrls.map((url, i) => `<img src="${url}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0?1:0};transition:opacity 0.8s ease" data-si="${i}">`).join('')}
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:28px 16px 24px;background:linear-gradient(transparent,rgba(0,0,0,0.85));text-align:center">
+        <div class="vg-lyric" style="font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.9);line-height:1.35;min-height:60px;display:flex;align-items:center;justify-content:center;transition:opacity 0.3s"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      ${imageUrls.map((url, i) => `<a class="bt bs" style="flex:1;text-align:center;text-decoration:none;font-size:11px;padding:8px 4px" href="${url}" download="viraltrack-${i+1}.png">Image ${i+1}</a>`).join('')}
+    </div>
+    <div style="font-size:12px;color:var(--t2);margin-top:8px;text-align:center;line-height:1.5">
+      Save these images + add lyrics and your song in CapCut or TikTok
     </div>`;
+
+  // Animate through images and lyrics
+  const el = document.getElementById(sid);
+  if (!el) return;
+  const imgs = el.querySelectorAll('img[data-si]');
+  const lyEl = el.querySelector('.vg-lyric');
+  let ci = 0, cl = 0;
+  if (lyrics.length > 0) lyEl.textContent = lyrics[0];
+  const secImg = 3.5, secLyr = lyrics.length > 0 ? Math.max(2.2, (imageUrls.length * secImg) / lyrics.length) : 999;
+  let t = 0;
+  const iv = setInterval(() => {
+    t += 0.5;
+    const ti = Math.floor(t / secImg) % imageUrls.length;
+    if (ti !== ci) { imgs[ci].style.opacity = '0'; ci = ti; imgs[ci].style.opacity = '1'; }
+    if (lyrics.length > 0) {
+      const tl = Math.min(Math.floor(t / secLyr), lyrics.length - 1);
+      if (tl !== cl) { lyEl.style.opacity = '0'; setTimeout(() => { cl = tl; lyEl.textContent = lyrics[cl]; lyEl.style.opacity = '1'; }, 250); }
+    }
+    if (lyrics.length > 0 && t > lyrics.length * secLyr + 1) { t = 0; ci = 0; cl = 0; imgs.forEach((s, i) => s.style.opacity = i === 0 ? '1' : '0'); lyEl.textContent = lyrics[0]; lyEl.style.opacity = '1'; }
+  }, 500);
+  // Store interval for cleanup
+  el.dataset.interval = iv;
 }
 
 async function initVideoButtons(track, vids, analysis) {
   let canGenerate = true;
   try {
-    const data = await (await authFetch(A + '/videos')).json();
+    // Filter videos by THIS track so old videos don't bleed across analyses
+    const data = await (await authFetch(A + '/videos?track_id=' + encodeURIComponent(track.id))).json();
     const remaining = data.daily_limit - data.today_count;
     if (remaining <= 0) {
       canGenerate = false;
@@ -941,7 +985,7 @@ async function initVideoButtons(track, vids, analysis) {
         b.textContent = 'Daily limit reached';
       });
     }
-    // Show already-completed videos (most recent first)
+    // Show already-completed videos for THIS track only
     const completedVids = data.videos.filter(dv => dv.status === 'completed');
     if (completedVids.length > 0) {
       const dv = completedVids[0];
@@ -964,7 +1008,7 @@ async function initVideoButtons(track, vids, analysis) {
       try {
         const lt = JSON.parse(analysis?.lyric_themes || '{}');
         if (lt.quotable_lines && lt.quotable_lines.length > 0) {
-          lyricLines = lt.quotable_lines.slice(0, 5);
+          lyricLines = lt.quotable_lines.slice(0, 8);
         }
       } catch(e) {}
       if (lyricLines.length === 0 && cs.hook_line) {
@@ -983,7 +1027,7 @@ async function initVideoButtons(track, vids, analysis) {
       try {
         let moodTags = [];
         try { moodTags = JSON.parse(analysis?.mood_tags || '[]'); } catch(e) {}
-        const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ lyric_lines: lyricLines, genre: track.genre || '', title: track.title || '', artist: track.artist || '', mood_tags: moodTags }) });
+        const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ lyric_lines: lyricLines, genre: track.genre || '', title: track.title || '', artist: track.artist || '', mood_tags: moodTags, track_id: track.id }) });
         const data = await res.json();
         if (!res.ok) {
           row.querySelector('.vid-gen-progress').style.display = 'none';

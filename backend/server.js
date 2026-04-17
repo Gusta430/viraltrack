@@ -107,22 +107,13 @@ function generateImage(falKey, prompt) {
 }
 
 // Build lyrics video in 2 passes:
-// Pass 1: Ken Burns zoompan on each image + concat + 2016 color grade (warm, grain, vignette)
-// Pass 2: Kashie-style lyrics overlay — one bar at a time, Poppins Bold, fade in/out
+// Pass 1: concat images into slideshow + retro dad-cam color grade
+// Pass 2: Kashie-style lyrics overlay — one bar at a time, bold font, fade in/out
 function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
   return new Promise(async (resolve, reject) => {
     const numImages = imagePaths.length;
     const durationPerImage = totalDuration / numImages;
-    const framesPerImage = Math.round(durationPerImage * 25); // 25fps
     const tempSlideshow = outputPath.replace('.mp4', '-raw.mp4');
-
-    // Ken Burns zoom variants — alternate between zoom-in and zoom-out for variety
-    const zoomVariants = [
-      { z: `min(zoom+0.0008,1.08)`, x: `iw/2-(iw/zoom/2)`, y: `ih/2-(ih/zoom/2)` },               // center zoom in
-      { z: `if(eq(on,0),1.08,max(zoom-0.0008,1.0))`, x: `iw/2-(iw/zoom/2)`, y: `ih/2-(ih/zoom/2)` }, // center zoom out
-      { z: `min(zoom+0.0008,1.08)`, x: `iw/2-(iw/zoom/2)`, y: `ih/3-(ih/zoom/3)` },               // zoom in top-center
-      { z: `if(eq(on,0),1.08,max(zoom-0.0008,1.0))`, x: `iw/3-(iw/zoom/3)`, y: `ih/2-(ih/zoom/2)` }, // zoom out left-center
-    ];
 
     // Font path — Poppins Bold preferred, with fallbacks
     const fontPaths = [
@@ -137,42 +128,42 @@ function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
     console.log('🔤 Using font:', fontFile || 'default');
 
     try {
-      // ── Pass 1: Ken Burns zoompan + concat + 2016 color grade ──
+      // ── Pass 1: concat images + retro dad-cam color grade ──
       await new Promise((res, rej) => {
         const inputs = [];
-        const filters = [];
+        const scaleFilters = [];
         const concatInputs = [];
 
         imagePaths.forEach((imgPath, i) => {
           inputs.push('-loop', '1', '-t', durationPerImage.toFixed(2), '-i', imgPath);
-          const zv = zoomVariants[i % zoomVariants.length];
-          filters.push(
-            `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,` +
-            `zoompan=z='${zv.z}':x='${zv.x}':y='${zv.y}':d=${framesPerImage}:s=1080x1920:fps=25[v${i}]`
+          scaleFilters.push(
+            `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
           );
           concatInputs.push(`[v${i}]`);
         });
 
-        // Concat + 2016 color grade: warm tones, film grain, vignette
-        filters.push(
+        // Concat + dad-cam retro grade: warm/faded tones, heavier grain, strong vignette
+        const filterComplex = [
+          ...scaleFilters,
           `${concatInputs.join('')}concat=n=${numImages}:v=1:a=0,fps=25,` +
-          `curves=r='0/0 0.25/0.28 0.5/0.55 0.75/0.78 1/0.95':g='0/0 0.25/0.23 0.5/0.5 0.75/0.73 1/0.9':b='0/0.05 0.25/0.2 0.5/0.45 0.75/0.68 1/0.85',` +
-          `noise=c0s=10:c0f=t,` +
-          `vignette=PI/4[outv]`
-        );
+          `eq=brightness=0.04:saturation=0.85,` +
+          `curves=r='0/0.02 0.25/0.3 0.5/0.58 0.75/0.8 1/0.92':g='0/0.01 0.25/0.22 0.5/0.48 0.75/0.7 1/0.88':b='0/0.06 0.25/0.18 0.5/0.4 0.75/0.62 1/0.8',` +
+          `noise=c0s=18:c0f=t,` +
+          `vignette=PI/3.5[outv]`
+        ].join(';');
 
         const args = [
           '-y', ...inputs,
-          '-filter_complex', filters.join(';'),
+          '-filter_complex', filterComplex,
           '-map', '[outv]',
-          '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p',
+          '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
           '-t', totalDuration.toFixed(2),
           tempSlideshow
         ];
 
-        console.log('🎬 Pass 1: Ken Burns + 2016 color grade...');
-        execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000 }, (err, stdout, stderr) => {
-          if (err) { console.error('FFmpeg pass 1 error:', stderr?.substring(stderr.length - 500)); rej(err); }
+        console.log('🎬 Pass 1: Concat + retro dad-cam grade...');
+        execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
+          if (err) { console.error('FFmpeg pass 1 error:', stderr?.substring(Math.max(0, (stderr?.length || 0) - 500))); rej(err); }
           else { console.log('✅ Pass 1 done'); res(); }
         });
       });
@@ -181,15 +172,15 @@ function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
       if (lyricLines && lyricLines.length > 0) {
         await new Promise((res, rej) => {
           const lineCount = lyricLines.length;
-          const gap = 0.4; // small gap between lines
+          const gap = 0.35;
           const displayTime = Math.max(2.0, (totalDuration - gap * (lineCount + 1)) / lineCount);
           const vfParts = [];
 
           lyricLines.forEach((line, i) => {
             const startTime = gap + i * (displayTime + gap);
             const endTime = Math.min(startTime + displayTime, totalDuration - 0.2);
-            const fadeIn = 0.25;
-            const fadeOut = 0.25;
+            const fadeIn = 0.2;
+            const fadeOut = 0.2;
 
             // Escape text for FFmpeg drawtext
             const escaped = line
@@ -198,13 +189,13 @@ function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
               .replace(/:/g, '\\:')
               .replace(/%/g, '%%');
 
-            // Semi-transparent dark bar behind text — positioned lower like Kashie style
+            // Semi-transparent dark bar behind text — lower third like Kashie
             vfParts.push(
               `drawbox=x=0:y=ih*0.72:w=iw:h=ih*0.16:color=black@0.5:t=fill:` +
               `enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
             );
 
-            // Lyric text — big, bold, centered, with border for legibility
+            // Lyric text — bold, centered, clean look
             const fontOpt = fontFile ? `fontfile=${fontFile}:` : '';
             vfParts.push(
               `drawtext=text='${escaped}':` +
@@ -224,8 +215,8 @@ function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
           ];
 
           console.log('🎬 Pass 2: Kashie-style lyrics overlay...');
-          execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000 }, (err, stdout, stderr) => {
-            if (err) { console.error('FFmpeg pass 2 error:', stderr?.substring(stderr.length - 500)); rej(err); }
+          execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
+            if (err) { console.error('FFmpeg pass 2 error:', stderr?.substring(Math.max(0, (stderr?.length || 0) - 500))); rej(err); }
             else { console.log('✅ Pass 2 done — lyrics video ready'); res(); }
           });
         });
@@ -273,41 +264,41 @@ function buildScenePrompts(lyricLines, genre, title, artist, moodTags) {
     }
   }
 
-  // Genre-based scene defaults
+  // Genre-based scene defaults — candid real moments
   const genreScenes = {
-    'hip hop': ['luxury car interior with ambient lighting', 'city skyline at night with neon lights', 'concert crowd with stage lights and smoke', 'designer clothing and jewelry on dark velvet', 'rooftop overlooking city at golden hour'],
-    'hip-hop': ['luxury car interior with ambient lighting', 'city skyline at night with neon lights', 'concert crowd with stage lights and smoke', 'designer clothing and jewelry on dark velvet', 'rooftop overlooking city at golden hour'],
-    'rap': ['studio session with mic and dim lights', 'expensive car on empty street at night', 'stack of money and watches on marble', 'crowd going wild at a rap concert', 'penthouse view of city lights'],
-    'trap': ['dark street with neon signs and fog', 'luxury sports car with glowing headlights', 'gold chains and designer on black background', 'concert moshpit with laser lights', 'trap house aesthetic with purple ambient light'],
-    'r&b': ['candlelit bedroom with silk sheets', 'couple silhouette at sunset beach', 'rain on window with city lights behind', 'slow dance with fairy lights', 'rose petals on dark surface with soft glow'],
-    'rnb': ['candlelit bedroom with silk sheets', 'couple silhouette at sunset beach', 'rain on window with city lights behind', 'slow dance with fairy lights', 'rose petals on dark surface with soft glow'],
-    'pop': ['colorful festival crowd with confetti', 'neon-lit dance floor', 'road trip through scenic highway', 'rooftop party at sunset', 'bright city street with movement'],
-    'reggaeton': ['beach club party with palm trees', 'neon nightclub dance floor', 'tropical sunset with ocean waves', 'convertible driving coastal road', 'pool party with colorful lights'],
-    'country': ['pickup truck on dirt road at sunset', 'bonfire under starry sky', 'open field with golden wheat', 'small town main street at dusk', 'acoustic guitar on porch with sunset'],
-    'rock': ['electric guitar with stage smoke', 'packed arena concert with spotlights', 'desert highway at sunset', 'abandoned warehouse with graffiti', 'band performing with dramatic lighting'],
-    'edm': ['massive festival stage with laser show', 'neon geometric patterns in dark space', 'rave crowd with glow sticks', 'futuristic city with holographic lights', 'dj booth overlooking huge crowd'],
-    'indie': ['vintage film aesthetic street photography', 'rain-soaked city street reflections', 'cozy coffee shop window view', 'wildflower field at golden hour', 'old record player in dim room'],
-    'afrobeats': ['vibrant african street market', 'beach party with colorful outfits', 'dance circle with dramatic sunset', 'luxury resort pool at night', 'festival with traditional and modern vibes'],
-    'latin': ['havana street with classic cars', 'salsa dance floor with warm lights', 'tropical beach with palm trees at sunset', 'colorful colonial buildings at night', 'outdoor festival with string lights'],
+    'hip hop': ['someone leaning on a nice car in a dimly lit parking garage', 'studio session with someone behind the mic and red light on', 'group of friends walking through city streets at night', 'crowd at a hip hop show with hands in the air', 'someone counting money on a hotel bed', 'sneakers and chains laid out on a bed'],
+    'hip-hop': ['someone leaning on a nice car in a dimly lit parking garage', 'studio session with someone behind the mic and red light on', 'group of friends walking through city streets at night', 'crowd at a hip hop show with hands in the air', 'someone counting money on a hotel bed'],
+    'rap': ['someone recording in a dim studio with red lights', 'expensive car on a dark street with headlights on', 'someone showing off jewelry and watches closeup', 'mosh pit at a rap concert crowd going crazy', 'late night drive through the city from inside the car'],
+    'trap': ['dark street corner with neon store signs at night', 'someone sitting on the hood of a car at a gas station', 'gold chains and designer clothes on a messy bed', 'concert crowd moshing with flash photography', 'purple LED lights in a room with smoke', 'fast food and cash on a car dashboard at night'],
+    'r&b': ['couple slow dancing in a living room with warm light', 'someone lying in bed staring at the ceiling', 'rain on a window with blurry city lights behind', 'candles and wine glasses on a table set for two', 'couple asleep together on a couch with tv glow'],
+    'rnb': ['couple slow dancing in a living room with warm light', 'someone lying in bed staring at the ceiling', 'rain on a window with blurry city lights behind', 'candles and wine glasses on a table set for two', 'couple asleep together on a couch with tv glow'],
+    'pop': ['friends at a music festival with confetti falling', 'road trip selfie from a car window on a highway', 'someone dancing alone in their room with headphones', 'rooftop hangout with city lights at sunset', 'group of friends laughing at a diner late at night'],
+    'reggaeton': ['pool party with people dancing', 'beach at sunset with music playing from a speaker', 'nightclub dance floor with colored lights', 'friends in a convertible with windows down on coast', 'someone dancing in a kitchen at a house party'],
+    'country': ['old pickup truck parked on a dirt road at sunset', 'bonfire with friends sitting on tailgates', 'someone walking through a wheat field', 'small town main street with christmas lights', 'guitar leaning against a porch railing at sunset'],
+    'rock': ['band playing in a garage with one overhead light', 'packed crowd at a rock show moshing', 'someone driving fast on a desert highway', 'graffiti covered alley with skateboards', 'someone stage diving at a small venue'],
+    'edm': ['huge festival crowd with laser lights above', 'friends at a rave with glow sticks and face paint', 'dj booth from behind looking at massive crowd', 'someone dancing in a parking lot with car headlights', 'sunrise after a festival with tents and trash'],
+    'indie': ['someone reading in a coffee shop window on a rainy day', 'film camera and old photos scattered on a table', 'empty street at night with puddles reflecting lights', 'wildflowers in an overgrown lot at golden hour', 'vinyl records and a turntable in a messy bedroom'],
+    'afrobeats': ['crowded street party with people dancing', 'beach scene with colorful outfits and speakers', 'group dance circle at a celebration', 'busy market street with vibrant colors', 'sunset party with friends and good energy'],
+    'latin': ['classic car parked on a colorful street', 'couple dancing under string lights at night', 'beach with palm trees and golden sunset', 'street food vendor at night with warm lighting', 'friends at an outdoor party with music and lights'],
   };
 
-  // Vibe-based scene pools
+  // Vibe-based scene pools — candid real moments like from someone's old camera roll
   const vibeScenes = {
-    beach: ['crystal clear ocean waves crashing on white sand beach', 'palm trees silhouette against pink sunset sky', 'beach bonfire at night with sparks rising', 'surfer walking on beach at golden hour', 'aerial view of turquoise tropical coastline'],
-    party: ['nightclub dance floor with laser lights and smoke', 'vip booth with champagne bottles and sparklers', 'packed concert crowd going wild', 'dj mixing at festival main stage', 'rooftop party with city skyline behind'],
-    luxury: ['luxury sports car parked in front of mansion at night', 'designer watches and jewelry on marble surface', 'penthouse suite overlooking city lights', 'private jet interior with champagne', 'exotic car collection in underground garage with neon'],
-    street: ['dark city alley with neon signs and fog', 'street corner at night with car headlights', 'gritty urban rooftop with city backdrop', 'basketball court at night with harsh streetlights', 'lowrider cruising through city streets'],
-    love: ['couple hands intertwined at sunset', 'candlelit dinner table with roses', 'two silhouettes on empty beach at dusk', 'fairy lights wrapped around trees in garden', 'love lock bridge with soft bokeh lights'],
-    heartbreak: ['empty park bench in rain', 'shattered glass on dark floor reflecting light', 'single streetlight on empty road at night', 'withered roses on dark surface', 'window with raindrops and blurred city behind'],
-    night: ['city skyline reflected in water at night', 'empty neon-lit street at 3am', 'car driving through rain-soaked city at night', 'rooftop view of city with distant lightning', 'moonlit empty highway stretching to horizon'],
-    nature: ['dramatic mountain peak above clouds at sunrise', 'waterfall in lush green forest', 'field of wildflowers under dramatic sky', 'aurora borealis over still lake', 'massive oak tree in golden light'],
-    hype: ['explosion of fire and sparks on black background', 'fighter walking into arena with spotlight', 'crowd at concert with hands raised and pyrotechnics', 'lightning striking a dark landscape', 'champion celebration with confetti and gold'],
-    chill: ['sunset over calm ocean with purple sky', 'smoke trails in colored ambient light', 'vinyl record spinning in warm lit room', 'hammock between palm trees at sunset', 'city view from balcony at blue hour'],
+    beach: ['group of friends running into ocean waves at sunset', 'messy beach blanket with snacks and sunglasses left behind', 'someone caught mid-laugh sitting on the sand', 'blurry photo of friends doing cannonball into pool', 'sandy feet dangling off a pier with ocean below', 'friends in a convertible driving along coast road windows down', 'someone sleeping on a beach towel with sunburn', 'bonfire on beach with people sitting around at night'],
+    party: ['blurry photo of people dancing in a dark club with flash', 'group photo at a house party someone has red eyes from flash', 'hands holding up drinks at a crowded bar', 'crowd at a concert everyone holding phones up', 'someone standing on a table at a party', 'backstage at a show with equipment and dim lighting', 'friends pregaming in a messy apartment', 'people leaving a club at 3am on a wet street'],
+    luxury: ['someone leaning on an expensive car in a parking garage', 'wrist with gold watch and bracelets on a steering wheel', 'shopping bags from designer stores on car backseat', 'sneaker collection laid out on bedroom floor', 'stacks of cash on a kitchen counter', 'someone trying on chains in a jewelry store', 'bottle service table at a club with sparklers', 'brand new shoes still in the box on a doorstep'],
+    street: ['group of guys hanging out on a street corner at night', 'someone walking alone down a dark alley with one streetlight', 'bikes and cars parked outside a corner store', 'graffiti wall with someone standing in front of it', 'basketball game on an outdoor court under lights', 'someone recording on their phone from a car window', 'foggy street with tail lights disappearing', 'fast food wrappers on the hood of a parked car at night'],
+    love: ['couple from behind walking down an empty road holding hands', 'someone asleep on their partners shoulder on a bus', 'two people sharing earbuds sitting on stairs', 'blurry selfie of a couple kissing with flash', 'handwritten note left on a pillow', 'two pairs of shoes by a front door', 'couple watching sunset from a car hood', 'someone putting a jacket around someone else in the cold'],
+    heartbreak: ['empty passenger seat with the seatbelt still buckled', 'someone sitting alone on a curb at night under streetlight', 'phone screen showing missed calls in the dark', 'rain on a car windshield in a parking lot at night', 'empty side of a bed with messy sheets', 'old polaroid photo lying on a table', 'someone walking away down a long hallway', 'wilted flowers on a kitchen counter'],
+    night: ['blurry city lights from inside a moving car', 'empty gas station at 2am with fluorescent lights', 'someone smoking on a fire escape overlooking the city', 'car dashboard at night with highway lights streaking', 'convenience store glow on a dark empty street', 'friends in the backseat of a car at night laughing', 'foggy parking lot with one car under a lamp', 'silhouette in a window with city lights behind'],
+    nature: ['someone hiking on a mountain trail looking at the view', 'campfire with marshmallows and peoples legs around it', 'rain hitting a puddle on a dirt road', 'someone lying in tall grass staring at the sky', 'view from a car window of mountains and clouds', 'sunrise through a tent opening at a campsite', 'someone standing at the edge of a cliff looking out', 'dog running through a field at golden hour'],
+    hype: ['crowd going absolutely crazy at a concert pit', 'someone celebrating with arms raised on a rooftop', 'group of friends hyping someone up before they go on stage', 'fireworks reflected in someones sunglasses', 'burnout marks on pavement next to a muscle car', 'athlete crossing finish line with crowd cheering', 'flash photo of someone flexing in a gym mirror', 'crowd surfing at a festival'],
+    chill: ['someone lying on a couch with tv glow on their face', 'record player spinning in a room with warm lamplight', 'feet up on a balcony railing watching the sunset', 'smoke rising from an ashtray in dim moody light', 'cat sleeping on someones lap while they watch tv', 'messy desk with laptop open and coffee mug', 'someone staring out a window on a rainy day', 'empty swing swaying at a playground at dusk'],
   };
 
   // Build scene list: match lyrics line-by-line to scenes
   const scenes = [];
-  const numImages = Math.min(Math.max(3, lyricLines.length), 6);
+  const numImages = Math.min(Math.max(3, lyricLines.length), 8);
 
   // First, try to match each lyric line to a vibe
   for (let i = 0; i < numImages; i++) {
@@ -341,7 +332,7 @@ function buildScenePrompts(lyricLines, genre, title, artist, moodTags) {
 
     // Ultimate fallback
     if (!bestScene) {
-      const fallback = ['city skyline at night with dramatic lighting', 'concert crowd with colorful stage lights', 'moody street photography with neon reflections', 'dramatic sunset over landscape', 'smoke and light in dark cinematic setting', 'luxury aesthetic with dark background'];
+      const fallback = ['blurry city lights from a moving car at night', 'group of friends caught mid laugh at a party', 'someone walking alone on an empty street at night', 'sunset seen through a dirty car windshield', 'empty room with just a window and warm light coming in', 'convenience store parking lot at 2am with fluorescent glow'];
       bestScene = fallback[i % fallback.length];
     }
 
@@ -370,7 +361,7 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
 
     const imagePromises = [];
     for (let i = 0; i < numImages; i++) {
-      const imgPrompt = `Real authentic photograph, ${scenePrompts[i]}. Shot on iPhone, candid raw moment, nostalgic 2016 VSCO aesthetic, warm faded tones, slight film grain, golden hour feel, real life not posed, no text, no words, no letters, no watermarks. Vertical 9:16 phone format.`;
+      const imgPrompt = `Amateur photo taken on a cheap digital camera or old camcorder, ${scenePrompts[i]}. Low resolution feel, slightly overexposed, flash photography, red eye, timestamp in corner aesthetic, 2000s disposable camera vibes, grainy, not professional, real candid moment caught on tape, no text no words no letters no watermarks. Vertical 9:16.`;
       console.log(`📸 Image ${i}: ${scenePrompts[i]}`);
       imagePromises.push(generateImage(falKey, imgPrompt));
     }
@@ -379,42 +370,47 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
     const imageUrls = await Promise.all(imagePromises);
     console.log(`📸 All ${numImages} images generated:`, imageUrls.map(u => u.substring(0, 60)));
 
-    // Save image URLs to DB immediately
+    // ── IMMEDIATELY mark completed with image URLs so frontend always has something ──
     await db.updateVideoGeneration(videoId, {
-      image_urls: JSON.stringify(imageUrls)
+      status: 'completed',
+      image_urls: JSON.stringify(imageUrls),
+      video_url: ''
     });
+    console.log(`✅ Images saved — now trying to build MP4 video...`);
 
-    // ── Build MP4 video with FFmpeg (required, not optional) ──
-    const ffmpegBin = ffmpegPath || 'ffmpeg'; // ffmpeg-static or system ffmpeg
-    console.log(`🎬 Building video with: ${ffmpegBin}`);
+    // ── Try to build MP4 video with FFmpeg (bonus — upgrades the result) ──
+    try {
+      const ffmpegBin = ffmpegPath || 'ffmpeg';
+      console.log(`🎬 Building video with: ${ffmpegBin}`);
 
-    // Download all images to disk
-    const imagePaths = [];
-    for (let i = 0; i < imageUrls.length; i++) {
-      const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
-      await downloadFile(imageUrls[i], imgPath);
-      imagePaths.push(imgPath);
-      console.log(`📥 Downloaded image ${i}`);
+      // Download all images to disk
+      const imagePaths = [];
+      for (let i = 0; i < imageUrls.length; i++) {
+        const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+        await downloadFile(imageUrls[i], imgPath);
+        imagePaths.push(imgPath);
+        console.log(`📥 Downloaded image ${i}`);
+      }
+
+      // Create video: ~3 sec per lyric line, minimum 12 sec
+      const totalDuration = Math.max(12, lyricLines.length * 3.0);
+      const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
+      await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
+
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+        const fileSize = fs.statSync(outputPath).size;
+        console.log(`✅ Video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
+        await db.updateVideoGeneration(videoId, {
+          video_url: `/api/videos/${videoId}/file`
+        });
+      }
+
+      // Cleanup temp images
+      imagePaths.forEach(p => fs.unlink(p, () => {}));
+    } catch (ffmpegErr) {
+      console.log(`⚠️ FFmpeg failed (images still available): ${ffmpegErr.message}`);
+      // Not fatal — status is already 'completed' with image URLs
     }
-
-    // Create video: ~3 sec per lyric line, minimum 12 sec
-    const totalDuration = Math.max(12, lyricLines.length * 3.0);
-    const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
-    await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
-
-    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
-      const fileSize = fs.statSync(outputPath).size;
-      console.log(`✅ Video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
-      await db.updateVideoGeneration(videoId, {
-        status: 'completed',
-        video_url: `/api/videos/${videoId}/file`
-      });
-    } else {
-      throw new Error('Video file was not created or is empty');
-    }
-
-    // Cleanup temp images
-    imagePaths.forEach(p => fs.unlink(p, () => {}));
 
   } catch (err) {
     console.error(`❌ Video ${videoId} failed:`, err.message);
@@ -609,8 +605,10 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/reports' && method === 'GET') return json(res, await db.getReports(user.id));
 
     // ── VIDEO GENERATION (fal.ai) ──
-    if (p === '/api/videos' && method === 'GET') {
-      const videos = await db.getUserVideos(user.id);
+    if (p.startsWith('/api/videos') && p.indexOf('/generate') === -1 && p.indexOf('/status') === -1 && p.indexOf('/file') === -1 && method === 'GET') {
+      const urlObj = new URL(req.url, 'http://localhost');
+      const trackId = urlObj.searchParams.get('track_id');
+      const videos = await db.getUserVideos(user.id, trackId);
       const todayCount = await db.getUserVideoCountToday(user.id);
       return json(res, { videos, today_count: todayCount, daily_limit: 999 });
     }
@@ -625,8 +623,9 @@ const server = http.createServer(async (req, res) => {
 
       const videoId = uuid();
       const genre = body.genre || '';
+      const trackId = body.track_id || '';
       const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [] };
-      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines) });
+      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines), track_id: trackId });
 
       // Fire background process: generate images → build slideshow → update DB
       processVideoGeneration(videoId, lyricLines, FAL_KEY, genre, songContext).catch(err => {

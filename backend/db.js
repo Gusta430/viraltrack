@@ -116,6 +116,7 @@ async function initDB() {
   try { await run('ALTER TABLE analyses ADD COLUMN posting_strategy TEXT'); } catch(e) {}
   try { await run('ALTER TABLE video_generations ADD COLUMN lyric_lines TEXT'); } catch(e) {}
   try { await run('ALTER TABLE video_generations ADD COLUMN image_urls TEXT'); } catch(e) {}
+  try { await run('ALTER TABLE video_generations ADD COLUMN track_id TEXT'); } catch(e) {}
   await run('CREATE TABLE IF NOT EXISTS trends (id INTEGER PRIMARY KEY, data TEXT, updated_at TEXT DEFAULT (CURRENT_TIMESTAMP))');
   console.log('✅ Database ready!');
 }
@@ -247,8 +248,8 @@ class Database {
 
   // Video generations
   async createVideoGeneration(v) {
-    await run('INSERT INTO video_generations (id, user_id, prompt, status, request_id, lyric_lines) VALUES (?,?,?,?,?,?)',
-      [v.id, v.user_id, v.prompt, v.status, v.request_id, v.lyric_lines || '[]']);
+    await run('INSERT INTO video_generations (id, user_id, prompt, status, request_id, lyric_lines, track_id) VALUES (?,?,?,?,?,?,?)',
+      [v.id, v.user_id, v.prompt, v.status, v.request_id, v.lyric_lines || '[]', v.track_id || null]);
     return v;
   }
 
@@ -278,7 +279,10 @@ class Database {
     return parseInt(rows[0]?.c || 0);
   }
 
-  async getUserVideos(userId) {
+  async getUserVideos(userId, trackId) {
+    if (trackId) {
+      return execute('SELECT * FROM video_generations WHERE user_id = ? AND track_id = ? ORDER BY created_at DESC LIMIT 20', [userId, trackId]);
+    }
     return execute('SELECT * FROM video_generations WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
   }
 
