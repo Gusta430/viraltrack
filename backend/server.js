@@ -17,10 +17,40 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(__dirname, '..', 'frontend', 'public');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const VIDS_DIR = path.join(__dirname, 'data', 'videos');
+const FONTS_DIR = path.join(__dirname, 'data', 'fonts');
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 fs.mkdirSync(VIDS_DIR, { recursive: true });
+fs.mkdirSync(FONTS_DIR, { recursive: true });
 
-// ── LYRICS SLIDESHOW VIDEO (fal.ai FLUX images + FFmpeg) ──
+// Download Poppins Bold font if not available on this system
+const POPPINS_BOLD = path.join(FONTS_DIR, 'Poppins-Bold.ttf');
+const POPPINS_URL = 'https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Bold.ttf';
+function ensureFont() {
+  // Check system paths first
+  const systemPaths = [
+    '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
+    '/usr/share/fonts/truetype/poppins/Poppins-Bold.ttf',
+  ];
+  for (const sp of systemPaths) { if (fs.existsSync(sp)) { console.log('🔤 Font found:', sp); return; } }
+  // Check local copy
+  if (fs.existsSync(POPPINS_BOLD) && fs.statSync(POPPINS_BOLD).size > 10000) {
+    console.log('🔤 Font found:', POPPINS_BOLD); return;
+  }
+  // Download it
+  console.log('🔤 Downloading Poppins-Bold font...');
+  https.get(POPPINS_URL, (resp) => {
+    if (resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+      https.get(resp.headers.location, (r2) => {
+        if (r2.statusCode >= 300 && r2.statusCode < 400 && r2.headers.location) {
+          https.get(r2.headers.location, (r3) => { r3.pipe(fs.createWriteStream(POPPINS_BOLD)); r3.on('end', () => console.log('🔤 Font downloaded')); });
+        } else { r2.pipe(fs.createWriteStream(POPPINS_BOLD)); r2.on('end', () => console.log('🔤 Font downloaded')); }
+      });
+    } else { resp.pipe(fs.createWriteStream(POPPINS_BOLD)); resp.on('end', () => console.log('🔤 Font downloaded')); }
+  }).on('error', (e) => console.log('⚠️ Font download failed:', e.message));
+}
+ensureFont();
+
+// ── LYRICS VIDEO (fal.ai FLUX images + FFmpeg) ──
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
@@ -76,112 +106,138 @@ function generateImage(falKey, prompt) {
   });
 }
 
-// Build FFmpeg lyrics slideshow in 2 passes for reliability:
-// Pass 1: concat images into slideshow video
-// Pass 2: overlay lyrics with fade-in/fade-out
-function createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration) {
+// Build lyrics video in 2 passes:
+// Pass 1: Ken Burns zoompan on each image + concat + 2016 color grade (warm, grain, vignette)
+// Pass 2: Kashie-style lyrics overlay — one bar at a time, Poppins Bold, fade in/out
+function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
   return new Promise(async (resolve, reject) => {
     const numImages = imagePaths.length;
     const durationPerImage = totalDuration / numImages;
-    const tempSlideshow = outputPath.replace('.mp4', '-slideshow.mp4');
+    const framesPerImage = Math.round(durationPerImage * 25); // 25fps
+    const tempSlideshow = outputPath.replace('.mp4', '-raw.mp4');
+
+    // Ken Burns zoom variants — alternate between zoom-in and zoom-out for variety
+    const zoomVariants = [
+      { z: `min(zoom+0.0008,1.08)`, x: `iw/2-(iw/zoom/2)`, y: `ih/2-(ih/zoom/2)` },               // center zoom in
+      { z: `if(eq(on,0),1.08,max(zoom-0.0008,1.0))`, x: `iw/2-(iw/zoom/2)`, y: `ih/2-(ih/zoom/2)` }, // center zoom out
+      { z: `min(zoom+0.0008,1.08)`, x: `iw/2-(iw/zoom/2)`, y: `ih/3-(ih/zoom/3)` },               // zoom in top-center
+      { z: `if(eq(on,0),1.08,max(zoom-0.0008,1.0))`, x: `iw/3-(iw/zoom/3)`, y: `ih/2-(ih/zoom/2)` }, // zoom out left-center
+    ];
+
+    // Font path — Poppins Bold preferred, with fallbacks
+    const fontPaths = [
+      '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
+      '/usr/share/fonts/truetype/poppins/Poppins-Bold.ttf',
+      POPPINS_BOLD, // our downloaded copy
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+      '/usr/share/fonts/truetype/lato/Lato-Bold.ttf'
+    ];
+    let fontFile = '';
+    for (const fp of fontPaths) { if (fs.existsSync(fp)) { fontFile = fp; break; } }
+    console.log('🔤 Using font:', fontFile || 'default');
 
     try {
-      // ── Pass 1: Create slideshow from images ──
+      // ── Pass 1: Ken Burns zoompan + concat + 2016 color grade ──
       await new Promise((res, rej) => {
         const inputs = [];
-        const scaleFilters = [];
+        const filters = [];
         const concatInputs = [];
 
         imagePaths.forEach((imgPath, i) => {
           inputs.push('-loop', '1', '-t', durationPerImage.toFixed(2), '-i', imgPath);
-          scaleFilters.push(
-            `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
+          const zv = zoomVariants[i % zoomVariants.length];
+          filters.push(
+            `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,` +
+            `zoompan=z='${zv.z}':x='${zv.x}':y='${zv.y}':d=${framesPerImage}:s=1080x1920:fps=25[v${i}]`
           );
           concatInputs.push(`[v${i}]`);
         });
 
-        const filterComplex = [
-          ...scaleFilters,
-          `${concatInputs.join('')}concat=n=${numImages}:v=1:a=0,fps=25[outv]`
-        ].join(';');
+        // Concat + 2016 color grade: warm tones, film grain, vignette
+        filters.push(
+          `${concatInputs.join('')}concat=n=${numImages}:v=1:a=0,fps=25,` +
+          `curves=r='0/0 0.25/0.28 0.5/0.55 0.75/0.78 1/0.95':g='0/0 0.25/0.23 0.5/0.5 0.75/0.73 1/0.9':b='0/0.05 0.25/0.2 0.5/0.45 0.75/0.68 1/0.85',` +
+          `noise=c0s=10:c0f=t,` +
+          `vignette=PI/4[outv]`
+        );
 
         const args = [
           '-y', ...inputs,
-          '-filter_complex', filterComplex,
+          '-filter_complex', filters.join(';'),
           '-map', '[outv]',
           '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p',
+          '-t', totalDuration.toFixed(2),
           tempSlideshow
         ];
 
-        console.log('🎬 Pass 1: Creating slideshow from images...');
-        execFile(ffmpegPath, args, { timeout: 120000 }, (err, stdout, stderr) => {
-          if (err) { console.error('FFmpeg pass 1 error:', stderr); rej(err); }
+        console.log('🎬 Pass 1: Ken Burns + 2016 color grade...');
+        execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000 }, (err, stdout, stderr) => {
+          if (err) { console.error('FFmpeg pass 1 error:', stderr?.substring(stderr.length - 500)); rej(err); }
           else { console.log('✅ Pass 1 done'); res(); }
         });
       });
 
-      // ── Pass 2: Overlay lyrics one bar at a time ──
+      // ── Pass 2: Kashie-style lyrics — one bar at a time ──
       if (lyricLines && lyricLines.length > 0) {
         await new Promise((res, rej) => {
           const lineCount = lyricLines.length;
-          const gap = 0.5;
+          const gap = 0.4; // small gap between lines
           const displayTime = Math.max(2.0, (totalDuration - gap * (lineCount + 1)) / lineCount);
-          const filters = [];
+          const vfParts = [];
 
           lyricLines.forEach((line, i) => {
             const startTime = gap + i * (displayTime + gap);
-            const endTime = Math.min(startTime + displayTime, totalDuration - 0.3);
-            const fadeInEnd = startTime + 0.3;
-            const fadeOutStart = Math.max(startTime, endTime - 0.3);
+            const endTime = Math.min(startTime + displayTime, totalDuration - 0.2);
+            const fadeIn = 0.25;
+            const fadeOut = 0.25;
 
-            // Escape for FFmpeg drawtext
+            // Escape text for FFmpeg drawtext
             const escaped = line
               .replace(/\\/g, '\\\\\\\\')
               .replace(/'/g, '\u2019')
               .replace(/:/g, '\\:')
               .replace(/%/g, '%%');
 
-            // Dark background box (use ih for input height in drawbox)
-            filters.push(
-              `drawbox=x=0:y=ih*0.58:w=iw:h=ih*0.20:color=black@0.6:t=fill:` +
+            // Semi-transparent dark bar behind text — positioned lower like Kashie style
+            vfParts.push(
+              `drawbox=x=0:y=ih*0.72:w=iw:h=ih*0.16:color=black@0.5:t=fill:` +
               `enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
             );
 
-            // Large white text with fade in/out
-            filters.push(
+            // Lyric text — big, bold, centered, with border for legibility
+            const fontOpt = fontFile ? `fontfile=${fontFile}:` : '';
+            vfParts.push(
               `drawtext=text='${escaped}':` +
-              `fontsize=58:fontcolor=white:borderw=4:bordercolor=black:` +
-              `x=(w-text_w)/2:y=h*0.65:` +
+              `${fontOpt}fontsize=52:fontcolor=white:borderw=3:bordercolor=black@0.7:` +
+              `x=(w-text_w)/2:y=h*0.77:` +
               `enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})':` +
-              `alpha='if(lt(t\\,${fadeInEnd.toFixed(2)})\\,(t-${startTime.toFixed(2)})/0.3\\,if(gt(t\\,${fadeOutStart.toFixed(2)})\\,(${endTime.toFixed(2)}-t)/0.3\\,1))'`
+              `alpha='if(lt(t\\,${(startTime + fadeIn).toFixed(2)})\\,(t-${startTime.toFixed(2)})/${fadeIn.toFixed(2)}\\,if(gt(t\\,${(endTime - fadeOut).toFixed(2)})\\,(${endTime.toFixed(2)}-t)/${fadeOut.toFixed(2)}\\,1))'`
             );
           });
 
           const args = [
             '-y', '-i', tempSlideshow,
-            '-vf', filters.join(','),
+            '-vf', vfParts.join(','),
             '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
             '-movflags', '+faststart',
             outputPath
           ];
 
-          console.log('🎬 Pass 2: Overlaying lyrics...');
-          execFile(ffmpegPath, args, { timeout: 120000 }, (err, stdout, stderr) => {
-            if (err) { console.error('FFmpeg pass 2 error:', stderr); rej(err); }
-            else { console.log('✅ Pass 2 done — lyrics overlaid'); res(); }
+          console.log('🎬 Pass 2: Kashie-style lyrics overlay...');
+          execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000 }, (err, stdout, stderr) => {
+            if (err) { console.error('FFmpeg pass 2 error:', stderr?.substring(stderr.length - 500)); rej(err); }
+            else { console.log('✅ Pass 2 done — lyrics video ready'); res(); }
           });
         });
       } else {
-        // No lyrics — just rename slideshow to output
         fs.renameSync(tempSlideshow, outputPath);
       }
 
-      // Cleanup temp slideshow
+      // Cleanup temp file
       fs.unlink(tempSlideshow, () => {});
       resolve(outputPath);
 
     } catch (err) {
-      // Cleanup on error
       fs.unlink(tempSlideshow, () => {});
       reject(new Error('FFmpeg failed: ' + err.message));
     }
@@ -314,55 +370,51 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
 
     const imagePromises = [];
     for (let i = 0; i < numImages; i++) {
-      const imgPrompt = `Cinematic photograph, ${scenePrompts[i]}. Ultra high quality, dramatic lighting, shot on RED camera, shallow depth of field, moody color grade. No text, no words, no letters, no watermarks. Vertical 9:16 phone format.`;
+      const imgPrompt = `Real authentic photograph, ${scenePrompts[i]}. Shot on iPhone, candid raw moment, nostalgic 2016 VSCO aesthetic, warm faded tones, slight film grain, golden hour feel, real life not posed, no text, no words, no letters, no watermarks. Vertical 9:16 phone format.`;
       console.log(`📸 Image ${i}: ${scenePrompts[i]}`);
       imagePromises.push(generateImage(falKey, imgPrompt));
     }
 
-    console.log(`📸 Generating ${numImages} background images via FLUX...`);
+    console.log(`📸 Generating ${numImages} images via FLUX...`);
     const imageUrls = await Promise.all(imagePromises);
     console.log(`📸 All ${numImages} images generated:`, imageUrls.map(u => u.substring(0, 60)));
 
-    // ── IMMEDIATELY save image URLs so frontend can show slideshow ──
-    // This is the guaranteed fallback — no FFmpeg needed for this
+    // Save image URLs to DB immediately
     await db.updateVideoGeneration(videoId, {
-      status: 'completed',
-      image_urls: JSON.stringify(imageUrls),
-      video_url: ''  // no video file yet, frontend will use image slideshow
+      image_urls: JSON.stringify(imageUrls)
     });
-    console.log(`✅ Image URLs saved for ${videoId} — frontend can show slideshow now`);
 
-    // ── Try FFmpeg slideshow as bonus (if ffmpeg-static works on this host) ──
-    try {
-      if (!ffmpegPath) throw new Error('ffmpeg-static not available');
+    // ── Build MP4 video with FFmpeg (required, not optional) ──
+    const ffmpegBin = ffmpegPath || 'ffmpeg'; // ffmpeg-static or system ffmpeg
+    console.log(`🎬 Building video with: ${ffmpegBin}`);
 
-      // Download all images to disk
-      const imagePaths = [];
-      for (let i = 0; i < imageUrls.length; i++) {
-        const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
-        await downloadFile(imageUrls[i], imgPath);
-        imagePaths.push(imgPath);
-      }
-
-      // Create slideshow: ~3.5 sec per lyric line, minimum 12 sec
-      const totalDuration = Math.max(12, lyricLines.length * 3.5);
-      const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
-      await createLyricsSlideshow(imagePaths, outputPath, lyricLines, totalDuration);
-
-      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
-        const fileSize = fs.statSync(outputPath).size;
-        console.log(`✅ Video file created (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
-        await db.updateVideoGeneration(videoId, {
-          video_url: `/api/videos/${videoId}/file`
-        });
-      }
-
-      // Cleanup temp images
-      imagePaths.forEach(p => fs.unlink(p, () => {}));
-    } catch (ffmpegErr) {
-      console.log(`⚠️ FFmpeg slideshow skipped (images still available): ${ffmpegErr.message}`);
-      // Not a fatal error — images are already saved and frontend will show slideshow
+    // Download all images to disk
+    const imagePaths = [];
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+      await downloadFile(imageUrls[i], imgPath);
+      imagePaths.push(imgPath);
+      console.log(`📥 Downloaded image ${i}`);
     }
+
+    // Create video: ~3 sec per lyric line, minimum 12 sec
+    const totalDuration = Math.max(12, lyricLines.length * 3.0);
+    const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
+    await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
+
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+      const fileSize = fs.statSync(outputPath).size;
+      console.log(`✅ Video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
+      await db.updateVideoGeneration(videoId, {
+        status: 'completed',
+        video_url: `/api/videos/${videoId}/file`
+      });
+    } else {
+      throw new Error('Video file was not created or is empty');
+    }
+
+    // Cleanup temp images
+    imagePaths.forEach(p => fs.unlink(p, () => {}));
 
   } catch (err) {
     console.error(`❌ Video ${videoId} failed:`, err.message);
@@ -610,7 +662,7 @@ const server = http.createServer(async (req, res) => {
       // Auto-timeout: if stuck processing for >5 min, mark as error
       if (video.status === 'processing' && video.created_at) {
         const age = Date.now() - new Date(video.created_at).getTime();
-        if (age > 5 * 60 * 1000) {
+        if (age > 8 * 60 * 1000) {
           await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation timed out — try again' });
           return json(res, { ...video, status: 'error', error_message: 'Generation timed out — try again' });
         }

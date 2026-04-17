@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "node --watch backend/server.js"
+    "dev": "node --watch backend/server.js",
+    "build": "echo 'Build done — ffmpeg-static provides FFmpeg binary'"
   },
   "dependencies": {
     "audio-decode": "^3.3.0",

@@ -770,7 +770,7 @@ function showAn(t,an){
       <div style="font-size:14px;color:var(--t2);margin-bottom:16px;max-width:500px;margin-left:auto;margin-right:auto">${isProd?'Get a 4-week strategy to sell this beat, find artists, optimize your store, and grow your brand':'Get a 4-week day-by-day launch strategy, real playlist targets, Meta Ads copy and more — all based on this analysis'}</div>
       <button class="bt bp" onclick="document.getElementById('btn-gen-promo').click()" style="padding:14px 32px;font-size:15px;font-weight:700;background:var(--ac);box-shadow:0 4px 16px rgba(139,92,246,.35)">${isProd?'Generate beat promo plan →':'Generate promo plan + Meta Ads →'}</button>
     </div>
-    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div><div class="stl">${isProd?'Beat Preview Suggestions':'AI Video Suggestions'}</div><div class="sts">${isProd?'Content ideas to promote your beat and attract artists':'Content ideas based on your track — generate any of them with AI'}</div></div></div><div class="vg">${vids.map((v,vi)=>{const cs=v.caption_structured||{};const as=v.algorithm_score||{};const cp=v.cross_post_strategy||{};const cap=cs.full_caption||v.caption||'';return `<div class="vc"><div class="vp"><div class="vbs"><span class="vb">${v.duration}</span>${(v.platforms||[]).map(p=>`<span class="vb">${p}</span>`).join('')}<span class="vb hl">${v.timestamp}</span></div><div class="vpi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div></div><div class="vby"><div class="video-suggestion-label">💡 Suggestion</div><div class="vtl">${v.title}</div>${v.cover_frame?`<div style="padding:10px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.15);border-radius:var(--rs);margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--yl);margin-bottom:4px;text-transform:uppercase">📸 Cover frame / thumbnail</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${v.cover_frame}</div></div>`:''}<div class="vcl">Caption: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vct').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vct">${cap}</div>${cs.hook_line?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0"><div style="padding:8px;background:rgba(139,92,246,.06);border-radius:6px;border:1px solid rgba(139,92,246,.12)"><div style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;margin-bottom:3px">Hook line</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.hook_line}</div></div><div style="padding:8px;background:rgba(34,197,94,.06);border-radius:6px;border:1px solid rgba(34,197,94,.12)"><div style="font-size:9px;font-weight:700;color:var(--gr);text-transform:uppercase;margin-bottom:3px">Body</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.body||''}</div></div><div style="padding:8px;background:rgba(236,72,153,.06);border-radius:6px;border:1px solid rgba(236,72,153,.12)"><div style="font-size:9px;font-weight:700;color:var(--pk);text-transform:uppercase;margin-bottom:3px">CTA</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.cta||''}</div></div></div>`:''}<div class="vcl">Hashtags: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vht').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vht">${v.hashtags}</div>${as.estimated_completion?`<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:8px">📊 Algorithm score</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="font-size:10px"><span style="color:var(--ac);font-weight:600">Completion:</span> <span style="color:var(--t2)">${as.estimated_completion}</span></div><div style="font-size:10px"><span style="color:var(--gr);font-weight:600">Rewatch:</span> <span style="color:var(--t2)">${as.rewatch_potential||''}</span></div><div style="font-size:10px"><span style="color:var(--pk);font-weight:600">Comments:</span> <span style="color:var(--t2)">${as.comment_trigger||''}</span></div><div style="font-size:10px"><span style="color:var(--yl);font-weight:600">Saves:</span> <span style="color:var(--t2)">${as.save_trigger||''}</span></div></div></div>`:''} ${cp.post_first_on?`<div style="margin-top:8px;padding:8px 10px;background:rgba(59,130,246,.06);border-radius:6px;border:1px solid rgba(59,130,246,.12)"><div style="font-size:9px;font-weight:700;color:var(--bl);text-transform:uppercase;margin-bottom:4px">Cross-posting</div><div style="font-size:10px;color:var(--t2);line-height:1.5">${cp.post_first_on}. Wait ${cp.wait_before_repost||'24h'}. ${cp.platform_tweaks||''}</div></div>`:''}</div><div class="vid-gen-row" id="vid-row-${vi}"><button class="bt bp vid-gen-btn" data-idx="${vi}" style="width:100%;margin-top:0;font-size:12px;padding:10px 16px">🎬 Generate Lyrics Video</button><div class="vid-gen-progress" style="display:none;text-align:center;padding:12px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div><div style="font-size:12px;color:var(--t2)">Generating lyrics video (~15-30 sec)... Add your song on TikTok/Reels after!</div></div><div class="vid-gen-result" style="display:none;padding:4px 0 0"><video controls playsinline style="width:100%;border-radius:var(--rs);background:#000"></video><a class="bt bs" style="width:100%;text-align:center;text-decoration:none;margin-top:8px;font-size:12px;display:block" download="viraltrack-promo.mp4">⬇ Download</a></div><div class="vid-gen-error auth-err" style="margin-top:8px;font-size:12px"></div></div></div>`}).join('')}</div><div class="tb yl"><span>💡</span><span><strong>Pro tip:</strong> ${an.pro_tip}</span></div></div>
+    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div><div class="stl">${isProd?'Beat Preview Suggestions':'AI Video Suggestions'}</div><div class="sts">${isProd?'Content ideas to promote your beat and attract artists':'Content ideas based on your track — generate any of them with AI'}</div></div></div><div class="vg">${vids.map((v,vi)=>{const cs=v.caption_structured||{};const as=v.algorithm_score||{};const cp=v.cross_post_strategy||{};const cap=cs.full_caption||v.caption||'';return `<div class="vc"><div class="vp"><div class="vbs"><span class="vb">${v.duration}</span>${(v.platforms||[]).map(p=>`<span class="vb">${p}</span>`).join('')}<span class="vb hl">${v.timestamp}</span></div><div class="vpi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div></div><div class="vby"><div class="video-suggestion-label">💡 Suggestion</div><div class="vtl">${v.title}</div>${v.cover_frame?`<div style="padding:10px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.15);border-radius:var(--rs);margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--yl);margin-bottom:4px;text-transform:uppercase">📸 Cover frame / thumbnail</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${v.cover_frame}</div></div>`:''}<div class="vcl">Caption: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vct').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vct">${cap}</div>${cs.hook_line?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0"><div style="padding:8px;background:rgba(139,92,246,.06);border-radius:6px;border:1px solid rgba(139,92,246,.12)"><div style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;margin-bottom:3px">Hook line</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.hook_line}</div></div><div style="padding:8px;background:rgba(34,197,94,.06);border-radius:6px;border:1px solid rgba(34,197,94,.12)"><div style="font-size:9px;font-weight:700;color:var(--gr);text-transform:uppercase;margin-bottom:3px">Body</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.body||''}</div></div><div style="padding:8px;background:rgba(236,72,153,.06);border-radius:6px;border:1px solid rgba(236,72,153,.12)"><div style="font-size:9px;font-weight:700;color:var(--pk);text-transform:uppercase;margin-bottom:3px">CTA</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.cta||''}</div></div></div>`:''}<div class="vcl">Hashtags: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vht').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vht">${v.hashtags}</div>${as.estimated_completion?`<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:8px">📊 Algorithm score</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="font-size:10px"><span style="color:var(--ac);font-weight:600">Completion:</span> <span style="color:var(--t2)">${as.estimated_completion}</span></div><div style="font-size:10px"><span style="color:var(--gr);font-weight:600">Rewatch:</span> <span style="color:var(--t2)">${as.rewatch_potential||''}</span></div><div style="font-size:10px"><span style="color:var(--pk);font-weight:600">Comments:</span> <span style="color:var(--t2)">${as.comment_trigger||''}</span></div><div style="font-size:10px"><span style="color:var(--yl);font-weight:600">Saves:</span> <span style="color:var(--t2)">${as.save_trigger||''}</span></div></div></div>`:''} ${cp.post_first_on?`<div style="margin-top:8px;padding:8px 10px;background:rgba(59,130,246,.06);border-radius:6px;border:1px solid rgba(59,130,246,.12)"><div style="font-size:9px;font-weight:700;color:var(--bl);text-transform:uppercase;margin-bottom:4px">Cross-posting</div><div style="font-size:10px;color:var(--t2);line-height:1.5">${cp.post_first_on}. Wait ${cp.wait_before_repost||'24h'}. ${cp.platform_tweaks||''}</div></div>`:''}</div><div class="vid-gen-row" id="vid-row-${vi}"><button class="bt bp vid-gen-btn" data-idx="${vi}" style="width:100%;margin-top:0;font-size:12px;padding:10px 16px">🎬 Generate Lyrics Video</button><div class="vid-gen-progress" style="display:none;text-align:center;padding:12px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div><div style="font-size:12px;color:var(--t2)">Creating your video (~1-2 min)... AI images + Ken Burns + lyrics overlay</div></div><div class="vid-gen-result" style="display:none;padding:4px 0 0"><video controls playsinline style="width:100%;border-radius:var(--rs);background:#000"></video><a class="bt bs" style="width:100%;text-align:center;text-decoration:none;margin-top:8px;font-size:12px;display:block" download="viraltrack-promo.mp4">⬇ Download</a></div><div class="vid-gen-error auth-err" style="margin-top:8px;font-size:12px"></div></div></div>`}).join('')}</div><div class="tb yl"><span>💡</span><span><strong>Pro tip:</strong> ${an.pro_tip}</span></div></div>
     <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div><div><div class="stl">${isProd?'Producer Content Ideas':'DIY Content Ideas'}</div><div class="sts">${isProd?'Content strategies to grow your producer brand':'Personal content you can create yourself'}</div></div></div><div class="dg2">${diys.map(d=>{const dcs=d.caption_structured||{};const das=d.algorithm_score||{};return `<div class="dc"><div class="dh"><div class="dtl">${d.title}</div><div class="dv">🔥 ${d.virality}%</div></div><div class="dm"><span class="dmt">${d.difficulty}</span><span class="dmt">⏱ ${d.duration}</span></div>${d.cover_frame?`<div style="padding:8px 10px;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.12);border-radius:6px;margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--yl);text-transform:uppercase;margin-bottom:3px">📸 Cover frame</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${d.cover_frame}</div></div>`:''}<div class="dd">${d.description}</div><div class="dhl">How to execute:</div><ul class="ds">${(d.howTo||[]).map(s=>`<li>${s}</li>`).join('')}</ul>${dcs.full_caption?`<div class="dhtl">Ready caption: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="dhts" style="background:var(--bg);padding:10px;border-radius:var(--rs);border:1px solid var(--bdr);font-size:12px;line-height:1.6">${dcs.full_caption}</div>`:''}<div class="dhtl">Suggested hashtags: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="dhts">${d.hashtags}</div>${das.estimated_completion?`<div style="margin-top:10px;padding:8px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--bdr)"><div style="font-size:9px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:6px">📊 Algorithm score</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px"><div style="font-size:10px"><span style="color:var(--ac);font-weight:600">Completion:</span> <span style="color:var(--t2)">${das.estimated_completion}</span></div><div style="font-size:10px"><span style="color:var(--gr);font-weight:600">Rewatch:</span> <span style="color:var(--t2)">${das.rewatch_potential||''}</span></div><div style="font-size:10px"><span style="color:var(--pk);font-weight:600">Comments:</span> <span style="color:var(--t2)">${das.comment_trigger||''}</span></div><div style="font-size:10px"><span style="color:var(--yl);font-weight:600">Saves:</span> <span style="color:var(--t2)">${das.save_trigger||''}</span></div></div></div>`:''} ${d.hook||d.relatability||d.share_trigger?`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--bdr);display:grid;grid-template-columns:1fr;gap:8px">${d.hook?`<div style="padding:10px;background:rgba(139,92,246,.06);border-radius:8px;border:1px solid rgba(139,92,246,.15)"><div style="font-size:10px;font-weight:700;color:var(--ac);margin-bottom:4px;text-transform:uppercase">Hook</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.hook}</div></div>`:''}${d.relatability?`<div style="padding:10px;background:rgba(34,197,94,.06);border-radius:8px;border:1px solid rgba(34,197,94,.15)"><div style="font-size:10px;font-weight:700;color:var(--gr);margin-bottom:4px;text-transform:uppercase">Relatability</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.relatability}</div></div>`:''}${d.share_trigger?`<div style="padding:10px;background:rgba(236,72,153,.06);border-radius:8px;border:1px solid rgba(236,72,153,.15)"><div style="font-size:10px;font-weight:700;color:var(--pk);margin-bottom:4px;text-transform:uppercase">Share trigger</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.share_trigger}</div></div>`:''}</div>`:''}</div>`}).join('')}</div><div class="tb pu"><span>🎬</span><span><strong>Creator tip:</strong> ${an.creator_tip}</span></div></div>
     <div class="aug"><div class="auc"><div class="aut">${isProd?'Target artists & listeners':'Likely audience'}</div><div class="aur"><span>Age:</span> <strong>${an.audience_age}</strong></div><div class="aur"><span>Interests:</span> <strong>${an.audience_interests}</strong></div><div class="aur"><span>Platforms:</span> <strong>${an.audience_platforms}</strong></div><div class="aur"><span>Content angle:</span> <strong>${an.audience_content_angle}</strong></div><div class="ib"><div class="il">Key insight</div><div class="it">${an.audience_key_insight}</div></div></div><div class="auc"><div class="aut">${isProd?'Discovery tags & references':'Discovery tags & references'}</div>${dt.bio_suggestion?`<div style="padding:12px;background:var(--ac-s);border-radius:var(--rs);margin-bottom:12px;font-size:13px;color:var(--ac);font-weight:500"><span style="font-size:11px;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px;opacity:.7">Bio / caption suggestion</span>${dt.bio_suggestion} <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.bio_suggestion||'').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div>`:''}${dt.youtube_title?`<div style="padding:12px;background:var(--gr-s);border-radius:var(--rs);margin-bottom:12px;font-size:13px;color:var(--gr);font-weight:500"><span style="font-size:11px;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px;opacity:.7">YouTube title</span>${dt.youtube_title} <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.youtube_title||'').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div>`:''}${(dt.artist_tags||dt.type_beat_tags||[]).length?`<div style="margin-bottom:10px"><span style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);display:block;margin-bottom:6px">${isProd?'Type beat tags':'Artist tags'} <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.artist_tags||dt.type_beat_tags||[]).join(' ').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy all</button></span><div style="display:flex;flex-wrap:wrap;gap:6px">${(dt.artist_tags||dt.type_beat_tags||[]).map(tag=>`<span class="mg">${tag}</span>`).join('')}</div></div>`:''}${(dt.genre_tags||[]).length?`<div style="margin-bottom:10px"><span style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);display:block;margin-bottom:6px">Genre tags <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.genre_tags||[]).join(' ').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy all</button></span><div style="display:flex;flex-wrap:wrap;gap:6px">${(dt.genre_tags||[]).map(tag=>`<span class="mg" style="background:var(--gr-s);color:var(--gr)">${tag}</span>`).join('')}</div></div>`:''}${(dt.trending_tags||[]).length?`<div style="margin-bottom:12px"><span style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);display:block;margin-bottom:6px">Trending tags <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.trending_tags||[]).join(' ').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy all</button></span><div style="display:flex;flex-wrap:wrap;gap:6px">${(dt.trending_tags||[]).map(tag=>`<span class="mg" style="background:var(--pk-s);color:var(--pk)">${tag}</span>`).join('')}</div></div>`:''}<div style="border-top:1px solid var(--bdr);padding-top:12px;margin-top:4px"><div style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);margin-bottom:8px">${isProd?'Why these references':'Why these references'}</div>${refs.map(a=>`<div class="ra"><div class="rn">${a.name}</div><div class="rg">${a.genre}</div><div class="rd">${a.description}</div></div>`).join('')}</div></div></div>
     <div class="cd" style="margin-top:24px;padding:24px;background:linear-gradient(135deg,rgba(139,92,246,.06),rgba(236,72,153,.04));border:1px solid rgba(139,92,246,.15)"><div style="font-size:16px;font-weight:700;margin-bottom:16px">Keys to actually going viral</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"><div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:6px">1. The hook</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${vk.hook || 'The first 1-2 seconds decide everything. Start with something that stops the scroll.'}</div></div><div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:13px;font-weight:700;color:var(--gr);margin-bottom:6px">2. Relatability</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${vk.relatability || 'Make viewers think "that is so me".'}</div></div><div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:13px;font-weight:700;color:var(--pk);margin-bottom:6px">3. Share trigger</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${vk.share_trigger || 'Give viewers a reason to send this to a friend.'}</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="padding:14px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--ac);margin-bottom:4px">Quality over quantity</div><div style="font-size:11px;color:var(--t2);line-height:1.5">One well-shot video beats ten lazy ones.</div></div><div style="padding:14px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--pk);margin-bottom:4px">Consistency is everything</div><div style="font-size:11px;color:var(--t2);line-height:1.5">Post 3-4 times per week. The algorithm rewards consistency.</div></div></div></div>
@@ -892,11 +892,10 @@ async function deleteTrack(trackId) {
   } catch(e) { alert('Failed to delete.'); console.error(e); }
 }
 
-// ── VIDEO / LYRICS SLIDESHOW GENERATION ──
+// ── VIDEO / LYRICS VIDEO GENERATION ──
 let vidPolling = null;
-let slideshowIntervals = {};
 
-// Show completed video result — either MP4 video player or animated image slideshow with lyrics
+// Show completed video — MP4 player with download button
 function showVideoResult(row, data) {
   row.querySelector('.vid-gen-progress').style.display = 'none';
   row.querySelector('.vid-gen-btn').style.display = 'none';
@@ -904,208 +903,30 @@ function showVideoResult(row, data) {
   resEl.innerHTML = '';
   resEl.style.display = 'block';
 
-  let lyrics = [];
-  try { lyrics = JSON.parse(data.lyric_lines || '[]'); } catch(e) {}
-
-  // If we have a video file (FFmpeg worked), show video player
+  // Video file ready — show player + download
   if (data.video_url && data.video_url.startsWith('/')) {
     const vUrl = location.origin + data.video_url;
     resEl.innerHTML = `
-      <video controls playsinline style="width:100%;border-radius:var(--rs);background:#000;max-height:500px" src="${vUrl}"></video>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <a class="bt bs" style="flex:1;text-align:center;text-decoration:none;font-size:12px;display:block" href="${vUrl}" download="viraltrack-lyrics.mp4">⬇ Download MP4</a>
+      <div style="position:relative;border-radius:12px;overflow:hidden;background:#000">
+        <video controls playsinline loop style="width:100%;display:block;max-height:520px;aspect-ratio:9/16;object-fit:contain" src="${vUrl}"></video>
       </div>
-      <div style="font-size:11px;color:var(--t2);margin-top:6px;text-align:center">Add your song to this video on TikTok / Reels</div>`;
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <a class="bt bp" style="flex:1;text-align:center;text-decoration:none;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px" href="${vUrl}" download="viraltrack-lyrics.mp4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download MP4
+        </a>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-top:8px;text-align:center;line-height:1.5">
+        Ready to post! Download and add your song on TikTok / Reels
+      </div>`;
     return;
   }
 
-  // ── VIRAL SLIDESHOW with Ken Burns zoom, cinematic transitions, bold lyrics ──
-  let imageUrls = [];
-  try { imageUrls = JSON.parse(data.image_urls || '[]'); } catch(e) {}
-  if (imageUrls.length === 0) {
-    resEl.innerHTML = '<div style="color:var(--t2);font-size:12px;padding:12px">No images generated. Try again.</div>';
-    return;
-  }
-
-  const sid = 'vs-' + data.id;
-  const secPerImage = 3.5;
-  const secPerLyric = lyrics.length > 0 ? Math.max(2.0, (imageUrls.length * secPerImage) / lyrics.length) : 999;
-
-  // Inject slideshow CSS if not already present
-  if (!document.getElementById('viral-slideshow-css')) {
-    const style = document.createElement('style');
-    style.id = 'viral-slideshow-css';
-    style.textContent = `
-      @keyframes kenBurns1 { 0%{transform:scale(1) translate(0,0)} 100%{transform:scale(1.15) translate(-2%,-1%)} }
-      @keyframes kenBurns2 { 0%{transform:scale(1.1) translate(-1%,1%)} 100%{transform:scale(1) translate(1%,-1%)} }
-      @keyframes kenBurns3 { 0%{transform:scale(1) translate(1%,0)} 100%{transform:scale(1.12) translate(-1%,2%)} }
-      @keyframes kenBurns4 { 0%{transform:scale(1.08) translate(0,-1%)} 100%{transform:scale(1) translate(0,1%)} }
-      @keyframes lyricPop {
-        0%{transform:scale(0.7) translateY(12px);opacity:0;filter:blur(4px)}
-        50%{transform:scale(1.06) translateY(-2px);opacity:1;filter:blur(0)}
-        100%{transform:scale(1) translateY(0);opacity:1;filter:blur(0)}
-      }
-      @keyframes lyricGlow {
-        0%,100%{text-shadow:0 2px 20px rgba(255,255,255,0.3),0 0 40px rgba(139,92,246,0.2)}
-        50%{text-shadow:0 2px 30px rgba(255,255,255,0.5),0 0 60px rgba(139,92,246,0.4)}
-      }
-      @keyframes slideIn { 0%{clip-path:inset(0 100% 0 0)} 100%{clip-path:inset(0 0 0 0)} }
-      @keyframes fadeScale { 0%{opacity:0;transform:scale(1.1)} 100%{opacity:1;transform:scale(1)} }
-      .vs-slide {
-        position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;
-        will-change:transform,opacity;
-      }
-      .vs-slide.active { opacity:1; z-index:2; }
-      .vs-slide.prev { opacity:1; z-index:1; }
-      .vs-slide.hidden { opacity:0; z-index:0; }
-      .vs-lyric-wrap {
-        position:absolute;bottom:0;left:0;right:0;z-index:10;
-        padding:40px 20px 36px;
-        background:linear-gradient(transparent 0%,rgba(0,0,0,0.3) 20%,rgba(0,0,0,0.75) 60%,rgba(0,0,0,0.9) 100%);
-      }
-      .vs-lyric {
-        font-size:26px;font-weight:800;color:#fff;text-align:center;
-        line-height:1.35;letter-spacing:-0.02em;
-        text-shadow:0 2px 20px rgba(0,0,0,0.9),0 0 40px rgba(0,0,0,0.5);
-        animation:lyricGlow 3s ease-in-out infinite;
-        min-height:70px;display:flex;align-items:center;justify-content:center;
-        padding:0 8px;
-      }
-      .vs-lyric.pop { animation:lyricPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards, lyricGlow 3s ease-in-out infinite 0.45s; }
-      .vs-progress {
-        position:absolute;top:12px;left:12px;right:12px;z-index:10;
-        display:flex;gap:4px;
-      }
-      .vs-progress-bar {
-        flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,0.25);overflow:hidden;
-      }
-      .vs-progress-fill {
-        height:100%;background:#fff;border-radius:2px;width:0%;transition:width 0.3s linear;
-      }
-      .vs-vignette {
-        position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;pointer-events:none;
-        background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.4) 100%);
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Ken Burns animation variants
-  const kbAnims = ['kenBurns1','kenBurns2','kenBurns3','kenBurns4'];
-  // Transition types for variety
-  const transitions = ['fade','slideIn','fadeScale'];
-
+  // No video yet — show error/retry
   resEl.innerHTML = `
-    <div id="${sid}" style="position:relative;width:100%;aspect-ratio:9/16;max-height:520px;border-radius:12px;overflow:hidden;background:#000;cursor:pointer" title="Click to pause/play">
-      <div class="vs-progress">${imageUrls.map(() => `<div class="vs-progress-bar"><div class="vs-progress-fill"></div></div>`).join('')}</div>
-      ${imageUrls.map((url, i) => `<img src="${url}" class="vs-slide ${i===0?'active':'hidden'}" data-idx="${i}" style="animation:${kbAnims[i%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate">`).join('')}
-      <div class="vs-vignette"></div>
-      <div class="vs-lyric-wrap">
-        <div class="vs-lyric"></div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <a class="bt bs" style="flex:1;text-align:center;text-decoration:none;font-size:12px" href="${imageUrls[0]}" download="viraltrack-bg.png" title="Download background image">⬇ Download</a>
-    </div>
-    <div style="font-size:11px;color:var(--t2);margin-top:6px;text-align:center">🎵 Screen record + add your song on TikTok / Reels for best results</div>`;
-
-  const container = document.getElementById(sid);
-  if (!container) return;
-  const slides = container.querySelectorAll('.vs-slide');
-  const lyricEl = container.querySelector('.vs-lyric');
-  const progressBars = container.querySelectorAll('.vs-progress-fill');
-
-  let currentSlide = 0;
-  let currentLyric = -1;
-  let tick = 0;
-  let paused = false;
-
-  // Set initial lyric
-  if (lyrics.length > 0) {
-    lyricEl.textContent = lyrics[0];
-    lyricEl.classList.add('pop');
-    currentLyric = 0;
-  }
-  // Set initial progress
-  if (progressBars[0]) progressBars[0].style.width = '0%';
-
-  // Click to pause/play
-  container.addEventListener('click', () => { paused = !paused; });
-
-  if (slideshowIntervals[sid]) clearInterval(slideshowIntervals[sid]);
-
-  slideshowIntervals[sid] = setInterval(() => {
-    if (paused) return;
-    tick++;
-    const t = tick * 0.1; // every 100ms for smoother progress
-
-    // Update progress bar for current slide
-    const slideProgress = ((t % secPerImage) / secPerImage) * 100;
-    if (progressBars[currentSlide]) progressBars[currentSlide].style.width = slideProgress + '%';
-
-    // Switch slide with transition effect
-    const targetSlide = Math.floor(t / secPerImage) % imageUrls.length;
-    if (targetSlide !== currentSlide) {
-      const prevSlide = currentSlide;
-      currentSlide = targetSlide;
-
-      // Mark completed progress
-      if (progressBars[prevSlide]) progressBars[prevSlide].style.width = '100%';
-      // Reset upcoming bars
-      for (let j = currentSlide; j < progressBars.length; j++) {
-        if (j !== currentSlide) progressBars[j].style.width = '0%';
-      }
-
-      // Apply transition
-      const trans = transitions[currentSlide % transitions.length];
-      slides.forEach((s, idx) => {
-        s.className = 'vs-slide hidden';
-        s.style.animation = `${kbAnims[idx%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate`;
-      });
-      slides[prevSlide].className = 'vs-slide prev';
-      slides[currentSlide].className = 'vs-slide active';
-
-      if (trans === 'slideIn') {
-        slides[currentSlide].style.animation = `slideIn 0.6s ease-out forwards, ${kbAnims[currentSlide%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate 0.6s`;
-      } else if (trans === 'fadeScale') {
-        slides[currentSlide].style.animation = `fadeScale 0.5s ease-out forwards, ${kbAnims[currentSlide%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate 0.5s`;
-      } else {
-        slides[currentSlide].style.transition = 'opacity 0.6s ease';
-      }
-    }
-
-    // Switch lyric with pop animation
-    if (lyrics.length > 0) {
-      const targetLyric = Math.min(Math.floor(t / secPerLyric), lyrics.length - 1);
-      if (targetLyric !== currentLyric) {
-        currentLyric = targetLyric;
-        lyricEl.classList.remove('pop');
-        lyricEl.style.opacity = '0';
-        lyricEl.style.transform = 'translateY(8px)';
-        setTimeout(() => {
-          lyricEl.textContent = lyrics[currentLyric];
-          lyricEl.style.opacity = '1';
-          lyricEl.style.transform = 'translateY(0)';
-          lyricEl.classList.add('pop');
-        }, 200);
-      }
-    }
-
-    // Loop
-    if (lyrics.length > 0 && t > lyrics.length * secPerLyric + 2) {
-      tick = 0;
-      currentSlide = 0;
-      currentLyric = -1;
-      slides.forEach((s, i) => {
-        s.className = i === 0 ? 'vs-slide active' : 'vs-slide hidden';
-        s.style.animation = `${kbAnims[i%kbAnims.length]} ${secPerImage+1}s ease-in-out infinite alternate`;
-      });
-      progressBars.forEach(b => b.style.width = '0%');
-      lyricEl.textContent = lyrics[0];
-      lyricEl.classList.add('pop');
-      currentLyric = 0;
-    }
-  }, 100); // 100ms ticks for smooth animation
+    <div style="color:var(--t2);font-size:13px;padding:16px;text-align:center;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)">
+      Video is still processing. Refresh to check again.
+    </div>`;
 }
 
 async function initVideoButtons(track, vids, analysis) {
@@ -1190,7 +1011,7 @@ function pollVideoCard(videoId, vids, rowIdx) {
   let attempts = 0;
   vidPolling = setInterval(async () => {
     attempts++;
-    if (attempts > 60) {
+    if (attempts > 120) { // 6 min timeout — video rendering takes 1-3 min
       clearInterval(vidPolling); vidPolling = null;
       document.querySelectorAll('.vid-gen-progress').forEach(p => p.style.display = 'none');
       document.querySelectorAll('.vid-gen-btn').forEach(b => { b.style.display = 'block'; b.disabled = false; b.style.opacity = '1'; b.innerHTML = '🎬 Generate Lyrics Video'; });
