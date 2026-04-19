@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node --watch backend/server.js",
-    "build": "echo 'Build done — ffmpeg-static provides FFmpeg binary'"
+    "build": "apt-get update -qq && apt-get install -y -qq ffmpeg >/dev/null 2>&1 || echo 'apt-get skipped — using ffmpeg-static'"
   },
   "dependencies": {
     "audio-decode": "^3.3.0",

@@ -12,19 +12,25 @@ import { analyzeAudio } from './audio-analysis.js';
 import { getTrends } from './trend-service.js';
 
 // Check FFmpeg availability — try ffmpeg-static first, then system ffmpeg
-let FFMPEG_BIN = ffmpegPath || 'ffmpeg';
-try {
-  execFileSync(FFMPEG_BIN, ['-version'], { timeout: 5000, stdio: 'pipe' });
-  console.log('🎬 FFmpeg binary:', FFMPEG_BIN);
-} catch(e1) {
+let FFMPEG_BIN = null;
+function testFfmpeg(bin) {
   try {
-    FFMPEG_BIN = 'ffmpeg';
-    execFileSync('ffmpeg', ['-version'], { timeout: 5000, stdio: 'pipe' });
-    console.log('🎬 Using system FFmpeg');
-  } catch(e2) {
-    console.log('⚠️ No FFmpeg found — videos will be images only');
-    FFMPEG_BIN = null;
-  }
+    // Fix permissions if needed (ffmpeg-static sometimes lacks +x)
+    try { fs.chmodSync(bin, 0o755); } catch(e) {}
+    const out = execFileSync(bin, ['-version'], { timeout: 5000, stdio: 'pipe' }).toString();
+    const ver = out.split('\n')[0];
+    console.log(`🎬 FFmpeg OK: ${bin} → ${ver}`);
+    return true;
+  } catch(e) { return false; }
+}
+if (ffmpegPath && testFfmpeg(ffmpegPath)) {
+  FFMPEG_BIN = ffmpegPath;
+} else if (testFfmpeg('/usr/bin/ffmpeg')) {
+  FFMPEG_BIN = '/usr/bin/ffmpeg';
+} else if (testFfmpeg('ffmpeg')) {
+  FFMPEG_BIN = 'ffmpeg';
+} else {
+  console.log('⚠️ No working FFmpeg found — videos will be images only');
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -120,99 +126,104 @@ function generateImage(falKey, prompt) {
   });
 }
 
-// Build lyrics video — punchy quick cuts with retro serif lyrics
-// Uses ONLY basic FFmpeg filters (scale, concat, drawbox, drawtext) for max compatibility
-function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
+// Run a single FFmpeg command — returns a promise
+function ffmpeg(args) {
   return new Promise((resolve, reject) => {
-    const numImages = imagePaths.length;
-    const durationPerImage = totalDuration / numImages;
-
-    // Font — retro serif bold (matches iPod/old-school lyric aesthetic)
-    const fontPaths = [
-      '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf',
-      '/usr/share/fonts/truetype/liberation2/LiberationSerif-Bold.ttf',
-      '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf',
-      POPPINS_BOLD,
-      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-    ];
-    let fontFile = '';
-    for (const fp of fontPaths) { if (fs.existsSync(fp)) { fontFile = fp; break; } }
-    console.log('🔤 Using font:', fontFile || 'default');
-
-    // ── SINGLE PASS: scale + concat + lyrics all in one filter_complex ──
-    const inputs = [];
-    const scaleFilters = [];
-    const concatInputs = [];
-
-    // Use 720x1280 to save memory on Render (still looks great on phones)
-    const W = 720, H = 1280;
-
-    imagePaths.forEach((imgPath, i) => {
-      inputs.push('-loop', '1', '-t', durationPerImage.toFixed(2), '-i', imgPath);
-      scaleFilters.push(
-        `[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
-      );
-      concatInputs.push(`[v${i}]`);
-    });
-
-    // Build drawtext filters for lyrics — centered on screen
-    const drawParts = [];
-    if (lyricLines && lyricLines.length > 0) {
-      const lineCount = lyricLines.length;
-      const gap = 0.12;
-      const displayTime = Math.max(1.2, (totalDuration - gap * (lineCount + 1)) / lineCount);
-
-      lyricLines.forEach((line, i) => {
-        const startTime = gap + i * (displayTime + gap);
-        const endTime = Math.min(startTime + displayTime, totalDuration - 0.1);
-
-        const escaped = line
-          .replace(/\\/g, '\\\\')
-          .replace(/'/g, '\u2019')
-          .replace(/:/g, '\\:')
-          .replace(/%/g, '%%');
-
-        const fontOpt = fontFile ? `fontfile=${fontFile}:` : '';
-
-        // Semi-transparent box centered on screen
-        drawParts.push(
-          `drawbox=x=0:y=ih/2-60:w=iw:h=120:color=black@0.5:t=fill:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
-        );
-
-        // Lyric text — centered horizontally AND vertically
-        drawParts.push(
-          `drawtext=text='${escaped}':${fontOpt}fontsize=38:fontcolor=white:borderw=2:bordercolor=black@0.8:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
-        );
-      });
-    }
-
-    const drawFilters = drawParts.length > 0 ? ',' + drawParts.join(',') : '';
-
-    const filterComplex = [
-      ...scaleFilters,
-      `${concatInputs.join('')}concat=n=${numImages}:v=1:a=0,fps=25${drawFilters}[outv]`
-    ].join(';');
-
-    const args = [
-      '-y', ...inputs,
-      '-filter_complex', filterComplex,
-      '-map', '[outv]',
-      '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p',
-      '-movflags', '+faststart',
-      outputPath
-    ];
-
-    console.log('🎬 Building video (single pass: concat + lyrics)...');
-    execFile(FFMPEG_BIN || 'ffmpeg', args, { timeout: 120000, maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {
+    const bin = FFMPEG_BIN || 'ffmpeg';
+    execFile(bin, args, { timeout: 60000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
       if (err) {
-        console.error('FFmpeg error:', stderr?.substring(Math.max(0, (stderr?.length || 0) - 800)));
-        reject(new Error('FFmpeg failed: ' + (err.message || 'unknown')));
-      } else {
-        console.log('✅ Video ready (single pass)');
-        resolve(outputPath);
-      }
+        const tail = stderr ? stderr.substring(Math.max(0, stderr.length - 500)) : err.message;
+        reject(new Error(tail));
+      } else resolve();
     });
   });
+}
+
+// Build lyrics video using concat demuxer approach (low memory, works on any host)
+// Step 1: convert each image to a short clip (one at a time)
+// Step 2: concat clips into a base video
+// Step 3: overlay lyrics text (optional — skipped if it fails)
+async function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
+  const W = 720, H = 1280;
+  const numImages = imagePaths.length;
+  const durPerImage = (totalDuration / numImages).toFixed(2);
+  const clipPaths = [];
+  const dir = path.dirname(outputPath);
+
+  // Font — retro serif bold
+  const fontPaths = [
+    '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf',
+    '/usr/share/fonts/truetype/liberation2/LiberationSerif-Bold.ttf',
+    '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf',
+    POPPINS_BOLD,
+    '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+  ];
+  let fontFile = '';
+  for (const fp of fontPaths) { if (fs.existsSync(fp)) { fontFile = fp; break; } }
+  console.log('🔤 Using font:', fontFile || 'default');
+
+  // ── STEP 1: Each image → individual clip (low memory: one image at a time) ──
+  for (let i = 0; i < numImages; i++) {
+    const clipPath = path.join(dir, path.basename(outputPath, '.mp4') + `-clip${i}.mp4`);
+    clipPaths.push(clipPath);
+    await ffmpeg([
+      '-y', '-loop', '1', '-t', durPerImage, '-i', imagePaths[i],
+      '-vf', `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1`,
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-r', '25',
+      clipPath
+    ]);
+    console.log(`🎬 Clip ${i}/${numImages} done`);
+  }
+
+  // ── STEP 2: Concat all clips into base video ──
+  const listPath = path.join(dir, path.basename(outputPath, '.mp4') + '-list.txt');
+  const basePath = path.join(dir, path.basename(outputPath, '.mp4') + '-base.mp4');
+  fs.writeFileSync(listPath, clipPaths.map(p => `file '${p}'`).join('\n'));
+
+  await ffmpeg([
+    '-y', '-f', 'concat', '-safe', '0', '-i', listPath,
+    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p',
+    basePath
+  ]);
+  console.log('🎬 Base video concatenated');
+
+  // ── STEP 3: Overlay lyrics (skip on failure — base video is still usable) ──
+  let finalPath = basePath;
+  if (lyricLines && lyricLines.length > 0 && fontFile) {
+    try {
+      const vfParts = [];
+      lyricLines.forEach((line, i) => {
+        const st = (i * parseFloat(durPerImage)).toFixed(2);
+        const et = (Math.min((i + 1) * parseFloat(durPerImage), totalDuration)).toFixed(2);
+        const escaped = line.replace(/\\/g, '\\\\').replace(/'/g, '\u2019').replace(/:/g, '\\:').replace(/%/g, '%%');
+
+        vfParts.push(`drawbox=x=0:y=ih/2-60:w=iw:h=120:color=black@0.5:t=fill:enable='between(t\\,${st}\\,${et})'`);
+        vfParts.push(`drawtext=text='${escaped}':fontfile=${fontFile}:fontsize=38:fontcolor=white:borderw=2:bordercolor=black@0.8:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${st}\\,${et})'`);
+      });
+
+      await ffmpeg([
+        '-y', '-i', basePath,
+        '-vf', vfParts.join(','),
+        '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+        outputPath
+      ]);
+      console.log('🎬 Lyrics overlay done');
+      finalPath = outputPath;
+    } catch (lyricsErr) {
+      console.log('⚠️ Lyrics overlay failed (using base video):', lyricsErr.message);
+    }
+  }
+
+  // If lyrics step was skipped or failed, rename base to output
+  if (finalPath !== outputPath) {
+    fs.copyFileSync(basePath, outputPath);
+    console.log('🎬 Using base video (no lyrics overlay)');
+  }
+
+  // Cleanup temp files
+  clipPaths.forEach(p => fs.unlink(p, () => {}));
+  fs.unlink(listPath, () => {});
+  fs.unlink(basePath, () => {});
 }
 
 // Background process: generate images → save URLs → try FFmpeg slideshow → update DB
@@ -358,49 +369,43 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
     });
     console.log(`✅ Images saved to DB — user can see results now`);
 
-    // ── Now try to build MP4 video with FFmpeg (upgrades the result) ──
+    // ── Build MP4 video with FFmpeg (upgrades the images-only result) ──
     if (!FFMPEG_BIN) {
       console.log(`⚠️ No FFmpeg available — skipping video build`);
       return;
     }
 
     try {
-      console.log(`🎬 Building MP4 video with: ${FFMPEG_BIN}`);
+      console.log(`🎬 Building MP4 with FFmpeg: ${FFMPEG_BIN}`);
 
-      // Download all images to disk
+      // Download images to disk
       const imagePaths = [];
       for (let i = 0; i < imageUrls.length; i++) {
         const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
         await downloadFile(imageUrls[i], imgPath);
+        if (!fs.existsSync(imgPath) || fs.statSync(imgPath).size < 100) {
+          throw new Error(`Image ${i} download failed or empty`);
+        }
         imagePaths.push(imgPath);
-        console.log(`📥 Downloaded image ${i}`);
+        console.log(`📥 Image ${i} downloaded (${(fs.statSync(imgPath).size/1024).toFixed(0)}KB)`);
       }
 
-      // Punchy quick cuts: ~1.8 sec per image for music video feel
       const totalDuration = Math.max(8, imagePaths.length * 1.8);
       const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
-
-      try {
-        await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
-      } catch (ffmpegErr) {
-        console.error(`⚠️ FFmpeg with lyrics failed, trying without lyrics:`, ffmpegErr.message);
-        // Retry without lyrics (simpler filter — more likely to work)
-        await createLyricsVideo(imagePaths, outputPath, [], totalDuration);
-      }
+      await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
 
       if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
-        const fileSize = fs.statSync(outputPath).size;
-        console.log(`✅ MP4 video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB) — upgrading DB`);
-        await db.updateVideoGeneration(videoId, {
-          video_url: `/api/videos/${videoId}/file`
-        });
+        const mb = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
+        console.log(`✅ MP4 ready (${mb}MB) — updating DB`);
+        await db.updateVideoGeneration(videoId, { video_url: `/api/videos/${videoId}/file` });
+      } else {
+        console.log('⚠️ Output file missing or too small');
       }
 
-      // Cleanup temp images
+      // Cleanup source images
       imagePaths.forEach(p => fs.unlink(p, () => {}));
-    } catch (ffmpegErr) {
-      console.log(`⚠️ FFmpeg failed entirely (images still available): ${ffmpegErr.message}`);
-      // Not fatal — status is already 'completed' with image URLs
+    } catch (buildErr) {
+      console.error(`⚠️ Video build failed (images still available):`, buildErr.message);
     }
 
   } catch (err) {
