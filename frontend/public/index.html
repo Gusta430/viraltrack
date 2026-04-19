@@ -1027,7 +1027,7 @@ async function initVideoButtons(track, vids, analysis) {
       try {
         const lt = JSON.parse(analysis?.lyric_themes || '{}');
         if (lt.quotable_lines && lt.quotable_lines.length > 0) {
-          lyricLines = lt.quotable_lines.slice(0, 8);
+          lyricLines = lt.quotable_lines.slice(0, 5);
         }
       } catch(e) {}
       if (lyricLines.length === 0 && cs.hook_line) {

@@ -4,14 +4,28 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
-import { execFile } from 'child_process';
+import { execFile, execFileSync } from 'child_process';
 import ffmpegPath from 'ffmpeg-static';
 import db from './db.js';
 import { analyzeTrack, generatePromoPlan } from './ai-service.js';
 import { analyzeAudio } from './audio-analysis.js';
 import { getTrends } from './trend-service.js';
 
-console.log('🎬 FFmpeg binary:', ffmpegPath);
+// Check FFmpeg availability — try ffmpeg-static first, then system ffmpeg
+let FFMPEG_BIN = ffmpegPath || 'ffmpeg';
+try {
+  execFileSync(FFMPEG_BIN, ['-version'], { timeout: 5000, stdio: 'pipe' });
+  console.log('🎬 FFmpeg binary:', FFMPEG_BIN);
+} catch(e1) {
+  try {
+    FFMPEG_BIN = 'ffmpeg';
+    execFileSync('ffmpeg', ['-version'], { timeout: 5000, stdio: 'pipe' });
+    console.log('🎬 Using system FFmpeg');
+  } catch(e2) {
+    console.log('⚠️ No FFmpeg found — videos will be images only');
+    FFMPEG_BIN = null;
+  }
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(__dirname, '..', 'frontend', 'public');
@@ -130,10 +144,13 @@ function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
     const scaleFilters = [];
     const concatInputs = [];
 
+    // Use 720x1280 to save memory on Render (still looks great on phones)
+    const W = 720, H = 1280;
+
     imagePaths.forEach((imgPath, i) => {
       inputs.push('-loop', '1', '-t', durationPerImage.toFixed(2), '-i', imgPath);
       scaleFilters.push(
-        `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
+        `[${i}:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
       );
       concatInputs.push(`[v${i}]`);
     });
@@ -159,12 +176,12 @@ function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
 
         // Semi-transparent box centered on screen
         drawParts.push(
-          `drawbox=x=0:y=ih/2-80:w=iw:h=160:color=black@0.5:t=fill:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
+          `drawbox=x=0:y=ih/2-60:w=iw:h=120:color=black@0.5:t=fill:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
         );
 
         // Lyric text — centered horizontally AND vertically
         drawParts.push(
-          `drawtext=text='${escaped}':${fontOpt}fontsize=52:fontcolor=white:borderw=3:bordercolor=black@0.8:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
+          `drawtext=text='${escaped}':${fontOpt}fontsize=38:fontcolor=white:borderw=2:bordercolor=black@0.8:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
         );
       });
     }
@@ -186,7 +203,7 @@ function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
     ];
 
     console.log('🎬 Building video (single pass: concat + lyrics)...');
-    execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000, maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {
+    execFile(FFMPEG_BIN || 'ffmpeg', args, { timeout: 120000, maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {
       if (err) {
         console.error('FFmpeg error:', stderr?.substring(Math.max(0, (stderr?.length || 0) - 800)));
         reject(new Error('FFmpeg failed: ' + (err.message || 'unknown')));
@@ -261,7 +278,7 @@ function buildScenePrompts(lyricLines, genre, title, artist, moodTags) {
 
   // Build scene list: match lyrics line-by-line to scenes
   const scenes = [];
-  const numImages = Math.min(Math.max(3, lyricLines.length), 8);
+  const numImages = Math.min(Math.max(3, lyricLines.length), 5);
 
   // First, try to match each lyric line to a vibe
   for (let i = 0; i < numImages; i++) {
@@ -333,54 +350,58 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
     const imageUrls = await Promise.all(imagePromises);
     console.log(`📸 All ${numImages} images generated:`, imageUrls.map(u => u.substring(0, 60)));
 
-    // Save image URLs to DB immediately (for reference)
+    // ── IMMEDIATELY mark completed with image URLs so user never sees "timed out" ──
     await db.updateVideoGeneration(videoId, {
-      image_urls: JSON.stringify(imageUrls)
+      status: 'completed',
+      image_urls: JSON.stringify(imageUrls),
+      video_url: ''
     });
+    console.log(`✅ Images saved to DB — user can see results now`);
 
-    // ── Build MP4 video with FFmpeg ──
-    const ffmpegBin = ffmpegPath || 'ffmpeg';
-    console.log(`🎬 Building MP4 video with: ${ffmpegBin}`);
-
-    // Download all images to disk
-    const imagePaths = [];
-    for (let i = 0; i < imageUrls.length; i++) {
-      const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
-      await downloadFile(imageUrls[i], imgPath);
-      imagePaths.push(imgPath);
-      console.log(`📥 Downloaded image ${i}`);
+    // ── Now try to build MP4 video with FFmpeg (upgrades the result) ──
+    if (!FFMPEG_BIN) {
+      console.log(`⚠️ No FFmpeg available — skipping video build`);
+      return;
     }
-
-    // Punchy quick cuts: ~1.8 sec per image for music video feel
-    const totalDuration = Math.max(8, imagePaths.length * 1.8);
-    const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
 
     try {
-      await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
+      console.log(`🎬 Building MP4 video with: ${FFMPEG_BIN}`);
+
+      // Download all images to disk
+      const imagePaths = [];
+      for (let i = 0; i < imageUrls.length; i++) {
+        const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+        await downloadFile(imageUrls[i], imgPath);
+        imagePaths.push(imgPath);
+        console.log(`📥 Downloaded image ${i}`);
+      }
+
+      // Punchy quick cuts: ~1.8 sec per image for music video feel
+      const totalDuration = Math.max(8, imagePaths.length * 1.8);
+      const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
+
+      try {
+        await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
+      } catch (ffmpegErr) {
+        console.error(`⚠️ FFmpeg with lyrics failed, trying without lyrics:`, ffmpegErr.message);
+        // Retry without lyrics (simpler filter — more likely to work)
+        await createLyricsVideo(imagePaths, outputPath, [], totalDuration);
+      }
+
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+        const fileSize = fs.statSync(outputPath).size;
+        console.log(`✅ MP4 video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB) — upgrading DB`);
+        await db.updateVideoGeneration(videoId, {
+          video_url: `/api/videos/${videoId}/file`
+        });
+      }
+
+      // Cleanup temp images
+      imagePaths.forEach(p => fs.unlink(p, () => {}));
     } catch (ffmpegErr) {
-      console.error(`⚠️ FFmpeg with lyrics failed, trying without lyrics:`, ffmpegErr.message);
-      // Retry without lyrics (simpler filter)
-      await createLyricsVideo(imagePaths, outputPath, [], totalDuration);
+      console.log(`⚠️ FFmpeg failed entirely (images still available): ${ffmpegErr.message}`);
+      // Not fatal — status is already 'completed' with image URLs
     }
-
-    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
-      const fileSize = fs.statSync(outputPath).size;
-      console.log(`✅ MP4 video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
-      await db.updateVideoGeneration(videoId, {
-        status: 'completed',
-        video_url: `/api/videos/${videoId}/file`
-      });
-    } else {
-      // Fallback: mark completed with images only
-      console.log(`⚠️ No MP4 produced, falling back to images`);
-      await db.updateVideoGeneration(videoId, {
-        status: 'completed',
-        video_url: ''
-      });
-    }
-
-    // Cleanup temp images
-    imagePaths.forEach(p => fs.unlink(p, () => {}));
 
   } catch (err) {
     console.error(`❌ Video ${videoId} failed:`, err.message);
