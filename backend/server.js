@@ -106,132 +106,95 @@ function generateImage(falKey, prompt) {
   });
 }
 
-// Build lyrics video in 2 passes:
-// Pass 1: concat images into slideshow + retro dad-cam color grade
-// Pass 2: Kashie-style lyrics overlay — one bar at a time, bold font, fade in/out
+// Build lyrics video — punchy quick cuts with retro serif lyrics
+// Uses ONLY basic FFmpeg filters (scale, concat, drawbox, drawtext) for max compatibility
 function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const numImages = imagePaths.length;
     const durationPerImage = totalDuration / numImages;
-    const tempSlideshow = outputPath.replace('.mp4', '-raw.mp4');
 
-    // Font path — Poppins Bold preferred, with fallbacks
+    // Font — retro serif bold (matches iPod/old-school lyric aesthetic)
     const fontPaths = [
-      '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
-      '/usr/share/fonts/truetype/poppins/Poppins-Bold.ttf',
-      POPPINS_BOLD, // our downloaded copy
+      '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf',
+      '/usr/share/fonts/truetype/liberation2/LiberationSerif-Bold.ttf',
+      '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf',
+      POPPINS_BOLD,
       '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-      '/usr/share/fonts/truetype/lato/Lato-Bold.ttf'
     ];
     let fontFile = '';
     for (const fp of fontPaths) { if (fs.existsSync(fp)) { fontFile = fp; break; } }
     console.log('🔤 Using font:', fontFile || 'default');
 
-    try {
-      // ── Pass 1: concat images + retro dad-cam color grade ──
-      await new Promise((res, rej) => {
-        const inputs = [];
-        const scaleFilters = [];
-        const concatInputs = [];
+    // ── SINGLE PASS: scale + concat + lyrics all in one filter_complex ──
+    const inputs = [];
+    const scaleFilters = [];
+    const concatInputs = [];
 
-        imagePaths.forEach((imgPath, i) => {
-          inputs.push('-loop', '1', '-t', durationPerImage.toFixed(2), '-i', imgPath);
-          scaleFilters.push(
-            `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
-          );
-          concatInputs.push(`[v${i}]`);
-        });
+    imagePaths.forEach((imgPath, i) => {
+      inputs.push('-loop', '1', '-t', durationPerImage.toFixed(2), '-i', imgPath);
+      scaleFilters.push(
+        `[${i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[v${i}]`
+      );
+      concatInputs.push(`[v${i}]`);
+    });
 
-        // Concat + dad-cam retro grade: warm/faded tones, heavier grain, strong vignette
-        const filterComplex = [
-          ...scaleFilters,
-          `${concatInputs.join('')}concat=n=${numImages}:v=1:a=0,fps=25,` +
-          `eq=brightness=0.04:saturation=0.85,` +
-          `curves=r='0/0.02 0.25/0.3 0.5/0.58 0.75/0.8 1/0.92':g='0/0.01 0.25/0.22 0.5/0.48 0.75/0.7 1/0.88':b='0/0.06 0.25/0.18 0.5/0.4 0.75/0.62 1/0.8',` +
-          `noise=c0s=18:c0f=t,` +
-          `vignette=PI/3.5[outv]`
-        ].join(';');
+    // Build drawtext filters for lyrics — centered on screen
+    const drawParts = [];
+    if (lyricLines && lyricLines.length > 0) {
+      const lineCount = lyricLines.length;
+      const gap = 0.12;
+      const displayTime = Math.max(1.2, (totalDuration - gap * (lineCount + 1)) / lineCount);
 
-        const args = [
-          '-y', ...inputs,
-          '-filter_complex', filterComplex,
-          '-map', '[outv]',
-          '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
-          '-t', totalDuration.toFixed(2),
-          tempSlideshow
-        ];
+      lyricLines.forEach((line, i) => {
+        const startTime = gap + i * (displayTime + gap);
+        const endTime = Math.min(startTime + displayTime, totalDuration - 0.1);
 
-        console.log('🎬 Pass 1: Concat + retro dad-cam grade...');
-        execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
-          if (err) { console.error('FFmpeg pass 1 error:', stderr?.substring(Math.max(0, (stderr?.length || 0) - 500))); rej(err); }
-          else { console.log('✅ Pass 1 done'); res(); }
-        });
+        const escaped = line
+          .replace(/\\/g, '\\\\')
+          .replace(/'/g, '\u2019')
+          .replace(/:/g, '\\:')
+          .replace(/%/g, '%%');
+
+        const fontOpt = fontFile ? `fontfile=${fontFile}:` : '';
+
+        // Semi-transparent box centered on screen
+        drawParts.push(
+          `drawbox=x=0:y=ih/2-80:w=iw:h=160:color=black@0.5:t=fill:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
+        );
+
+        // Lyric text — centered horizontally AND vertically
+        drawParts.push(
+          `drawtext=text='${escaped}':${fontOpt}fontsize=52:fontcolor=white:borderw=3:bordercolor=black@0.8:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
+        );
       });
-
-      // ── Pass 2: Kashie-style lyrics — one bar at a time ──
-      if (lyricLines && lyricLines.length > 0) {
-        await new Promise((res, rej) => {
-          const lineCount = lyricLines.length;
-          const gap = 0.35;
-          const displayTime = Math.max(2.0, (totalDuration - gap * (lineCount + 1)) / lineCount);
-          const vfParts = [];
-
-          lyricLines.forEach((line, i) => {
-            const startTime = gap + i * (displayTime + gap);
-            const endTime = Math.min(startTime + displayTime, totalDuration - 0.2);
-            const fadeIn = 0.2;
-            const fadeOut = 0.2;
-
-            // Escape text for FFmpeg drawtext
-            const escaped = line
-              .replace(/\\/g, '\\\\\\\\')
-              .replace(/'/g, '\u2019')
-              .replace(/:/g, '\\:')
-              .replace(/%/g, '%%');
-
-            // Semi-transparent dark bar behind text — lower third like Kashie
-            vfParts.push(
-              `drawbox=x=0:y=ih*0.72:w=iw:h=ih*0.16:color=black@0.5:t=fill:` +
-              `enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})'`
-            );
-
-            // Lyric text — bold, centered, clean look
-            const fontOpt = fontFile ? `fontfile=${fontFile}:` : '';
-            vfParts.push(
-              `drawtext=text='${escaped}':` +
-              `${fontOpt}fontsize=52:fontcolor=white:borderw=3:bordercolor=black@0.7:` +
-              `x=(w-text_w)/2:y=h*0.77:` +
-              `enable='between(t\\,${startTime.toFixed(2)}\\,${endTime.toFixed(2)})':` +
-              `alpha='if(lt(t\\,${(startTime + fadeIn).toFixed(2)})\\,(t-${startTime.toFixed(2)})/${fadeIn.toFixed(2)}\\,if(gt(t\\,${(endTime - fadeOut).toFixed(2)})\\,(${endTime.toFixed(2)}-t)/${fadeOut.toFixed(2)}\\,1))'`
-            );
-          });
-
-          const args = [
-            '-y', '-i', tempSlideshow,
-            '-vf', vfParts.join(','),
-            '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p',
-            '-movflags', '+faststart',
-            outputPath
-          ];
-
-          console.log('🎬 Pass 2: Kashie-style lyrics overlay...');
-          execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
-            if (err) { console.error('FFmpeg pass 2 error:', stderr?.substring(Math.max(0, (stderr?.length || 0) - 500))); rej(err); }
-            else { console.log('✅ Pass 2 done — lyrics video ready'); res(); }
-          });
-        });
-      } else {
-        fs.renameSync(tempSlideshow, outputPath);
-      }
-
-      // Cleanup temp file
-      fs.unlink(tempSlideshow, () => {});
-      resolve(outputPath);
-
-    } catch (err) {
-      fs.unlink(tempSlideshow, () => {});
-      reject(new Error('FFmpeg failed: ' + err.message));
     }
+
+    const drawFilters = drawParts.length > 0 ? ',' + drawParts.join(',') : '';
+
+    const filterComplex = [
+      ...scaleFilters,
+      `${concatInputs.join('')}concat=n=${numImages}:v=1:a=0,fps=25${drawFilters}[outv]`
+    ].join(';');
+
+    const args = [
+      '-y', ...inputs,
+      '-filter_complex', filterComplex,
+      '-map', '[outv]',
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart',
+      outputPath
+    ];
+
+    console.log('🎬 Building video (single pass: concat + lyrics)...');
+    execFile(ffmpegPath || 'ffmpeg', args, { timeout: 180000, maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {
+      if (err) {
+        console.error('FFmpeg error:', stderr?.substring(Math.max(0, (stderr?.length || 0) - 800)));
+        reject(new Error('FFmpeg failed: ' + (err.message || 'unknown')));
+      } else {
+        console.log('✅ Video ready (single pass)');
+        resolve(outputPath);
+      }
+    });
   });
 }
 
@@ -370,47 +333,54 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
     const imageUrls = await Promise.all(imagePromises);
     console.log(`📸 All ${numImages} images generated:`, imageUrls.map(u => u.substring(0, 60)));
 
-    // ── IMMEDIATELY mark completed with image URLs so frontend always has something ──
+    // Save image URLs to DB immediately (for reference)
     await db.updateVideoGeneration(videoId, {
-      status: 'completed',
-      image_urls: JSON.stringify(imageUrls),
-      video_url: ''
+      image_urls: JSON.stringify(imageUrls)
     });
-    console.log(`✅ Images saved — now trying to build MP4 video...`);
 
-    // ── Try to build MP4 video with FFmpeg (bonus — upgrades the result) ──
-    try {
-      const ffmpegBin = ffmpegPath || 'ffmpeg';
-      console.log(`🎬 Building video with: ${ffmpegBin}`);
+    // ── Build MP4 video with FFmpeg ──
+    const ffmpegBin = ffmpegPath || 'ffmpeg';
+    console.log(`🎬 Building MP4 video with: ${ffmpegBin}`);
 
-      // Download all images to disk
-      const imagePaths = [];
-      for (let i = 0; i < imageUrls.length; i++) {
-        const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
-        await downloadFile(imageUrls[i], imgPath);
-        imagePaths.push(imgPath);
-        console.log(`📥 Downloaded image ${i}`);
-      }
-
-      // Create video: ~3 sec per lyric line, minimum 12 sec
-      const totalDuration = Math.max(12, lyricLines.length * 3.0);
-      const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
-      await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
-
-      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
-        const fileSize = fs.statSync(outputPath).size;
-        console.log(`✅ Video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
-        await db.updateVideoGeneration(videoId, {
-          video_url: `/api/videos/${videoId}/file`
-        });
-      }
-
-      // Cleanup temp images
-      imagePaths.forEach(p => fs.unlink(p, () => {}));
-    } catch (ffmpegErr) {
-      console.log(`⚠️ FFmpeg failed (images still available): ${ffmpegErr.message}`);
-      // Not fatal — status is already 'completed' with image URLs
+    // Download all images to disk
+    const imagePaths = [];
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+      await downloadFile(imageUrls[i], imgPath);
+      imagePaths.push(imgPath);
+      console.log(`📥 Downloaded image ${i}`);
     }
+
+    // Punchy quick cuts: ~1.8 sec per image for music video feel
+    const totalDuration = Math.max(8, imagePaths.length * 1.8);
+    const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
+
+    try {
+      await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
+    } catch (ffmpegErr) {
+      console.error(`⚠️ FFmpeg with lyrics failed, trying without lyrics:`, ffmpegErr.message);
+      // Retry without lyrics (simpler filter)
+      await createLyricsVideo(imagePaths, outputPath, [], totalDuration);
+    }
+
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+      const fileSize = fs.statSync(outputPath).size;
+      console.log(`✅ MP4 video ready (${(fileSize / 1024 / 1024).toFixed(1)}MB)`);
+      await db.updateVideoGeneration(videoId, {
+        status: 'completed',
+        video_url: `/api/videos/${videoId}/file`
+      });
+    } else {
+      // Fallback: mark completed with images only
+      console.log(`⚠️ No MP4 produced, falling back to images`);
+      await db.updateVideoGeneration(videoId, {
+        status: 'completed',
+        video_url: ''
+      });
+    }
+
+    // Cleanup temp images
+    imagePaths.forEach(p => fs.unlink(p, () => {}));
 
   } catch (err) {
     console.error(`❌ Video ${videoId} failed:`, err.message);
@@ -644,7 +614,7 @@ const server = http.createServer(async (req, res) => {
         const stat = fs.statSync(videoFile);
         res.writeHead(200, {
           'Content-Type': 'video/mp4', 'Content-Length': stat.size,
-          'Content-Disposition': 'inline; filename="viraltrack-lyrics.mp4"',
+          'Content-Disposition': 'attachment; filename="viraltrack-lyrics.mp4"',
           'Access-Control-Allow-Origin': '*',
           'Cache-Control': 'public, max-age=86400'
         });
