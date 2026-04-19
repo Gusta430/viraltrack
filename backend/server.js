@@ -150,13 +150,13 @@ async function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDurati
   const clipPaths = [];
   const dir = path.dirname(outputPath);
 
-  // Font — retro serif bold
+  // Font — clean sans-serif (matches the iPod/Kashie screenshot style)
   const fontPaths = [
-    '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf',
-    '/usr/share/fonts/truetype/liberation2/LiberationSerif-Bold.ttf',
-    '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf',
-    POPPINS_BOLD,
     '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+    POPPINS_BOLD,
+    '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf',
+    '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
   ];
   let fontFile = '';
   for (const fp of fontPaths) { if (fs.existsSync(fp)) { fontFile = fp; break; } }
@@ -197,8 +197,7 @@ async function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDurati
         const et = (Math.min((i + 1) * parseFloat(durPerImage), totalDuration)).toFixed(2);
         const escaped = line.replace(/\\/g, '\\\\').replace(/'/g, '\u2019').replace(/:/g, '\\:').replace(/%/g, '%%');
 
-        vfParts.push(`drawbox=x=0:y=ih/2-60:w=iw:h=120:color=black@0.5:t=fill:enable='between(t\\,${st}\\,${et})'`);
-        vfParts.push(`drawtext=text='${escaped}':fontfile=${fontFile}:fontsize=38:fontcolor=white:borderw=2:bordercolor=black@0.8:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${st}\\,${et})'`);
+        vfParts.push(`drawtext=text='${escaped}':fontfile=${fontFile}:fontsize=42:fontcolor=white:shadowcolor=black@0.7:shadowx=2:shadowy=2:borderw=3:bordercolor=black@0.5:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${st}\\,${et})'`);
       });
 
       await ffmpeg([
@@ -289,7 +288,7 @@ function buildScenePrompts(lyricLines, genre, title, artist, moodTags) {
 
   // Build scene list: match lyrics line-by-line to scenes
   const scenes = [];
-  const numImages = Math.min(Math.max(3, lyricLines.length), 5);
+  const numImages = Math.min(Math.max(3, lyricLines.length), 6);
 
   // First, try to match each lyric line to a vibe
   for (let i = 0; i < numImages; i++) {

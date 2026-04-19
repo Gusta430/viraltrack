@@ -946,8 +946,8 @@ function showVideoResult(row, data) {
         <div id="${sid}" style="position:relative;width:100%;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#000">
           ${imageUrls.map((url, i) => `<img src="${url}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:${i===0?1:0};transition:none;transform:scale(1);will-change:opacity,transform" data-si="${i}">`).join('')}
           <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:5;pointer-events:none">
-            <div style="background:rgba(0,0,0,0.5);padding:12px 24px;border-radius:8px;max-width:90%">
-              <div class="vg-ly" style="font-family:Georgia,'Times New Roman','DejaVu Serif',serif;font-size:22px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.9);line-height:1.4;text-align:center;min-height:32px;opacity:0"></div>
+            <div style="padding:12px 24px;max-width:90%">
+              <div class="vg-ly" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:24px;font-weight:700;color:#fff;text-shadow:1px 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.5);line-height:1.4;text-align:center;min-height:32px;opacity:0"></div>
             </div>
           </div>
         </div>
@@ -1027,7 +1027,7 @@ async function initVideoButtons(track, vids, analysis) {
       try {
         const lt = JSON.parse(analysis?.lyric_themes || '{}');
         if (lt.quotable_lines && lt.quotable_lines.length > 0) {
-          lyricLines = lt.quotable_lines.slice(0, 5);
+          lyricLines = lt.quotable_lines.slice(0, 6);
         }
       } catch(e) {}
       if (lyricLines.length === 0 && cs.hook_line) {
