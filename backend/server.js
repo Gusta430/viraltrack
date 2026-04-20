@@ -33,6 +33,29 @@ if (ffmpegPath && testFfmpeg(ffmpegPath)) {
   console.log('⚠️ No working FFmpeg found — videos will be images only');
 }
 
+// Check ImageMagick availability (for burning lyrics onto images)
+let MAGICK_BIN = null;
+for (const bin of ['magick', 'convert', '/usr/bin/convert']) {
+  try {
+    execFileSync(bin, ['-version'], { timeout: 5000, stdio: 'pipe' });
+    MAGICK_BIN = bin;
+    console.log(`🖼️ ImageMagick OK: ${bin}`);
+    break;
+  } catch(e) {}
+}
+if (!MAGICK_BIN) console.log('⚠️ No ImageMagick found — lyrics won\'t appear in video');
+
+// Find a usable font file
+const FONT_CANDIDATES = [
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+  '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf',
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+];
+let LYRICS_FONT = '';
+for (const fp of FONT_CANDIDATES) { if (fs.existsSync(fp)) { LYRICS_FONT = fp; break; } }
+console.log('🔤 Lyrics font:', LYRICS_FONT || 'none');
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATIC_DIR = path.join(__dirname, '..', 'frontend', 'public');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -127,7 +150,7 @@ function generateImage(falKey, prompt) {
 }
 
 // Run a single FFmpeg command — returns a promise
-function ffmpeg(args) {
+function ffmpegRun(args) {
   return new Promise((resolve, reject) => {
     const bin = FFMPEG_BIN || 'ffmpeg';
     execFile(bin, args, { timeout: 60000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
@@ -139,90 +162,90 @@ function ffmpeg(args) {
   });
 }
 
+// Burn lyric text onto an image using ImageMagick (no FFmpeg drawtext needed)
+function burnTextOnImage(inputPath, outputPath, text) {
+  return new Promise((resolve, reject) => {
+    if (!MAGICK_BIN || !LYRICS_FONT) return resolve(false);
+    const args = [
+      inputPath,
+      '-resize', '720x1280!',
+      '-gravity', 'center',
+      '-font', LYRICS_FONT,
+      '-pointsize', '42',
+      '-fill', 'white',
+      '-stroke', 'rgba(0,0,0,0.5)',
+      '-strokewidth', '3',
+      '-annotate', '+0+0', text,
+      outputPath
+    ];
+    execFile(MAGICK_BIN, args, { timeout: 15000 }, (err) => {
+      if (err) { console.log('⚠️ ImageMagick failed:', err.message); resolve(false); }
+      else resolve(true);
+    });
+  });
+}
+
 // Build lyrics video using concat demuxer approach (low memory, works on any host)
-// Step 1: convert each image to a short clip (one at a time)
-// Step 2: concat clips into a base video
-// Step 3: overlay lyrics text (optional — skipped if it fails)
+// Step 1: burn lyrics onto images with ImageMagick + scale to 720x1280
+// Step 2: convert each image to a short clip
+// Step 3: concat clips into final video
 async function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
   const W = 720, H = 1280;
   const numImages = imagePaths.length;
   const durPerImage = (totalDuration / numImages).toFixed(2);
   const clipPaths = [];
+  const tempPaths = [];
   const dir = path.dirname(outputPath);
 
-  // Font — clean sans-serif (matches the iPod/Kashie screenshot style)
-  const fontPaths = [
-    '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-    POPPINS_BOLD,
-    '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf',
-    '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
-    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-  ];
-  let fontFile = '';
-  for (const fp of fontPaths) { if (fs.existsSync(fp)) { fontFile = fp; break; } }
-  console.log('🔤 Using font:', fontFile || 'default');
-
-  // ── STEP 1: Each image → individual clip (low memory: one image at a time) ──
   for (let i = 0; i < numImages; i++) {
+    const lyric = (lyricLines && lyricLines[i]) ? lyricLines[i] : '';
+    let imgToUse = imagePaths[i];
+
+    // ── STEP 1: Burn lyric text onto image with ImageMagick ──
+    if (lyric && MAGICK_BIN && LYRICS_FONT) {
+      const burnedPath = path.join(dir, path.basename(outputPath, '.mp4') + `-burned${i}.png`);
+      const ok = await burnTextOnImage(imagePaths[i], burnedPath, lyric);
+      if (ok && fs.existsSync(burnedPath) && fs.statSync(burnedPath).size > 500) {
+        imgToUse = burnedPath;
+        tempPaths.push(burnedPath);
+        console.log(`🔤 Lyrics burned on image ${i}`);
+      }
+    }
+
+    // ── STEP 2: Image → video clip ──
     const clipPath = path.join(dir, path.basename(outputPath, '.mp4') + `-clip${i}.mp4`);
     clipPaths.push(clipPath);
-    await ffmpeg([
-      '-y', '-loop', '1', '-t', durPerImage, '-i', imagePaths[i],
-      '-vf', `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1`,
+
+    // If ImageMagick already resized, we just need to encode.
+    // If not (no lyrics or failed), we need to scale with FFmpeg.
+    const vf = imgToUse === imagePaths[i]
+      ? `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1`
+      : `setsar=1`;
+
+    await ffmpegRun([
+      '-y', '-loop', '1', '-t', durPerImage, '-i', imgToUse,
+      '-vf', vf,
       '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-r', '25',
       clipPath
     ]);
     console.log(`🎬 Clip ${i}/${numImages} done`);
   }
 
-  // ── STEP 2: Concat all clips into base video ──
+  // ── STEP 3: Concat all clips into final video ──
   const listPath = path.join(dir, path.basename(outputPath, '.mp4') + '-list.txt');
-  const basePath = path.join(dir, path.basename(outputPath, '.mp4') + '-base.mp4');
   fs.writeFileSync(listPath, clipPaths.map(p => `file '${p}'`).join('\n'));
 
-  await ffmpeg([
+  await ffmpegRun([
     '-y', '-f', 'concat', '-safe', '0', '-i', listPath,
-    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p',
-    basePath
+    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+    outputPath
   ]);
-  console.log('🎬 Base video concatenated');
-
-  // ── STEP 3: Overlay lyrics (skip on failure — base video is still usable) ──
-  let finalPath = basePath;
-  if (lyricLines && lyricLines.length > 0 && fontFile) {
-    try {
-      const vfParts = [];
-      lyricLines.forEach((line, i) => {
-        const st = (i * parseFloat(durPerImage)).toFixed(2);
-        const et = (Math.min((i + 1) * parseFloat(durPerImage), totalDuration)).toFixed(2);
-        const escaped = line.replace(/\\/g, '\\\\').replace(/'/g, '\u2019').replace(/:/g, '\\:').replace(/%/g, '%%');
-
-        vfParts.push(`drawtext=text='${escaped}':fontfile=${fontFile}:fontsize=42:fontcolor=white:shadowcolor=black@0.7:shadowx=2:shadowy=2:borderw=3:bordercolor=black@0.5:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t\\,${st}\\,${et})'`);
-      });
-
-      await ffmpeg([
-        '-y', '-i', basePath,
-        '-vf', vfParts.join(','),
-        '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
-        outputPath
-      ]);
-      console.log('🎬 Lyrics overlay done');
-      finalPath = outputPath;
-    } catch (lyricsErr) {
-      console.log('⚠️ Lyrics overlay failed (using base video):', lyricsErr.message);
-    }
-  }
-
-  // If lyrics step was skipped or failed, rename base to output
-  if (finalPath !== outputPath) {
-    fs.copyFileSync(basePath, outputPath);
-    console.log('🎬 Using base video (no lyrics overlay)');
-  }
+  console.log('🎬 Video concatenated — done');
 
   // Cleanup temp files
   clipPaths.forEach(p => fs.unlink(p, () => {}));
+  tempPaths.forEach(p => fs.unlink(p, () => {}));
   fs.unlink(listPath, () => {});
-  fs.unlink(basePath, () => {});
 }
 
 // Background process: generate images → save URLs → try FFmpeg slideshow → update DB
