@@ -283,6 +283,8 @@ JSON structure:
   "lyric_themes": {
     "core_story": "<2-3 sentences: what is this song about? Who's talking, to whom, about what?>",
     "quotable_lines": ["<exact lyric that works as a caption>", "<another>", "<another>"],
+    "video_bars": ["<bar 1>", "<bar 2>", "<bar 3>", "<bar 4>", "<bar 5>", "<bar 6>"],
+    "video_bars_section": "<which section these bars come from, e.g. 'Verse 1', 'Chorus', 'Hook'>",
     "emotional_core": "<the universal feeling that makes listeners think 'this is me'>",
     "visual_world": "<colors, settings, time of day, textures matching lyrics + sound>"
   },
@@ -419,7 +421,10 @@ BEFORE writing ANY suggestion:
 2. Find 3+ quotable lines that work as captions
 3. What LIFESTYLE do the lyrics describe? That lifestyle IS the content strategy
 4. Note slang, cultural references, double meanings — the title's meaning comes from the lyrics only
-5. Every idea MUST reference a specific lyric theme. No connection to lyrics = cut it` : 'No lyrics. Base strategy on genre, mood, energy, similar artists. Mention lyrics would improve results.'}
+5. Every idea MUST reference a specific lyric theme. No connection to lyrics = cut it
+
+VIDEO BARS (critical — read carefully):
+For "video_bars" in lyric_themes: pick the STRONGEST section of the song (the most impactful verse, chorus, or hook) and extract exactly 6 consecutive bars/lines from it, in the EXACT order they appear in the lyrics. These must be WORD-FOR-WORD copies from the lyrics above — do NOT paraphrase, reorder, or pick lines from different sections. If the strongest section has fewer than 6 lines, continue into the next section to reach 6. These bars will be displayed one at a time in a lyric video, so they must read as a continuous sequence from the actual song.` : 'No lyrics. Base strategy on genre, mood, energy, similar artists. Mention lyrics would improve results.'}
 
 ${audioFeatures?.analyzed ? `
 AUDIO DATA (use exactly):

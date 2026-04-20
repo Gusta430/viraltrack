@@ -982,11 +982,16 @@ async function initVideoButtons(track, vids, analysis) {
       const row = document.getElementById('vid-row-' + idx);
       const cs = v.caption_structured || {};
 
-      // Extract lyric lines: quotable lines from analysis → caption parts → song moment
+      // Extract lyric lines: video_bars (sequential bars from strongest section) → quotable lines → caption parts → song moment
       let lyricLines = [];
       try {
         const lt = JSON.parse(analysis?.lyric_themes || '{}');
-        if (lt.quotable_lines && lt.quotable_lines.length > 0) {
+        // Prefer video_bars: sequential lyrics from the strongest section, in correct order
+        if (lt.video_bars && Array.isArray(lt.video_bars) && lt.video_bars.length > 0) {
+          lyricLines = lt.video_bars.filter(b => b && b.trim()).slice(0, 6);
+        }
+        // Fallback to quotable_lines if video_bars not available
+        if (lyricLines.length === 0 && lt.quotable_lines && lt.quotable_lines.length > 0) {
           lyricLines = lt.quotable_lines.slice(0, 6);
         }
       } catch(e) {}
