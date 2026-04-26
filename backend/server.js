@@ -525,6 +525,24 @@ const server = http.createServer(async (req, res) => {
       return json(res, user);
     }
 
+    // ── PUBLIC: Serve video files (no auth — loaded via <video src> which can't send headers) ──
+    const videoFileMatch = p.match(/^\/api\/videos\/([^/]+)\/file$/);
+    if (videoFileMatch && method === 'GET') {
+      const videoFile = path.join(VIDS_DIR, videoFileMatch[1] + '-lyrics.mp4');
+      if (fs.existsSync(videoFile)) {
+        const stat = fs.statSync(videoFile);
+        res.writeHead(200, {
+          'Content-Type': 'video/mp4', 'Content-Length': stat.size,
+          'Accept-Ranges': 'bytes',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, max-age=86400'
+        });
+        fs.createReadStream(videoFile).pipe(res);
+        return;
+      }
+      return json(res, { error: 'Video file not found' }, 404);
+    }
+
     // ── PROTECTED ROUTES ──
     const user = await getUser(req);
     if (p.startsWith('/api/') && !user) return json(res, { error: 'Login required' }, 401);
@@ -654,23 +672,7 @@ const server = http.createServer(async (req, res) => {
       return json(res, { id: videoId, status: 'processing' });
     }
 
-    // Serve processed lyrics video file
-    const videoFileMatch = p.match(/^\/api\/videos\/([^/]+)\/file$/);
-    if (videoFileMatch && method === 'GET') {
-      const videoFile = path.join(VIDS_DIR, videoFileMatch[1] + '-lyrics.mp4');
-      if (fs.existsSync(videoFile)) {
-        const stat = fs.statSync(videoFile);
-        res.writeHead(200, {
-          'Content-Type': 'video/mp4', 'Content-Length': stat.size,
-          'Content-Disposition': 'attachment; filename="viraltrack-lyrics.mp4"',
-          'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, max-age=86400'
-        });
-        fs.createReadStream(videoFile).pipe(res);
-        return;
-      }
-      return json(res, { error: 'Video file not found' }, 404);
-    }
+    // (Video file serving moved above auth check)
 
     const videoStatusMatch = p.match(/^\/api\/videos\/([^/]+)\/status$/);
     if (videoStatusMatch && method === 'GET') {
