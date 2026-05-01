@@ -525,6 +525,11 @@ const server = http.createServer(async (req, res) => {
       return json(res, user);
     }
 
+    // ── Health check (public, no auth — used by keep-alive + frontend warm-up) ──
+    if (p === '/api/health' && method === 'GET') {
+      return json(res, { status: 'ok', uptime: Math.floor(process.uptime()) });
+    }
+
     // ── PUBLIC: Serve video files (no auth — loaded via <video src> which can't send headers) ──
     const videoFileMatch = p.match(/^\/api\/videos\/([^/]+)\/file$/);
     if (videoFileMatch && method === 'GET') {
@@ -747,7 +752,22 @@ const server = http.createServer(async (req, res) => {
 // Init database then start server
 const PORT = process.env.PORT || 3000;
 db.init().then(() => {
-  server.listen(PORT, () => console.log(`\n  🎵 ViralTrack running at http://localhost:${PORT}\n`));
+  server.listen(PORT, () => {
+    console.log(`\n  🎵 ViralTrack running at http://localhost:${PORT}\n`);
+
+    // ── Keep-alive: prevent hosting platforms from sleeping the server ──
+    // Pings itself every 14 minutes (Render free tier sleeps after 15 min idle)
+    const APP_URL = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
+    if (APP_URL) {
+      const pingUrl = APP_URL + '/api/health';
+      setInterval(() => {
+        const mod = pingUrl.startsWith('https') ? https : http;
+        mod.get(pingUrl, (r) => r.resume()).on('error', () => {});
+        console.log('💓 Keep-alive ping sent');
+      }, 14 * 60 * 1000); // every 14 minutes
+      console.log(`💓 Keep-alive enabled → ${pingUrl} every 14 min`);
+    }
+  });
 }).catch(err => {
   console.error('❌ Database init failed:', err);
   process.exit(1);

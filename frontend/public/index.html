@@ -274,6 +274,7 @@
        ═══════════════════════════════════════════════════ */
     .sp{width:20px;height:20px;border:2px solid rgba(255,255,255,.06);border-top:2px solid var(--ac);border-radius:50%;animation:spn .7s linear infinite}
     @keyframes spn{to{transform:rotate(360deg)}}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spn .6s linear infinite;vertical-align:middle}
     .lo{display:none;position:fixed;inset:0;background:rgba(9,9,11,.88);backdrop-filter:blur(16px);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:20px}
     .lo.vis{display:flex;animation:loFi .25s var(--ease)}
     .lt{font-size:15px;font-weight:500;color:var(--t2)}
@@ -916,23 +917,26 @@ async function checkAuth() {
 
 // ── LOGIN ──
 document.getElementById('btn-login').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-login');
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.classList.remove('vis');
   if (!email || !pass) { errEl.textContent = 'Fill in all fields'; errEl.classList.add('vis'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Connecting...';
   try {
     const res = await fetch(A+'/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) });
     const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('vis'); return; }
+    if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('vis'); btn.disabled = false; btn.textContent = 'Log in'; return; }
     authToken = data.token;
     localStorage.setItem('vt_token', authToken);
     showApp(data.user);
-  } catch(e) { errEl.textContent = 'Connection error'; errEl.classList.add('vis'); }
+  } catch(e) { errEl.textContent = 'Connection error — retrying...'; errEl.classList.add('vis'); btn.disabled = false; btn.textContent = 'Log in'; }
 });
 
 // ── REGISTER ──
 document.getElementById('btn-register').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-register');
   const name = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const pass = document.getElementById('reg-pass').value;
@@ -940,14 +944,15 @@ document.getElementById('btn-register').addEventListener('click', async () => {
   errEl.classList.remove('vis');
   if (!name || !email || !pass) { errEl.textContent = 'Fill in all fields'; errEl.classList.add('vis'); return; }
   if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.classList.add('vis'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Creating account...';
   try {
     const res = await fetch(A+'/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password: pass }) });
     const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('vis'); return; }
+    if (!res.ok) { errEl.textContent = data.error; errEl.classList.add('vis'); btn.disabled = false; btn.textContent = 'Create account'; return; }
     authToken = data.token;
     localStorage.setItem('vt_token', authToken);
     showApp(data.user);
-  } catch(e) { errEl.textContent = 'Connection error'; errEl.classList.add('vis'); }
+  } catch(e) { errEl.textContent = 'Connection error — retrying...'; errEl.classList.add('vis'); btn.disabled = false; btn.textContent = 'Create account'; }
 });
 
 // ── SWITCH LOGIN/REGISTER ──
@@ -1394,6 +1399,8 @@ document.getElementById('in-tk').addEventListener('change', function() {
 });
 
 // ── INIT ──
+// Warm up backend immediately so it's ready by the time user clicks login/signup
+fetch(A + '/health').catch(() => {});
 checkAuth();
 </script>
 <script>
