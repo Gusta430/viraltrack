@@ -1300,19 +1300,40 @@ async function initVideoButtons(track, vids, analysis) {
       const row = document.getElementById('vid-row-' + idx);
       const cs = v.caption_structured || {};
 
-      // Extract lyric lines: video_bars (sequential bars from strongest section) → quotable lines → caption parts → song moment
+      // Extract lyric lines: use video_bars (strongest section, bar-by-bar in order)
+      // Only fall back to other sources if video_bars wasn't generated
       let lyricLines = [];
-      try {
-        const lt = JSON.parse(analysis?.lyric_themes || '{}');
-        // Prefer video_bars: sequential lyrics from the strongest section, in correct order
-        if (lt.video_bars && Array.isArray(lt.video_bars) && lt.video_bars.length > 0) {
-          lyricLines = lt.video_bars.filter(b => b && b.trim()).slice(0, 6);
+      let lt = {};
+      try { lt = JSON.parse(analysis?.lyric_themes || '{}'); } catch(e) {}
+
+      // PRIMARY: video_bars — consecutive bars from the strongest section, in exact song order
+      if (lt.video_bars && Array.isArray(lt.video_bars) && lt.video_bars.length > 0) {
+        lyricLines = lt.video_bars.filter(b => b && b.trim()).slice(0, 6);
+      }
+
+      // FALLBACK 1: If lyrics were provided, try to extract consecutive lines from chorus/hook
+      if (lyricLines.length === 0 && track.lyrics) {
+        const lines = track.lyrics.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('['));
+        // Find chorus/hook section if marked
+        const lyricsRaw = track.lyrics;
+        const chorusMatch = lyricsRaw.match(/\[(?:Chorus|Hook|Refrain)[^\]]*\]\n([\s\S]*?)(?=\n\[|$)/i);
+        if (chorusMatch) {
+          const chorusLines = chorusMatch[1].split('\n').map(l => l.trim()).filter(l => l);
+          lyricLines = chorusLines.slice(0, 6);
         }
-        // Fallback to quotable_lines if video_bars not available
-        if (lyricLines.length === 0 && lt.quotable_lines && lt.quotable_lines.length > 0) {
-          lyricLines = lt.quotable_lines.slice(0, 6);
+        // If no marked chorus, take the densest 6 consecutive lines from middle of song
+        if (lyricLines.length === 0 && lines.length >= 4) {
+          const startIdx = Math.max(0, Math.floor(lines.length * 0.3));
+          lyricLines = lines.slice(startIdx, startIdx + 6);
         }
-      } catch(e) {}
+      }
+
+      // FALLBACK 2: quotable_lines (still from the song, just not consecutive)
+      if (lyricLines.length === 0 && lt.quotable_lines && lt.quotable_lines.length > 0) {
+        lyricLines = lt.quotable_lines.slice(0, 6);
+      }
+
+      // FALLBACK 3: caption hook
       if (lyricLines.length === 0 && cs.hook_line) {
         lyricLines = [cs.hook_line, cs.body || '', cs.cta || ''].filter(l => l);
       }
@@ -1329,7 +1350,8 @@ async function initVideoButtons(track, vids, analysis) {
       try {
         let moodTags = [];
         try { moodTags = JSON.parse(analysis?.mood_tags || '[]'); } catch(e) {}
-        const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ lyric_lines: lyricLines, genre: track.genre || '', title: track.title || '', artist: track.artist || '', mood_tags: moodTags, track_id: track.id }) });
+        const bpm = parseInt(analysis?.tempo_bpm) || 0;
+        const res = await authFetch(A + '/videos/generate', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ lyric_lines: lyricLines, genre: track.genre || '', title: track.title || '', artist: track.artist || '', mood_tags: moodTags, track_id: track.id, bpm }) });
         const data = await res.json();
         if (!res.ok) {
           row.querySelector('.vid-gen-progress').style.display = 'none';

@@ -424,7 +424,15 @@ BEFORE writing ANY suggestion:
 5. Every idea MUST reference a specific lyric theme. No connection to lyrics = cut it
 
 VIDEO BARS (critical — read carefully):
-For "video_bars" in lyric_themes: pick the STRONGEST section of the song (the most impactful verse, chorus, or hook) and extract exactly 6 consecutive bars/lines from it, in the EXACT order they appear in the lyrics. These must be WORD-FOR-WORD copies from the lyrics above — do NOT paraphrase, reorder, or pick lines from different sections. If the strongest section has fewer than 6 lines, continue into the next section to reach 6. These bars will be displayed one at a time in a lyric video, so they must read as a continuous sequence from the actual song.` : 'No lyrics. Base strategy on genre, mood, energy, similar artists. Mention lyrics would improve results.'}
+For "video_bars" in lyric_themes: find the MOST VIRAL section of the song — the part that would make someone stop scrolling on TikTok. This is usually the chorus, hook, or the hardest-hitting verse. Extract exactly 6 consecutive bars/lines from that section, WORD-FOR-WORD, in the EXACT order they appear in the lyrics. Rules:
+1. COPY-PASTE the bars directly from the lyrics — zero paraphrasing, zero reordering
+2. They must be CONSECUTIVE lines — bar 1 flows into bar 2 flows into bar 3 etc.
+3. Pick lines that HIT HARD back-to-back — punchlines, hooks, the part people would lip-sync to
+4. If the chorus has fewer than 6 lines, continue into the next bar after the chorus to reach 6
+5. NEVER grab lines from different parts of the song and stitch them together
+6. These get displayed one at a time in a lyric video, timed to the BPM — they must flow naturally as if someone is rapping/singing along
+
+Also set "video_bars_section" to exactly which section you pulled from (e.g. "Chorus", "Verse 2", "Hook").` : 'No lyrics. Base strategy on genre, mood, energy, similar artists. Mention lyrics would improve results.'}
 
 ${audioFeatures?.analyzed ? `
 AUDIO DATA (use exactly):

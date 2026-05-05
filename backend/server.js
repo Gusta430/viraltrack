@@ -192,7 +192,30 @@ function burnTextOnImage(inputPath, outputPath, text) {
 async function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration) {
   const W = 720, H = 1280;
   const numImages = imagePaths.length;
-  const durPerImage = (totalDuration / numImages).toFixed(2);
+
+  // ── Proportional timing: longer bars get more time, shorter ones get less ──
+  // This makes the video feel like natural speech/rap rhythm
+  const charCounts = [];
+  let totalChars = 0;
+  for (let i = 0; i < numImages; i++) {
+    const chars = (lyricLines && lyricLines[i]) ? lyricLines[i].length : 20;
+    charCounts.push(chars);
+    totalChars += chars;
+  }
+  // Calculate duration per clip proportional to character count
+  const durations = charCounts.map(c => {
+    const proportion = c / Math.max(1, totalChars);
+    const raw = proportion * totalDuration;
+    // Clamp each clip between 1.2s and 5s
+    return Math.max(1.2, Math.min(5.0, raw));
+  });
+  // Normalize so total matches totalDuration exactly
+  const rawTotal = durations.reduce((a, b) => a + b, 0);
+  const scale = totalDuration / rawTotal;
+  const finalDurations = durations.map(d => (d * scale).toFixed(2));
+
+  console.log(`🎵 Per-line timing: ${finalDurations.map((d, i) => `"${(lyricLines[i] || '').substring(0, 20)}…" → ${d}s`).join(' | ')}`);
+
   const clipPaths = [];
   const tempPaths = [];
   const dir = path.dirname(outputPath);
@@ -223,7 +246,7 @@ async function createLyricsVideo(imagePaths, outputPath, lyricLines, totalDurati
       : `setsar=1`;
 
     await ffmpegRun([
-      '-y', '-loop', '1', '-t', durPerImage, '-i', imgToUse,
+      '-y', '-loop', '1', '-t', finalDurations[i], '-i', imgToUse,
       '-vf', vf,
       '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-pix_fmt', 'yuv420p', '-r', '25',
       clipPath
@@ -412,7 +435,18 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
         console.log(`📥 Image ${i} downloaded (${(fs.statSync(imgPath).size/1024).toFixed(0)}KB)`);
       }
 
-      const totalDuration = Math.max(8, imagePaths.length * 1.8);
+      // ── BPM-aware timing: each bar gets time matching the song's actual rhythm ──
+      // A "bar" in rap/singing typically spans 4 beats. At 120 BPM that's 2 seconds.
+      // For slower sections (chorus/hooks) we use 2 bars = 8 beats per line.
+      const bpm = songContext.bpm || 120;
+      const beatsPerBar = 4;
+      const barsPerLine = 2; // most lyric lines span ~2 musical bars
+      const secondsPerLine = (beatsPerBar * barsPerLine * 60) / bpm;
+      // Clamp between 1.5s and 4s per line for watchability
+      const clampedSecondsPerLine = Math.max(1.5, Math.min(4.0, secondsPerLine));
+      const totalDuration = Math.max(8, imagePaths.length * clampedSecondsPerLine);
+      console.log(`🎵 Timing: BPM=${bpm}, ${clampedSecondsPerLine.toFixed(2)}s per line, total=${totalDuration.toFixed(1)}s`);
+
       const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
       await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
 
@@ -665,7 +699,8 @@ const server = http.createServer(async (req, res) => {
       const videoId = uuid();
       const genre = body.genre || '';
       const trackId = body.track_id || '';
-      const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [] };
+      const bpm = body.bpm || 0;
+      const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [], bpm };
       await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines), track_id: trackId });
 
       // Fire background process: generate images → build slideshow → update DB
