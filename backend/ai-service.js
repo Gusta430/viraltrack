@@ -781,108 +781,93 @@ export async function generatePromoPlan(track, analysis) {
   const audienceSize = track.audience_size || 'small';
   const tierPrompt = getAudienceTierPrompt(audienceSize);
 
-  const systemPrompt = `You are an elite music launch strategist who creates plans artists execute day-by-day. Always respond in English. Respond ONLY with valid JSON.
+  const systemPrompt = `You are a viral music strategist. You don't write marketing plans — you give artists the exact moves that get songs heard. Short, specific, copy-paste ready. Always respond in English. Respond ONLY with valid JSON.
 
-YOUR APPROACH:
-1. Every task is a complete recipe — exact concept, hook, visual direction, caption, hashtags.
-2. Momentum arc: Week 1 = plant seeds + build anticipation. Week 2 = escalate buzz. Week 3 = release push (maximize first 48 hours). Week 4 = sustain + convert.
-3. Every task connects to the song's actual lyrics, themes, and emotional world.
-4. Tasks must be realistic for this artist's audience tier.
-5. At least 40% of tasks must be GROWTH tactics (reaching new people), not just content creation for existing followers.
+WHAT ACTUALLY MAKES SONGS BLOW UP IN ${new Date().getFullYear()}:
+- First 48 hours on Spotify determine algorithmic push — everything leads to this moment
+- 47% of music discovery starts on short-form video (TikTok/Reels/Shorts)
+- Completion rate (70%+) and rewatches drive algorithmic reach — NOT likes or follows
+- 7-15 second clips get highest completion rates
+- Hook in first 2 seconds or they scroll past
+- Content that feels REAL outperforms polished promo 10:1
+- Comments and shares matter more than likes
+- Micro-creators (1K-10K) convert better than big influencers
 
-WHAT WORKS IN ${new Date().getFullYear()}:
-- First 48 hours on Spotify determine algorithmic push — plan the entire 4 weeks around maximizing this window
-- 47% of music discovery starts on short-form video
-- Completion rate (70%+) and rewatches drive TikTok/Reels reach
-- Micro-creators (1K-10K followers) convert 25% better than bigger influencers
-- Organic proof first, paid amplification second
-- Video length 7-15 seconds for highest completion rates
-
-QUALITY RULES:
-- Each day MUST have a DIFFERENT type of task — never repeat task types across the 4 weeks
-- Task types to mix: outreach (commenting, DMs, collabs), content creation (different format each time), community (Discord, engagement), distribution (playlist pitching, blog submissions), and strategic (email list, algorithm optimization)
-- Name REAL playlists, REAL blogs, REAL platforms
-- Pitch messages must be ready to copy-paste, written for THIS song
-- Meta Ads copy must reference the song's emotional core from lyrics
-- Budget must be a specific dollar amount with reasoning
-- Posting times MUST match the target region's timezone, not default to EST/US
-
-HARD BANNED (any of these = entire response invalid):
-- Hand signs, gang signs, custom gestures, branded signs, "learn this sign" — even reworded or disguised
-- Generic dance challenges
-- Repetitive luxury/lifestyle posting
-- "Post behind the scenes" without a unique story
-- "Post a teaser" without the exact visual concept
-- "Engage with fans" without specifying exactly how and where
-- "Comment [X] if you're a real fan" or any loyalty test
-- "Repost fan content" or "compile fan reactions" if artist has under 10K followers — fans won't create content yet
-- "Host a live" if artist has under 5K followers
-- "Celebrate stream milestones" as content if under 10K streams
-- "Run a giveaway" for artists under 5K followers
-- Any task that works for any song — every task MUST reference this song's themes
-- Posting times in wrong timezone for target region
-- Borrowing luxury items to fake a lifestyle
+RULES:
+- Every tactic must be specific to THIS song's lyrics, mood, and world
+- Give EXACT captions, hooks, hashtags — ready to paste
+- No generic advice ("post consistently", "engage with your audience")
+- No cringe (hand signs, loyalty tests, fake luxury, forced challenges)
+- Posting times must match target region timezone
+- Be realistic for the artist's size
 
 JSON structure:
 {
-  "plan_title": "<creative title referencing the song's themes>",
-  "plan_summary": "<2-3 sentences: what makes THIS plan different from a generic launch>",
-  "target_audience": {
-    "description": "<specific subculture, not demographics>",
-    "best_platforms": ["<platform1>", "<platform2>", "<platform3>"],
-    "best_posting_times": "<specific times in the TARGET REGION'S timezone with reasoning>",
-    "content_style": "<visual/tonal direction matching the song's world>"
+  "plan_title": "<short punchy title referencing the song>",
+  "viral_hook": "<1 sentence: the single most viral angle for this song — what makes someone stop scrolling>",
+  "release_countdown": {
+    "7_days_before": "<one key action>",
+    "3_days_before": "<one key action>",
+    "release_day": "<one key action>",
+    "48_hours_after": "<one key action>"
   },
-  "weeks": [
+  "viral_tactics": [
     {
-      "week_number": 1, "title": "<thematic>", "goal": "<specific, measurable>",
-      "tasks": [
-        {"day": "<day>", "task": "<name>", "platform": "<platform>", "details": "<COMPLETE brief: exact concept, visual direction, caption ready to paste, hashtags, timing. Must reference a specific lyric theme or sonic element. Artist executes immediately without googling>"},
-        {"day": "<day>", "task": "<>", "platform": "<>", "details": "<>"},
-        {"day": "<day>", "task": "<>", "platform": "<>", "details": "<>"}
-      ]
+      "title": "<short name>",
+      "platform": "TikTok|Reels|Both",
+      "why_it_works": "<1 sentence — the psychological trigger>",
+      "script": "<exact step-by-step: what to film, what to show, transitions, timing>",
+      "caption": "<ready to paste caption with hook line first>",
+      "hashtags": "<5-7 hashtags, niche first>",
+      "best_time": "<when to post in target region timezone>",
+      "difficulty": "Easy|Medium"
     },
-    {"week_number": 2, "title": "", "goal": "", "tasks": [{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]},
-    {"week_number": 3, "title": "", "goal": "", "tasks": [{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]},
-    {"week_number": 4, "title": "", "goal": "", "tasks": [{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""},{"day":"","task":"","platform":"","details":""}]}
-  ],
-  "playlist_strategy": {
-    "approach": "<strategy tailored to audience tier>",
-    "editorial_playlists": [{"name": "<real Spotify editorial playlist>", "why": "<why this song fits — reference mood, tempo, themes>", "follower_estimate": "<approx>"}],
-    "independent_playlists": [{"name": "<real indie playlist>", "curator_contact": "<how to find/contact>", "why": "<reason>"}, {"name": "<>", "curator_contact": "<>", "why": "<>"}],
-    "pitch_template": "<ready-to-send pitch referencing this song's specific story, mood, and comps>",
-    "pitch_tips": "<tips for this genre and tier>",
-    "spotify_for_artists_pitch": "<exact text to paste, written for this song>"
-  },
-  "collaboration_ideas": [
-    {"type": "<type>", "description": "<specific creator type/size, what the collab looks like, why it works for this song>", "expected_impact": "<realistic for tier>"},
-    {"type": "<>", "description": "<>", "expected_impact": "<>"}
-  ],
-  "budget_tips": {
-    "free_tactics": ["<specific free tactic with execution details>", "<>", "<>"],
-    "paid_options": [{"tactic": "<specific>", "estimated_cost": "<real cost>", "expected_result": "<realistic for tier>"}]
-  },
-  "meta_ads": {
-    "campaign_objective": "<objective — or 'Skip ads for now' if artist is under 5K followers>",
-    "ad_copy_variations": [
-      {"headline": "<captures emotional core from lyrics>", "primary_text": "<speaks to target subculture>", "cta": "<>"},
-      {"headline": "<different angle>", "primary_text": "<>", "cta": "<>"}
-    ],
-    "targeting": {
-      "age_range": "<>",
-      "interests": ["<specific>", "<>", "<>", "<>"],
-      "lookalike_suggestion": "<>",
-      "excluded_audiences": "<>"
+    {
+      "title": "<completely different format from #1>",
+      "platform": "",
+      "why_it_works": "",
+      "script": "",
+      "caption": "",
+      "hashtags": "",
+      "best_time": "",
+      "difficulty": ""
     },
-    "budget_recommendation": "<specific amount with reasoning — or 'Don't spend yet' with explanation for small artists>",
-    "ad_format": "<format with reasoning>",
-    "creative_direction": "<specific visual direction from the song's world>"
+    {
+      "title": "<completely different format from #1 and #2>",
+      "platform": "",
+      "why_it_works": "",
+      "script": "",
+      "caption": "",
+      "hashtags": "",
+      "best_time": "",
+      "difficulty": ""
+    }
+  ],
+  "growth_moves": [
+    {
+      "move": "<specific action — not 'engage with fans' but 'comment on [type] videos'>",
+      "details": "<exactly how to do it, where, what to say>",
+      "expected_result": "<realistic outcome>"
+    },
+    {"move": "", "details": "", "expected_result": ""},
+    {"move": "", "details": "", "expected_result": ""}
+  ],
+  "playlist_pitch": {
+    "best_playlists": ["<real playlist name>", "<real playlist name>", "<real playlist name>"],
+    "pitch_message": "<ready to copy-paste pitch written for THIS song>",
+    "spotify_pitch": "<exact Spotify for Artists pitch text>"
   },
-  "key_metrics": ["<metric relevant to tier>", "<>", "<>", "<>"],
-  "common_mistakes": ["<mistake specific to this genre/tier>", "<>", "<>"]
+  "caption_bank": [
+    "<ready-to-use caption #1 — references lyrics>",
+    "<ready-to-use caption #2 — different angle>",
+    "<ready-to-use caption #3 — question/engagement hook>",
+    "<ready-to-use caption #4 — storytelling angle>",
+    "<ready-to-use caption #5 — bold claim>"
+  ],
+  "mistakes_to_avoid": ["<specific mistake for this genre/tier>", "<another>", "<another>"]
 }`;
 
-  const userPrompt = `Create a 4-week launch plan. Every task must be immediately executable.
+  const userPrompt = `Give me the viral playbook for this song. Not a marketing plan — the exact moves to get this song heard.
 
 Title: "${track.title}"
 Artist: ${track.artist}
@@ -894,33 +879,25 @@ Energy: ${analysis.energy_percent || 50}%
 BPM: ${analysis.tempo_bpm || 120}
 Audience: ${analysis.audience_age || '18-28'}, ${analysis.audience_platforms || 'TikTok, Spotify'}
 ${track.target_region ? `Target region: ${track.target_region} — ALL posting times must be in this region's timezone` : ''}
-${noSocial ? 'NO social media. Focus entirely on: playlists, blogs, sync licensing, live shows, radio, press, collaborations.' : ''}
+${noSocial ? 'NO social media. Focus on: playlists, blogs, sync licensing, collabs, press.' : ''}
 
 ${tierPrompt}
 
 ${lyricThemes.core_story ? `
-SONG IDENTITY (from analysis):
+SONG DNA:
 Story: ${lyricThemes.core_story}
-Emotional core: ${lyricThemes.emotional_core || ''}
+Feeling: ${lyricThemes.emotional_core || ''}
 Visual world: ${lyricThemes.visual_world || ''}
-Quotable lines: ${(lyricThemes.quotable_lines || []).join(' | ')}
+Best lines: ${(lyricThemes.quotable_lines || []).join(' | ')}` : ''}
 
-Every task, ad, and pitch must connect to these themes.` : ''}
+${track.lyrics ? `LYRICS:\n${track.lyrics}` : ''}
 
-${track.lyrics ? `
-FULL LYRICS (use for ad copy, captions, pitches):
-${track.lyrics}` : ''}
-
-TASK MIX REQUIREMENT:
-Your 12 tasks across 4 weeks must include at least:
-- 3 OUTREACH tasks (commenting on bigger artists, DMing micro-creators, joining communities)
-- 3 CONTENT tasks (each a completely different format/concept)
-- 2 DISTRIBUTION tasks (playlist submissions, blog pitching, Spotify for Artists)
-- 2 COMMUNITY tasks (building connections, responding strategically, group creation)
-- 2 STRATEGIC tasks (email list, pre-save campaigns, algorithm optimization)
-Do NOT make 12 "post a video" tasks. Variety is mandatory.
-
-SELF-CHECK: For every task — "could any artist use this for any song?" If yes, rewrite with specific references to this song's lyrics, themes, and sound.
+IMPORTANT:
+- The 3 viral_tactics must each be a COMPLETELY different format (not 3 variations of the same idea)
+- Each tactic needs a full "script" the artist can follow second by second
+- The caption_bank must have 5 captions ready to copy-paste, each using a different lyric or angle
+- The growth_moves must be actions that reach NEW people, not just content for existing followers
+- For every element: "could any artist use this?" If yes → rewrite with THIS song's specific lyrics and themes
 
 Respond ONLY with JSON.`;
 
