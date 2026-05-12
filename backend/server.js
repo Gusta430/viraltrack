@@ -166,16 +166,20 @@ function ffmpegRun(args, timeoutMs = 120000) {
 function burnTextOnImage(inputPath, outputPath, text) {
   return new Promise((resolve, reject) => {
     if (!MAGICK_BIN || !LYRICS_FONT) return resolve(false);
+    // Use caption: to auto-wrap text within a box that fits inside the frame
+    // 640px wide (720 - 80px padding) centered in the lower third of the image
     const args = [
       inputPath,
       '-resize', '720x1280!',
-      '-gravity', 'center',
-      '-font', LYRICS_FONT,
-      '-pointsize', '42',
-      '-fill', 'white',
-      '-stroke', 'rgba(0,0,0,0.5)',
-      '-strokewidth', '3',
-      '-annotate', '+0+0', text,
+      // Create a text overlay that auto-wraps within 640px width
+      '(', '-size', '640x', '-background', 'none',
+        '-font', LYRICS_FONT, '-pointsize', '40',
+        '-fill', 'white', '-stroke', 'black', '-strokewidth', '3',
+        '-gravity', 'center', `caption:${text}`,
+      ')',
+      // Composite the text onto the image, centered horizontally, in the lower third
+      '-gravity', 'south', '-geometry', '+0+180',
+      '-composite',
       outputPath
     ];
     execFile(MAGICK_BIN, args, { timeout: 15000 }, (err) => {
