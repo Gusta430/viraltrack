@@ -1255,14 +1255,19 @@ function showVideoResult(row, data) {
     const vid = document.getElementById(sid);
     if (vid) vid.play().catch(() => {});
   } else {
-    // No MP4 but has images — show first image as static thumbnail
+    // No MP4 but has images — show all images as a scrollable gallery
+    const imgGallery = imageUrls.map((url, i) => `
+      <div style="position:relative;width:100%;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#000;flex-shrink:0;scroll-snap-align:start">
+        <img src="${url}" style="width:100%;height:100%;object-fit:cover" alt="Scene ${i+1}">
+        ${lyrics[i] ? `<div style="position:absolute;bottom:24px;left:16px;right:16px;text-align:center;color:#fff;font-weight:700;font-size:16px;text-shadow:0 2px 8px rgba(0,0,0,0.8);line-height:1.4">${lyrics[i]}</div>` : ''}
+      </div>`).join('');
     resEl.innerHTML = `
       <div style="width:100%;max-width:340px;margin:0 auto">
-        <div style="position:relative;width:100%;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#000">
-          <img src="${imageUrls[0]}" style="width:100%;height:100%;object-fit:cover">
+        <div style="display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:8px">
+          ${imgGallery}
         </div>
         <div style="font-size:12px;color:var(--t2);margin-top:10px;text-align:center;line-height:1.5">
-          Video couldn't be built. Try generating again.
+          Video is still being built — refresh in a moment, or swipe through the scenes above.
         </div>
       </div>`;
   }
@@ -1281,15 +1286,15 @@ async function initVideoButtons(track, vids, analysis) {
         b.textContent = 'Daily limit reached';
       });
     }
-    // Show already-completed videos that have MP4 ready
-    const readyVids = data.videos.filter(dv => dv.status === 'completed' && dv.video_url && dv.video_url.startsWith('/'));
+    // Show already-completed videos that have MP4 ready or images
+    const readyVids = data.videos.filter(dv => dv.status === 'completed');
     if (readyVids.length > 0) {
       const dv = readyVids[0];
       const row = document.getElementById('vid-row-0');
       if (row) showVideoResult(row, dv);
     }
-    // Resume polling if a video is still processing or waiting for MP4
-    const pending = data.videos.find(v => v.status === 'processing' || v.status === 'queued' || (v.status === 'completed' && (!v.video_url || !v.video_url.startsWith('/'))));
+    // Resume polling if a video is still processing
+    const pending = data.videos.find(v => v.status === 'processing' || v.status === 'queued' || v.status === 'building_video');
     if (pending) pollVideoCard(pending.id, vids, 0);
   } catch(e) { console.error('initVideoButtons error:', e); }
 
@@ -1379,7 +1384,7 @@ function pollVideoCard(videoId, vids, rowIdx) {
   let attempts = 0;
   vidPolling = setInterval(async () => {
     attempts++;
-    if (attempts > 120) { // 6 min timeout — video rendering takes 1-3 min
+    if (attempts > 200) { // 10 min timeout
       clearInterval(vidPolling); vidPolling = null;
       document.querySelectorAll('.vid-gen-progress').forEach(p => p.style.display = 'none');
       document.querySelectorAll('.vid-gen-btn').forEach(b => { b.style.display = 'block'; b.disabled = false; b.style.opacity = '1'; b.innerHTML = 'Generate Lyrics Video'; });
@@ -1387,6 +1392,13 @@ function pollVideoCard(videoId, vids, rowIdx) {
       if (row) { const err = row.querySelector('.vid-gen-error'); err.textContent = 'Timed out. Try again.'; err.classList.add('vis'); }
       return;
     }
+    // Update progress message based on stage
+    const progressEls = document.querySelectorAll('.vid-gen-progress');
+    progressEls.forEach(p => {
+      if (attempts < 30) p.innerHTML = '<span class="spinner"></span> Generating images...';
+      else if (attempts < 60) p.innerHTML = '<span class="spinner"></span> Building video...';
+      else p.innerHTML = '<span class="spinner"></span> Almost done...';
+    });
     try {
       const data = await (await authFetch(A + '/videos/' + videoId + '/status')).json();
       if (data.status === 'completed' && data.video_url && data.video_url.startsWith('/')) {
@@ -1395,8 +1407,8 @@ function pollVideoCard(videoId, vids, rowIdx) {
         const row = document.getElementById('vid-row-' + rowIdx);
         if (row) showVideoResult(row, data);
         document.querySelectorAll('.vid-gen-btn').forEach(b => { b.disabled = false; b.style.opacity = '1'; b.innerHTML = 'Generate Lyrics Video'; });
-      } else if (data.status === 'completed' && attempts > 80) {
-        // Images done but MP4 never arrived after 4 min — show images as fallback
+      } else if (data.status === 'completed' && !data.video_url) {
+        // Completed but no MP4 — show images as fallback
         clearInterval(vidPolling); vidPolling = null;
         const row = document.getElementById('vid-row-' + rowIdx);
         if (row) showVideoResult(row, data);
@@ -1408,7 +1420,11 @@ function pollVideoCard(videoId, vids, rowIdx) {
         const row = document.getElementById('vid-row-' + rowIdx);
         if (row) { const err = row.querySelector('.vid-gen-error'); err.textContent = data.error_message || 'Generation failed. Try again.'; err.classList.add('vis'); }
       }
-    } catch(e) {}
+      // If status is 'processing' — keep polling (server is still working)
+    } catch(e) {
+      // Network error during poll — don't stop, server might have restarted
+      console.log('Poll error (will retry):', e.message);
+    }
   }, 3000);
 }
 

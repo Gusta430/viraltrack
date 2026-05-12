@@ -150,10 +150,10 @@ function generateImage(falKey, prompt) {
 }
 
 // Run a single FFmpeg command — returns a promise
-function ffmpegRun(args) {
+function ffmpegRun(args, timeoutMs = 120000) {
   return new Promise((resolve, reject) => {
     const bin = FFMPEG_BIN || 'ffmpeg';
-    execFile(bin, args, { timeout: 60000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
+    execFile(bin, args, { timeout: timeoutMs, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
       if (err) {
         const tail = stderr ? stderr.substring(Math.max(0, stderr.length - 500)) : err.message;
         reject(new Error(tail));
@@ -406,67 +406,78 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
     const imageUrls = await Promise.all(imagePromises);
     console.log(`📸 All ${numImages} images generated:`, imageUrls.map(u => u.substring(0, 60)));
 
-    // ── IMMEDIATELY mark completed with image URLs so user never sees "timed out" ──
+    // Save images to DB — use status 'building_video' so frontend knows MP4 is still coming
     await db.updateVideoGeneration(videoId, {
-      status: 'completed',
+      status: 'building_video',
       image_urls: JSON.stringify(imageUrls),
       video_url: ''
     });
-    console.log(`✅ Images saved to DB — user can see results now`);
+    console.log(`✅ Images saved to DB — now building MP4...`);
 
-    // ── Build MP4 video with FFmpeg (upgrades the images-only result) ──
+    // ── Build MP4 video with FFmpeg ──
     if (!FFMPEG_BIN) {
-      console.log(`⚠️ No FFmpeg available — skipping video build`);
+      console.log(`⚠️ No FFmpeg available — marking completed with images only`);
+      await db.updateVideoGeneration(videoId, { status: 'completed' });
       return;
     }
 
-    try {
-      console.log(`🎬 Building MP4 with FFmpeg: ${FFMPEG_BIN}`);
+    await buildVideoFromImages(videoId, imageUrls, lyricLines, songContext);
 
-      // Download images to disk
-      const imagePaths = [];
-      for (let i = 0; i < imageUrls.length; i++) {
-        const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+  } catch (err) {
+    console.error(`❌ Video ${videoId} failed:`, err.message);
+    await db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message || 'Generation failed' }).catch(() => {});
+  }
+}
+
+// Separated so it can be called from recovery too
+async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext) {
+  try {
+    console.log(`🎬 Building MP4 with FFmpeg: ${FFMPEG_BIN}`);
+
+    // Download images to disk
+    const imagePaths = [];
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imgPath = path.join(VIDS_DIR, `${videoId}-img${i}.png`);
+      // Skip download if already on disk (recovery case)
+      if (fs.existsSync(imgPath) && fs.statSync(imgPath).size > 100) {
+        console.log(`📥 Image ${i} already on disk (${(fs.statSync(imgPath).size/1024).toFixed(0)}KB)`);
+      } else {
         await downloadFile(imageUrls[i], imgPath);
         if (!fs.existsSync(imgPath) || fs.statSync(imgPath).size < 100) {
           throw new Error(`Image ${i} download failed or empty`);
         }
-        imagePaths.push(imgPath);
         console.log(`📥 Image ${i} downloaded (${(fs.statSync(imgPath).size/1024).toFixed(0)}KB)`);
       }
-
-      // ── BPM-aware timing: each bar gets time matching the song's actual rhythm ──
-      // A "bar" in rap/singing typically spans 4 beats. At 120 BPM that's 2 seconds.
-      // For slower sections (chorus/hooks) we use 2 bars = 8 beats per line.
-      const bpm = songContext.bpm || 120;
-      const beatsPerBar = 4;
-      const barsPerLine = 2; // most lyric lines span ~2 musical bars
-      const secondsPerLine = (beatsPerBar * barsPerLine * 60) / bpm;
-      // Clamp between 1.5s and 4s per line for watchability
-      const clampedSecondsPerLine = Math.max(1.5, Math.min(4.0, secondsPerLine));
-      const totalDuration = Math.max(8, imagePaths.length * clampedSecondsPerLine);
-      console.log(`🎵 Timing: BPM=${bpm}, ${clampedSecondsPerLine.toFixed(2)}s per line, total=${totalDuration.toFixed(1)}s`);
-
-      const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
-      await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
-
-      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
-        const mb = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
-        console.log(`✅ MP4 ready (${mb}MB) — updating DB`);
-        await db.updateVideoGeneration(videoId, { video_url: `/api/videos/${videoId}/file` });
-      } else {
-        console.log('⚠️ Output file missing or too small');
-      }
-
-      // Cleanup source images
-      imagePaths.forEach(p => fs.unlink(p, () => {}));
-    } catch (buildErr) {
-      console.error(`⚠️ Video build failed (images still available):`, buildErr.message);
+      imagePaths.push(imgPath);
     }
 
-  } catch (err) {
-    console.error(`❌ Video ${videoId} failed:`, err.message);
-    await db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message });
+    // ── BPM-aware timing ──
+    const bpm = (songContext && songContext.bpm) || 120;
+    const beatsPerBar = 4;
+    const barsPerLine = 2;
+    const secondsPerLine = (beatsPerBar * barsPerLine * 60) / bpm;
+    const clampedSecondsPerLine = Math.max(1.5, Math.min(4.0, secondsPerLine));
+    const totalDuration = Math.max(8, imagePaths.length * clampedSecondsPerLine);
+    console.log(`🎵 Timing: BPM=${bpm}, ${clampedSecondsPerLine.toFixed(2)}s per line, total=${totalDuration.toFixed(1)}s`);
+
+    const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
+    await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
+
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+      const mb = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
+      console.log(`✅ MP4 ready (${mb}MB) — updating DB`);
+      await db.updateVideoGeneration(videoId, { status: 'completed', video_url: `/api/videos/${videoId}/file` });
+    } else {
+      console.log('⚠️ Output file missing or too small — marking completed with images only');
+      await db.updateVideoGeneration(videoId, { status: 'completed' });
+    }
+
+    // Cleanup source images
+    imagePaths.forEach(p => fs.unlink(p, () => {}));
+  } catch (buildErr) {
+    console.error(`⚠️ Video build failed for ${videoId}:`, buildErr.message);
+    // Still mark completed so user sees images as fallback
+    await db.updateVideoGeneration(videoId, { status: 'completed' }).catch(() => {});
   }
 }
 
@@ -718,13 +729,24 @@ const server = http.createServer(async (req, res) => {
     if (videoStatusMatch && method === 'GET') {
       const video = await db.getVideoGeneration(videoStatusMatch[1]);
       if (!video || video.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
-      // Auto-timeout: if stuck processing for >5 min, mark as error
-      if (video.status === 'processing' && video.created_at) {
+      // Auto-timeout: if stuck in processing or building_video for too long
+      if ((video.status === 'processing' || video.status === 'building_video') && video.created_at) {
         const age = Date.now() - new Date(video.created_at).getTime();
-        if (age > 8 * 60 * 1000) {
-          await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation timed out — try again' });
-          return json(res, { ...video, status: 'error', error_message: 'Generation timed out — try again' });
+        if (age > 10 * 60 * 1000) {
+          // If images exist, mark completed (show images). Otherwise mark error.
+          const hasImages = video.image_urls && video.image_urls !== '[]' && video.image_urls !== '';
+          if (hasImages) {
+            await db.updateVideoGeneration(video.id, { status: 'completed' });
+            return json(res, { ...video, status: 'completed' });
+          } else {
+            await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Generation timed out — try again' });
+            return json(res, { ...video, status: 'error', error_message: 'Generation timed out — try again' });
+          }
         }
+      }
+      // For frontend: building_video looks like processing (still show spinner)
+      if (video.status === 'building_video') {
+        return json(res, { ...video, status: 'processing' });
       }
       return json(res, video);
     }
@@ -784,11 +806,52 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+// ── Recover interrupted video builds after server restart ──
+async function recoverStuckVideos() {
+  try {
+    const stuck = await db.getStuckVideos();
+    if (!stuck || stuck.length === 0) return;
+    console.log(`🔄 Found ${stuck.length} video(s) to recover after restart`);
+    const FAL_KEY = process.env.FAL_API_KEY;
+
+    for (const video of stuck) {
+      try {
+        const imageUrls = JSON.parse(video.image_urls || '[]');
+        const lyricLines = JSON.parse(video.lyric_lines || '[]');
+        if (imageUrls.length === 0) {
+          // No images — can't recover, mark completed (images-only fallback)
+          await db.updateVideoGeneration(video.id, { status: 'completed' });
+          console.log(`⚠️ Video ${video.id}: no images, marked completed`);
+          continue;
+        }
+        if (!FFMPEG_BIN) {
+          await db.updateVideoGeneration(video.id, { status: 'completed' });
+          console.log(`⚠️ Video ${video.id}: no FFmpeg, marked completed with images`);
+          continue;
+        }
+        console.log(`🔄 Recovering video ${video.id} — ${imageUrls.length} images, ${lyricLines.length} lyrics`);
+        // Fire recovery in background
+        buildVideoFromImages(video.id, imageUrls, lyricLines, { bpm: 120 }).catch(err => {
+          console.error(`❌ Recovery failed for ${video.id}:`, err.message);
+        });
+      } catch (e) {
+        console.error(`❌ Recovery error for ${video.id}:`, e.message);
+        await db.updateVideoGeneration(video.id, { status: 'completed' }).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.error('Recovery check failed:', e.message);
+  }
+}
+
 // Init database then start server
 const PORT = process.env.PORT || 3000;
 db.init().then(() => {
   server.listen(PORT, () => {
     console.log(`\n  🎵 ViralTrack running at http://localhost:${PORT}\n`);
+
+    // Recover any video builds interrupted by restart
+    setTimeout(() => recoverStuckVideos(), 3000);
 
     // ── Keep-alive: prevent hosting platforms from sleeping the server ──
     // Pings itself every 14 minutes (Render free tier sleeps after 15 min idle)

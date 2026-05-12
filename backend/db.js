@@ -286,6 +286,11 @@ class Database {
     return execute('SELECT * FROM video_generations WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [userId]);
   }
 
+  // Recovery: find videos stuck in building_video or processing (interrupted by restart)
+  async getStuckVideos() {
+    return execute("SELECT * FROM video_generations WHERE status IN ('building_video', 'processing') AND created_at >= datetime('now', '-1 hour') ORDER BY created_at DESC LIMIT 10");
+  }
+
   // Admin
   async getAllUsers() {
     return execute("SELECT id, name, email, plan, created_at FROM users ORDER BY created_at DESC");
