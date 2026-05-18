@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { execFile, execFileSync } from 'child_process';
 import ffmpegPath from 'ffmpeg-static';
 import db from './db.js';
-import { analyzeTrack, generatePromoPlan } from './ai-service.js';
+import { analyzeTrack, generatePromoPlan, regenerateSection } from './ai-service.js';
 import { analyzeAudio } from './audio-analysis.js';
 import { getTrends } from './trend-service.js';
 
@@ -579,6 +579,12 @@ const server = http.createServer(async (req, res) => {
       return json(res, { status: 'ok', uptime: Math.floor(process.uptime()) });
     }
 
+    // ── Public stats (track count for landing page) ──
+    if (p === '/api/stats' && method === 'GET') {
+      const count = await db.getTotalTrackCount();
+      return json(res, { tracks_analyzed: count });
+    }
+
     // ── PUBLIC: Serve video files (no auth — loaded via <video src> which can't send headers) ──
     const videoFileMatch = p.match(/^\/api\/videos\/([^/]+)\/file$/);
     if (videoFileMatch && method === 'GET') {
@@ -663,6 +669,23 @@ const server = http.createServer(async (req, res) => {
         try { fs.unlinkSync(path.join(UPLOADS_DIR, track.filename)); } catch(e) {}
       }
       return json(res, { track: await db.getTrack(track.id), analysis: await db.getAnalysis(analysisId) });
+    }
+
+    const regenMatch = p.match(/^\/api\/tracks\/([^/]+)\/regenerate\/([^/]+)$/);
+    if (regenMatch && method === 'POST') {
+      const track = await db.getTrack(regenMatch[1]);
+      if (!track || track.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
+      const analysis = await db.getAnalysisByTrack(track.id);
+      if (!analysis) return json(res, { error: 'Analyze track first' }, 400);
+      const section = regenMatch[2]; // video_edits or diy_content_ideas
+      try {
+        const result = await regenerateSection(track, analysis, section);
+        // Update the analysis with new section data
+        await db.updateAnalysis(analysis.id, { [section]: JSON.stringify(result) });
+        return json(res, { section, data: result });
+      } catch (err) {
+        return json(res, { error: 'Regeneration failed: ' + err.message }, 500);
+      }
     }
 
     const promoMatch = p.match(/^\/api\/tracks\/([^/]+)\/promo-plan$/);

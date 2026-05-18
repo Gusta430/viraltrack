@@ -324,6 +324,15 @@ WHAT MAKES CONTENT VIRAL (real mechanics, not theory):
 - Remixable content (fans can put their own spin on it) spreads further.
 - Rewatchability matters heavily — content people want to watch twice gets pushed harder.
 
+LYRIC ANCHORING (CRITICAL — this is what separates useful output from generic garbage):
+Every single video_edit and diy_content_idea MUST be anchored to a specific moment in the song:
+- Quote the EXACT lyric line(s) that the idea is built around — use quotation marks
+- Reference the specific SONIC moment (e.g. "the beat drops at the chorus", "the 808 slide before verse 2", "the vocal break after 'I lost myself again'")
+- The concept/script/description must describe HOW the lyric or sound is used visually (e.g. "text overlay with 'I lost myself again' appearing word by word, slow zoom, crosscut with rain on a window")
+- If you can swap in ANY other song and the idea still works, it's GENERIC — rewrite it with specific lyric references
+- BAD: "Film yourself vibing to the beat" — works for any song
+- GOOD: "Film yourself walking away from camera as the line 'I left it all behind' plays, text overlay appears word by word, cut to black on 'behind'"
+
 WHAT MAKES CONTENT CRINGE (never do these):
 - Forced on-camera performance when the artist clearly isn't natural on camera
 - "🔥🔥🔥 new heat dropping" energy in captions
@@ -395,9 +404,14 @@ JSON structure:
       "duration": "<7-15 sec for max completion>",
       "timestamp": "<specific song section to use>",
       "platforms": ["TikTok", "Reels"],
-      "concept": "<FULL second-by-second brief: First 2 sec = hook (what stops scroll). Middle = tension or payoff. End = share trigger or loop point. Include camera angle, lighting, edit style — 'handheld warm tungsten slow push-in with grain' not 'cinematic'>",
+      "lyric_anchor": {
+        "exact_line": "<EXACT lyric line quoted word-for-word from the lyrics that this video is built around>",
+        "sound_moment": "<specific sonic element — e.g. 'the 808 drop before the chorus', 'the vocal break at 0:45', 'the key change in verse 2'>",
+        "how_its_used": "<HOW this lyric/sound appears in the video — e.g. 'text overlay appearing word-by-word as artist walks toward camera', 'beat drop syncs with visual transition from dark to bright'>"
+      },
+      "concept": "<FULL second-by-second brief: First 2 sec = hook (what stops scroll). Middle = tension or payoff. End = share trigger or loop point. Include camera angle, lighting, edit style — 'handheld warm tungsten slow push-in with grain' not 'cinematic'. MUST reference the specific lyric line and describe how it appears visually>",
       "cover_frame": "<EXACT frame to use as thumbnail/cover: describe the visual, text overlay if any, and why this frame makes people tap from the profile grid. The cover frame is your second chance to get views — 60% of views come from profile visits, not the feed>",
-      "song_moment": "<which lyric line, beat drop, or energy shift this is built around>",
+      "song_moment": "<which lyric line, beat drop, or energy shift this is built around — QUOTE the exact lyric>",
       "share_trigger": "<why someone sends this to a friend>",
       "algorithm_score": {
         "estimated_completion": "<percentage estimate + why — e.g. '82% — short duration + curiosity hook holds attention'>",
@@ -420,8 +434,13 @@ JSON structure:
       "difficulty": "Easy|Medium|Hard",
       "duration": "<length>",
       "virality": <1-100>,
-      "description": "<FULL brief: what to film, how to edit, what the viewer experiences. Must reference a specific lyric theme or sonic element>",
-      "hook": "<what stops the scroll in first 1-2 seconds>",
+      "lyric_anchor": {
+        "exact_line": "<EXACT lyric line quoted word-for-word that this content is built around>",
+        "sound_moment": "<specific sonic element tied to this idea>",
+        "how_its_used": "<HOW the lyric/sound appears in the content — text overlay, lip sync, visual metaphor, etc.>"
+      },
+      "description": "<FULL brief: what to film, how to edit, what the viewer experiences. MUST describe how the specific lyric line or sound moment is used visually — not just 'vibe to the beat'>",
+      "hook": "<what stops the scroll in first 1-2 seconds — reference the specific lyric or sound>",
       "relatability": "<what universal feeling viewers recognize>",
       "share_trigger": "<why someone sends this to a friend>",
       "howTo": ["<step 1 — specific>", "<step 2>", "<step 3>"],
@@ -521,7 +540,11 @@ ${trends && trends.trends && trends.trends.length > 0 ? `TRENDING FORMATS (adapt
 ${trends.trends.slice(0, 6).map(t => '- ' + t.name + ': ' + t.description).join('\n')}
 Trending hashtags: ${(trends.trending_hashtags || []).join(', ')}` : ''}
 
-SELF-CHECK: For each suggestion — "if I swap '${track.title}' for a different song, does this still work?" If yes → rewrite with specific lyrics/sound references.
+SELF-CHECK (run this for EVERY video_edit and diy_content_idea before finalizing):
+1. Does the "lyric_anchor.exact_line" contain a WORD-FOR-WORD quote from the lyrics above? If not → fix it
+2. Does the "concept" or "description" describe HOW this specific lyric appears visually? If not → add it
+3. Could this idea work with ANY other song? If yes → it's generic garbage, rewrite it around a specific lyric moment
+4. Does the "song_moment" quote an actual lyric or describe a real sonic moment? If it says something vague like "the chorus" without quoting the actual words → fix it
 
 Respond ONLY with JSON.`;
 
@@ -554,6 +577,83 @@ Respond ONLY with JSON.`;
   } catch (err) {
     console.error('❌ Analysis failed:', err.message);
     return getFallback('Analysis failed: ' + err.message);
+  }
+}
+
+// ── REGENERATE INDIVIDUAL SECTION ──
+export async function regenerateSection(track, analysis, section) {
+  const sectionPrompts = {
+    video_edits: {
+      system: `You are an elite music content strategist. Generate 2 NEW, completely different video content ideas for a song. These must be DIFFERENT from any previous suggestions. Every idea MUST be anchored to a specific lyric line (quoted word-for-word) and describe exactly how that lyric appears visually. Always respond in English. Respond ONLY with valid JSON array.
+
+LYRIC ANCHORING (CRITICAL):
+- Quote the EXACT lyric line(s) the idea is built around
+- Describe HOW the lyric or sound is used visually
+- If you can swap in ANY other song and the idea still works, it's GENERIC — rewrite it
+
+Return a JSON array of 2 video_edit objects with this structure:
+[{
+  "title": "", "caption_structured": {"hook_line":"","body":"","cta":"","full_caption":""},
+  "hashtags": "", "duration": "", "timestamp": "", "platforms": ["TikTok","Reels"],
+  "lyric_anchor": {"exact_line":"<word-for-word lyric>","sound_moment":"","how_its_used":""},
+  "concept": "<second-by-second brief referencing the specific lyric>",
+  "cover_frame": "", "song_moment": "", "share_trigger": "",
+  "algorithm_score": {"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":"","share_trigger":""},
+  "cross_post_strategy": {"post_first_on":"","wait_before_repost":"","platform_tweaks":""}
+}]`,
+      user: (track, analysis) => {
+        const lt = (() => { try { return JSON.parse(analysis.lyric_themes || '{}'); } catch(e) { return {}; } })();
+        return `Generate 2 NEW video ideas for "${track.title}" by ${track.artist}.
+Genre: ${analysis.genre_fit || track.genre || 'Unknown'}
+${track.social_vibe ? `On-camera preference: ${track.social_vibe}. ALL content must respect this.` : ''}
+${track.target_region ? `Target region: ${track.target_region}` : ''}
+${lt.core_story ? `Song story: ${lt.core_story}` : ''}
+${track.lyrics ? `LYRICS:\n${track.lyrics}` : ''}
+Give COMPLETELY DIFFERENT ideas from typical suggestions. Each must quote a specific lyric line.
+Respond with JSON array only.`;
+      }
+    },
+    diy_content_ideas: {
+      system: `You are an elite DIY content strategist for musicians. Generate 4 NEW, creative content ideas that an artist can film themselves. Every idea MUST reference a specific lyric line (word-for-word) and describe how it's used. Always respond in English. Respond ONLY with valid JSON array.
+
+Return a JSON array of 4 objects:
+[{
+  "title": "", "difficulty": "Easy|Medium|Hard", "duration": "", "virality": 0,
+  "lyric_anchor": {"exact_line":"<word-for-word lyric>","sound_moment":"","how_its_used":""},
+  "description": "<must describe how the specific lyric appears visually>",
+  "hook": "", "relatability": "", "share_trigger": "",
+  "howTo": ["","",""], "hashtags": "", "why_it_works": "",
+  "caption_structured": {"hook_line":"","body":"","cta":"","full_caption":""},
+  "cover_frame": "",
+  "algorithm_score": {"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}
+}]`,
+      user: (track, analysis) => {
+        const lt = (() => { try { return JSON.parse(analysis.lyric_themes || '{}'); } catch(e) { return {}; } })();
+        return `Generate 4 NEW DIY content ideas for "${track.title}" by ${track.artist}.
+Genre: ${analysis.genre_fit || track.genre || 'Unknown'}
+${track.social_vibe ? `On-camera preference: ${track.social_vibe}` : ''}
+${track.target_region ? `Target region: ${track.target_region}` : ''}
+${lt.core_story ? `Song story: ${lt.core_story}` : ''}
+${track.lyrics ? `LYRICS:\n${track.lyrics}` : ''}
+Each must quote a specific lyric line and describe how it appears visually.
+Respond with JSON array only.`;
+      }
+    }
+  };
+
+  const sectionConfig = sectionPrompts[section];
+  if (!sectionConfig) throw new Error('Unknown section: ' + section);
+
+  try {
+    console.log(`🔄 Regenerating section: ${section}...`);
+    const userPrompt = sectionConfig.user(track, analysis);
+    const response = await callClaude(userPrompt, sectionConfig.system);
+    const result = parseJSON(response);
+    console.log(`✅ Section ${section} regenerated!`);
+    return Array.isArray(result) ? result : [];
+  } catch (err) {
+    console.error(`❌ Regenerate ${section} failed:`, err.message);
+    throw err;
   }
 }
 
@@ -815,9 +915,10 @@ JSON structure:
     {
       "title": "<short name>",
       "platform": "TikTok|Reels|Both",
-      "why_it_works": "<1 sentence — the psychological trigger>",
-      "script": "<exact step-by-step: what to film, what to show, transitions, timing>",
-      "caption": "<ready to paste caption with hook line first>",
+      "lyric_anchor": "<EXACT lyric line this tactic is built around — word-for-word quote>",
+      "why_it_works": "<1 sentence — the psychological trigger, referencing the specific lyric/sound>",
+      "script": "<exact step-by-step: what to film, what to show, transitions, timing. MUST describe how the quoted lyric line appears (text overlay, lip sync, visual metaphor). Example: 'Sec 0-2: black screen, text fades in word-by-word: I left it all behind. Sec 2-5: artist walks away from camera in empty parking lot, slow zoom. Sec 5-8: cut to closeup, mouth the next line. Sec 8-10: hard cut to black on the beat drop'>",
+      "caption": "<ready to paste caption with hook line first — reference the lyric>",
       "hashtags": "<5-7 hashtags, niche first>",
       "best_time": "<when to post in target region timezone>",
       "difficulty": "Easy|Medium"
@@ -825,6 +926,7 @@ JSON structure:
     {
       "title": "<completely different format from #1>",
       "platform": "",
+      "lyric_anchor": "<different lyric line — word-for-word quote>",
       "why_it_works": "",
       "script": "",
       "caption": "",
@@ -835,6 +937,7 @@ JSON structure:
     {
       "title": "<completely different format from #1 and #2>",
       "platform": "",
+      "lyric_anchor": "<different lyric line — word-for-word quote>",
       "why_it_works": "",
       "script": "",
       "caption": "",
@@ -898,6 +1001,9 @@ IMPORTANT:
 - The caption_bank must have 5 captions ready to copy-paste, each using a different lyric or angle
 - The growth_moves must be actions that reach NEW people, not just content for existing followers
 - For every element: "could any artist use this?" If yes → rewrite with THIS song's specific lyrics and themes
+- Each viral_tactic.lyric_anchor MUST be a WORD-FOR-WORD quote from the lyrics — not a paraphrase
+- Each viral_tactic.script MUST describe how that specific lyric appears visually (text overlay, lip sync, visual cut, etc.)
+- Each caption in caption_bank MUST reference or quote a specific lyric line
 
 Respond ONLY with JSON.`;
 

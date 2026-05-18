@@ -385,6 +385,16 @@
     .copy-btn{background:none;border:1px solid var(--bdr);color:var(--t3);padding:3px 10px;border-radius:6px;font-size:10px;font-family:inherit;cursor:pointer;transition:all .2s var(--ease);display:inline-flex;align-items:center;gap:4px;margin-left:8px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
     .copy-btn:hover{border-color:rgba(255,255,255,.15);color:var(--t1);background:rgba(255,255,255,.04)}
     .copy-btn.copied{border-color:var(--gr);color:var(--gr);background:var(--gr-s)}
+    .regen-btn{background:rgba(201,162,39,.08)!important;border:1px solid rgba(201,162,39,.2)!important;color:var(--ac)!important;font-weight:600!important;letter-spacing:.3px;transition:all .2s var(--ease)!important}
+    .regen-btn:hover{background:rgba(201,162,39,.15)!important;border-color:rgba(201,162,39,.3)!important}
+    .task-check{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:6px 0}
+    .task-check input[type=checkbox]{width:18px;height:18px;accent-color:var(--ac);cursor:pointer;flex-shrink:0}
+    .task-check.done .task-label{text-decoration:line-through;opacity:0.5}
+    .task-label{font-size:13px;color:var(--t1);line-height:1.5}
+    .checklist-progress{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:16px}
+    .checklist-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--gr));border-radius:2px;transition:width .3s var(--ease)}
+    .demo-step{text-align:center;padding:24px 16px;opacity:0;animation:fadeUp .5s var(--ease) forwards}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     .share-row{display:flex;gap:10px;margin-bottom:28px}
     .share-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rs);color:var(--t2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s var(--ease)}
     .share-btn:hover{border-color:rgba(255,255,255,.12);color:var(--t1);background:rgba(255,255,255,.03)}
@@ -595,6 +605,8 @@
       .l-cta{padding:16px 36px;font-size:15px}
       .l-social{padding:48px 20px}
       .l-example{padding:0 20px}
+      .demo-step-grid{grid-template-columns:1fr!important}
+      .demo-arrow{display:none!important}
     }
   </style>
 </head>
@@ -633,13 +645,44 @@
 
   <!-- STATS BAR -->
   <div class="l-stats">
+    <div class="l-stat"><div class="l-stat-num" id="live-track-count">—</div><div class="l-stat-label">Tracks analyzed</div></div>
     <div class="l-stat"><div class="l-stat-num">100%</div><div class="l-stat-label">Free to use</div></div>
     <div class="l-stat"><div class="l-stat-num">AI</div><div class="l-stat-label">Powered analysis</div></div>
-    <div class="l-stat"><div class="l-stat-num">4 Week</div><div class="l-stat-label">Launch plan</div></div>
+  </div>
+
+  <!-- HOW IT WORKS — animated demo -->
+  <div class="l-section" style="text-align:center">
+    <div class="l-section-label">How it works</div>
+    <div class="l-section-title" style="margin-left:auto;margin-right:auto">Three steps to your viral strategy</div>
+    <div class="demo-step-grid" style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:0;max-width:800px;margin:0 auto">
+      <div class="demo-step" style="animation-delay:0s">
+        <div style="width:64px;height:64px;border-radius:16px;background:var(--ac-s);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px">Upload your track</div>
+        <div style="font-size:12px;color:var(--t3);line-height:1.5">Drop your MP3 + paste lyrics. Takes 10 seconds.</div>
+      </div>
+      <div class="demo-arrow" style="color:var(--t3);font-size:24px;opacity:0.3">→</div>
+      <div class="demo-step" style="animation-delay:.2s">
+        <div style="width:64px;height:64px;border-radius:16px;background:var(--gr-s);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px">AI analyzes everything</div>
+        <div style="font-size:12px;color:var(--t3);line-height:1.5">BPM, mood, audience, viral angles — all in 30 seconds.</div>
+      </div>
+      <div class="demo-arrow" style="color:var(--t3);font-size:24px;opacity:0.3">→</div>
+      <div class="demo-step" style="animation-delay:.4s">
+        <div style="width:64px;height:64px;border-radius:16px;background:var(--pk-s);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pk)" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px">Get your viral playbook</div>
+        <div style="font-size:12px;color:var(--t3);line-height:1.5">Copy-paste captions, video scripts, posting times.</div>
+      </div>
+    </div>
   </div>
 
   <!-- FEATURES — bento grid -->
-  <div class="l-section">
+  <div class="l-section" style="padding-top:0">
     <div class="l-section-label">Everything you need</div>
     <div class="l-section-title">From upload to viral — in minutes</div>
     <div class="l-features">
@@ -688,6 +731,18 @@
     <div class="l-quotes">
       <div class="l-quote" style="grid-column:1/-1;text-align:center;max-width:640px;margin:0 auto;background:transparent;border:none;padding:32px"><p style="font-size:18px;line-height:1.8;font-weight:400;font-style:italic">"I built ViralTrack because I was tired of spending more time on promotion than on making music. Now I use it for every release."</p><cite>— André, founder & independent artist</cite></div>
     </div>
+  </div>
+
+  <!-- TRUSTED BY -->
+  <div style="text-align:center;padding:48px 40px 0;max-width:800px;margin:0 auto">
+    <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:2px;margin-bottom:24px">Trusted by independent artists</div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:40px;flex-wrap:wrap;opacity:0.4">
+      <span style="font-size:16px;font-weight:800;letter-spacing:1px;color:var(--t2)">SPOTIFY</span>
+      <span style="font-size:16px;font-weight:800;letter-spacing:1px;color:var(--t2)">TIKTOK</span>
+      <span style="font-size:16px;font-weight:800;letter-spacing:1px;color:var(--t2)">SOUNDCLOUD</span>
+      <span style="font-size:16px;font-weight:800;letter-spacing:1px;color:var(--t2)">DISTROKID</span>
+    </div>
+    <div style="font-size:10px;color:var(--t3);margin-top:12px;opacity:0.5">Artists on these platforms use ViralTrack</div>
   </div>
 
   <!-- AUTH -->
@@ -1081,21 +1136,46 @@ function showAn(t,an){
   const pg=document.getElementById('pg-analysis');
   pg.innerHTML=`<h1 class="pt">${isProd?'Beat Analysis':'Track Analysis'}</h1><p class="ps">${isProd?'AI-powered strategy to sell and promote your beats':'AI-powered insights about your music'}</p>
     <div class="th"><div class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="tm"><div class="tn">${t.title}</div><div class="ta">${t.artist}</div><span class="bg bg-g" style="margin-top:6px">Analysis complete</span></div><div class="wf">${bars}</div><button class="bt bp" style="white-space:nowrap;background:var(--ac);padding:14px 24px;font-size:14px;font-weight:700" id="btn-gen-promo">${isProd?'Generate beat promo plan':'Generate promo plan + Meta Ads'}</button></div>
-    <div class="share-row"><button class="share-btn" id="btn-share-link" onclick="navigator.clipboard.writeText(window.location.origin+'/api/tracks/${t.id}').then(()=>{this.innerHTML='✓ Link copied';setTimeout(()=>this.innerHTML='Share link',2000)})">Share link</button><button class="share-btn" onclick="window.print()">Export PDF</button></div>
+    <div class="share-row"><button class="share-btn" id="btn-share-card" onclick="generateShareCard('${t.id}','${t.title.replace(/'/g,"\\'")}','${t.artist.replace(/'/g,"\\'")}','${an.genre_fit||''}','${an.energy_percent||50}',${JSON.stringify(moods).replace(/'/g,"\\'")})">Share my results</button><button class="share-btn" onclick="window.print()">Export PDF</button></div>
     <div class="ag"><div class="ac"><div class="al"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Tempo</div><div class="ab">${an.tempo_bpm} BPM</div><div class="ad">${an.tempo_description}</div></div><div class="ac"><div class="al">Mood</div><div class="mt">${moods.map(m=>`<span class="mg">${m}</span>`).join('')}</div></div><div class="ac"><div class="al"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Energy</div><div class="eb"><div class="ef" style="width:${an.energy_percent}%"></div></div><div class="ab">${an.energy_percent}%</div><div class="ad">${an.energy_description}</div></div><div class="ac"><div class="al">Genre fit</div><div style="font-size:16px;font-weight:600;margin-top:8px">${an.genre_fit}</div></div><div class="ac"><div class="al"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Key</div><div style="font-size:16px;font-weight:600;margin-top:8px">${an.audio_key || 'N/A'}</div><div class="ad">${an.audio_danceability ? 'Danceability: ' + an.audio_danceability + '%' : ''}</div></div></div>
     <div class="cd" style="margin-bottom:24px;padding:28px;background:rgba(201,162,39,.03);border:1px solid rgba(201,162,39,.12);text-align:center">
       <div style="font-size:20px;font-weight:700;margin-bottom:8px">${isProd?'Ready for your beat promotion plan?':'Ready for the full promo plan?'}</div>
       <div style="font-size:14px;color:var(--t2);margin-bottom:16px;max-width:500px;margin-left:auto;margin-right:auto">${isProd?'Get a 4-week strategy to sell this beat, find artists, optimize your store, and grow your brand':'Get a 4-week day-by-day launch strategy, real playlist targets, Meta Ads copy and more — all based on this analysis'}</div>
       <button class="bt bp" onclick="document.getElementById('btn-gen-promo').click()" style="padding:14px 32px;font-size:15px;font-weight:700">${isProd?'Generate beat promo plan':'Generate promo plan + Meta Ads'}</button>
     </div>
-    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div><div class="stl">${isProd?'Beat Preview Suggestions':'AI Video Suggestions'}</div><div class="sts">${isProd?'Content ideas to promote your beat and attract artists':'Content ideas based on your track — generate any of them with AI'}</div></div></div><div class="vg">${vids.map((v,vi)=>{const cs=v.caption_structured||{};const as=v.algorithm_score||{};const cp=v.cross_post_strategy||{};const cap=cs.full_caption||v.caption||'';return `<div class="vc"><div class="vp"><div class="vbs"><span class="vb">${v.duration}</span>${(v.platforms||[]).map(p=>`<span class="vb">${p}</span>`).join('')}<span class="vb hl">${v.timestamp}</span></div><div class="vpi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div></div><div class="vby"><div class="video-suggestion-label">Suggestion</div><div class="vtl">${v.title}</div>${v.cover_frame?`<div style="padding:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);border-radius:var(--rs);margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--yl);margin-bottom:4px;text-transform:uppercase">Cover frame / thumbnail</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${v.cover_frame}</div></div>`:''}<div class="vcl">Caption: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vct').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vct">${cap}</div>${cs.hook_line?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0"><div style="padding:8px;background:rgba(201,162,39,.06);border-radius:6px;border:1px solid rgba(201,162,39,.12)"><div style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;margin-bottom:3px">Hook line</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.hook_line}</div></div><div style="padding:8px;background:rgba(74,222,128,.06);border-radius:6px;border:1px solid rgba(74,222,128,.12)"><div style="font-size:9px;font-weight:700;color:var(--gr);text-transform:uppercase;margin-bottom:3px">Body</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.body||''}</div></div><div style="padding:8px;background:rgba(244,114,182,.06);border-radius:6px;border:1px solid rgba(244,114,182,.12)"><div style="font-size:9px;font-weight:700;color:var(--pk);text-transform:uppercase;margin-bottom:3px">CTA</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.cta||''}</div></div></div>`:''}<div class="vcl">Hashtags: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vht').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vht">${v.hashtags}</div>${as.estimated_completion?`<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:8px">Algorithm score</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="font-size:10px"><span style="color:var(--ac);font-weight:600">Completion:</span> <span style="color:var(--t2)">${as.estimated_completion}</span></div><div style="font-size:10px"><span style="color:var(--gr);font-weight:600">Rewatch:</span> <span style="color:var(--t2)">${as.rewatch_potential||''}</span></div><div style="font-size:10px"><span style="color:var(--pk);font-weight:600">Comments:</span> <span style="color:var(--t2)">${as.comment_trigger||''}</span></div><div style="font-size:10px"><span style="color:var(--yl);font-weight:600">Saves:</span> <span style="color:var(--t2)">${as.save_trigger||''}</span></div></div></div>`:''} ${cp.post_first_on?`<div style="margin-top:8px;padding:8px 10px;background:rgba(59,130,246,.06);border-radius:6px;border:1px solid rgba(59,130,246,.12)"><div style="font-size:9px;font-weight:700;color:var(--bl);text-transform:uppercase;margin-bottom:4px">Cross-posting</div><div style="font-size:10px;color:var(--t2);line-height:1.5">${cp.post_first_on}. Wait ${cp.wait_before_repost||'24h'}. ${cp.platform_tweaks||''}</div></div>`:''}</div><div class="vid-gen-row" id="vid-row-${vi}"><button class="bt bp vid-gen-btn" data-idx="${vi}" style="width:100%;margin-top:0;font-size:12px;padding:10px 16px">Generate Lyrics Video</button><div class="vid-gen-progress" style="display:none;text-align:center;padding:12px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div><div style="font-size:12px;color:var(--t2)">Creating your MP4 video (~1-2 min)... Generating images + building video with lyrics</div></div><div class="vid-gen-result" style="display:none;padding:4px 0 0"><video controls playsinline style="width:100%;border-radius:var(--rs);background:#000"></video><a class="bt bs" style="width:100%;text-align:center;text-decoration:none;margin-top:8px;font-size:12px;display:block" download="viraltrack-promo.mp4">Download</a></div><div class="vid-gen-error auth-err" style="margin-top:8px;font-size:12px"></div></div></div>`}).join('')}</div><div class="tb yl"><span style="font-size:12px;font-weight:700;opacity:.7">TIP</span><span><strong>Pro tip:</strong> ${an.pro_tip}</span></div></div>
-    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div><div><div class="stl">${isProd?'Producer Content Ideas':'DIY Content Ideas'}</div><div class="sts">${isProd?'Content strategies to grow your producer brand':'Personal content you can create yourself'}</div></div></div><div class="dg2">${diys.map(d=>{const dcs=d.caption_structured||{};const das=d.algorithm_score||{};return `<div class="dc"><div class="dh"><div class="dtl">${d.title}</div><div class="dv">${d.virality}% viral</div></div><div class="dm"><span class="dmt">${d.difficulty}</span><span class="dmt">${d.duration}</span></div>${d.cover_frame?`<div style="padding:8px 10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.12);border-radius:6px;margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--yl);text-transform:uppercase;margin-bottom:3px">Cover frame</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${d.cover_frame}</div></div>`:''}<div class="dd">${d.description}</div><div class="dhl">How to execute:</div><ul class="ds">${(d.howTo||[]).map(s=>`<li>${s}</li>`).join('')}</ul>${dcs.full_caption?`<div class="dhtl">Ready caption: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="dhts" style="background:var(--bg);padding:10px;border-radius:var(--rs);border:1px solid var(--bdr);font-size:12px;line-height:1.6">${dcs.full_caption}</div>`:''}<div class="dhtl">Suggested hashtags: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="dhts">${d.hashtags}</div>${das.estimated_completion?`<div style="margin-top:10px;padding:8px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--bdr)"><div style="font-size:9px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:6px">Algorithm score</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px"><div style="font-size:10px"><span style="color:var(--ac);font-weight:600">Completion:</span> <span style="color:var(--t2)">${das.estimated_completion}</span></div><div style="font-size:10px"><span style="color:var(--gr);font-weight:600">Rewatch:</span> <span style="color:var(--t2)">${das.rewatch_potential||''}</span></div><div style="font-size:10px"><span style="color:var(--pk);font-weight:600">Comments:</span> <span style="color:var(--t2)">${das.comment_trigger||''}</span></div><div style="font-size:10px"><span style="color:var(--yl);font-weight:600">Saves:</span> <span style="color:var(--t2)">${das.save_trigger||''}</span></div></div></div>`:''} ${d.hook||d.relatability||d.share_trigger?`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--bdr);display:grid;grid-template-columns:1fr;gap:8px">${d.hook?`<div style="padding:10px;background:rgba(201,162,39,.06);border-radius:8px;border:1px solid rgba(201,162,39,.15)"><div style="font-size:10px;font-weight:700;color:var(--ac);margin-bottom:4px;text-transform:uppercase">Hook</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.hook}</div></div>`:''}${d.relatability?`<div style="padding:10px;background:rgba(74,222,128,.06);border-radius:8px;border:1px solid rgba(74,222,128,.15)"><div style="font-size:10px;font-weight:700;color:var(--gr);margin-bottom:4px;text-transform:uppercase">Relatability</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.relatability}</div></div>`:''}${d.share_trigger?`<div style="padding:10px;background:rgba(244,114,182,.06);border-radius:8px;border:1px solid rgba(244,114,182,.15)"><div style="font-size:10px;font-weight:700;color:var(--pk);margin-bottom:4px;text-transform:uppercase">Share trigger</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.share_trigger}</div></div>`:''}</div>`:''}</div>`}).join('')}</div><div class="tb pu"><span style="font-size:12px;font-weight:700;opacity:.7">TIP</span><span><strong>Creator tip:</strong> ${an.creator_tip}</span></div></div>
+    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><div><div class="stl">${isProd?'Beat Preview Suggestions':'AI Video Suggestions'}</div><div class="sts">${isProd?'Content ideas to promote your beat and attract artists':'Content ideas based on your track — generate any of them with AI'}</div></div><button class="bt bs regen-btn" data-section="video_edits" data-track="${t.id}" style="white-space:nowrap;font-size:11px;padding:6px 14px;margin-left:auto" title="Generate new video ideas">↻ New ideas</button></div><div class="vg">${vids.map((v,vi)=>{const cs=v.caption_structured||{};const as=v.algorithm_score||{};const cp=v.cross_post_strategy||{};const cap=cs.full_caption||v.caption||'';return `<div class="vc"><div class="vp"><div class="vbs"><span class="vb">${v.duration}</span>${(v.platforms||[]).map(p=>`<span class="vb">${p}</span>`).join('')}<span class="vb hl">${v.timestamp}</span></div><div class="vpi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div></div><div class="vby"><div class="video-suggestion-label">Suggestion</div><div class="vtl">${v.title}</div>${v.lyric_anchor&&v.lyric_anchor.exact_line?`<div style="padding:10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.12);border-radius:var(--rs);margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--ac);margin-bottom:4px;text-transform:uppercase">Built around this lyric</div><div style="font-size:13px;color:var(--t1);font-style:italic;line-height:1.5;margin-bottom:6px">"${v.lyric_anchor.exact_line}"</div>${v.lyric_anchor.sound_moment?`<div style="font-size:11px;color:var(--t2);line-height:1.4"><strong>Sound:</strong> ${v.lyric_anchor.sound_moment}</div>`:''}</div>`:''}${v.cover_frame?`<div style="padding:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);border-radius:var(--rs);margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--yl);margin-bottom:4px;text-transform:uppercase">Cover frame / thumbnail</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${v.cover_frame}</div></div>`:''}<div class="vcl">Caption: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vct').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vct">${cap}</div>${cs.hook_line?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0"><div style="padding:8px;background:rgba(201,162,39,.06);border-radius:6px;border:1px solid rgba(201,162,39,.12)"><div style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;margin-bottom:3px">Hook line</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.hook_line}</div></div><div style="padding:8px;background:rgba(74,222,128,.06);border-radius:6px;border:1px solid rgba(74,222,128,.12)"><div style="font-size:9px;font-weight:700;color:var(--gr);text-transform:uppercase;margin-bottom:3px">Body</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.body||''}</div></div><div style="padding:8px;background:rgba(244,114,182,.06);border-radius:6px;border:1px solid rgba(244,114,182,.12)"><div style="font-size:9px;font-weight:700;color:var(--pk);text-transform:uppercase;margin-bottom:3px">CTA</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${cs.cta||''}</div></div></div>`:''}<div class="vcl">Hashtags: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('.vby').querySelector('.vht').textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="vht">${v.hashtags}</div>${as.estimated_completion?`<div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:8px">Algorithm score</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="font-size:10px"><span style="color:var(--ac);font-weight:600">Completion:</span> <span style="color:var(--t2)">${as.estimated_completion}</span></div><div style="font-size:10px"><span style="color:var(--gr);font-weight:600">Rewatch:</span> <span style="color:var(--t2)">${as.rewatch_potential||''}</span></div><div style="font-size:10px"><span style="color:var(--pk);font-weight:600">Comments:</span> <span style="color:var(--t2)">${as.comment_trigger||''}</span></div><div style="font-size:10px"><span style="color:var(--yl);font-weight:600">Saves:</span> <span style="color:var(--t2)">${as.save_trigger||''}</span></div></div></div>`:''} ${cp.post_first_on?`<div style="margin-top:8px;padding:8px 10px;background:rgba(59,130,246,.06);border-radius:6px;border:1px solid rgba(59,130,246,.12)"><div style="font-size:9px;font-weight:700;color:var(--bl);text-transform:uppercase;margin-bottom:4px">Cross-posting</div><div style="font-size:10px;color:var(--t2);line-height:1.5">${cp.post_first_on}. Wait ${cp.wait_before_repost||'24h'}. ${cp.platform_tweaks||''}</div></div>`:''}</div><div class="vid-gen-row" id="vid-row-${vi}"><button class="bt bp vid-gen-btn" data-idx="${vi}" style="width:100%;margin-top:0;font-size:12px;padding:10px 16px">Generate Lyrics Video</button><div class="vid-gen-progress" style="display:none;text-align:center;padding:12px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div><div style="font-size:12px;color:var(--t2)">Creating your MP4 video (~1-2 min)... Generating images + building video with lyrics</div></div><div class="vid-gen-result" style="display:none;padding:4px 0 0"><video controls playsinline style="width:100%;border-radius:var(--rs);background:#000"></video><a class="bt bs" style="width:100%;text-align:center;text-decoration:none;margin-top:8px;font-size:12px;display:block" download="viraltrack-promo.mp4">Download</a></div><div class="vid-gen-error auth-err" style="margin-top:8px;font-size:12px"></div></div></div>`}).join('')}</div><div class="tb yl"><span style="font-size:12px;font-weight:700;opacity:.7">TIP</span><span><strong>Pro tip:</strong> ${an.pro_tip}</span></div></div>
+    <div class="cd" style="margin-bottom:24px;padding:28px"><div class="sh"><div class="sic pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div><div><div class="stl">${isProd?'Producer Content Ideas':'DIY Content Ideas'}</div><div class="sts">${isProd?'Content strategies to grow your producer brand':'Personal content you can create yourself'}</div></div><button class="bt bs regen-btn" data-section="diy_content_ideas" data-track="${t.id}" style="white-space:nowrap;font-size:11px;padding:6px 14px;margin-left:auto" title="Generate new content ideas">↻ New ideas</button></div><div class="dg2">${diys.map(d=>{const dcs=d.caption_structured||{};const das=d.algorithm_score||{};return `<div class="dc"><div class="dh"><div class="dtl">${d.title}</div><div class="dv">${d.virality}% viral</div></div><div class="dm"><span class="dmt">${d.difficulty}</span><span class="dmt">${d.duration}</span></div>${d.lyric_anchor&&d.lyric_anchor.exact_line?`<div style="padding:8px 10px;background:rgba(201,162,39,.06);border:1px solid rgba(201,162,39,.12);border-radius:6px;margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;margin-bottom:3px">Built around</div><div style="font-size:12px;color:var(--t1);font-style:italic;line-height:1.4;margin-bottom:4px">"${d.lyric_anchor.exact_line}"</div>${d.lyric_anchor.sound_moment?`<div style="font-size:10px;color:var(--t2);line-height:1.4">${d.lyric_anchor.sound_moment}</div>`:''}</div>`:''} ${d.cover_frame?`<div style="padding:8px 10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.12);border-radius:6px;margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--yl);text-transform:uppercase;margin-bottom:3px">Cover frame</div><div style="font-size:10px;color:var(--t2);line-height:1.4">${d.cover_frame}</div></div>`:''}<div class="dd">${d.description}</div><div class="dhl">How to execute:</div><ul class="ds">${(d.howTo||[]).map(s=>`<li>${s}</li>`).join('')}</ul>${dcs.full_caption?`<div class="dhtl">Ready caption: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="dhts" style="background:var(--bg);padding:10px;border-radius:var(--rs);border:1px solid var(--bdr);font-size:12px;line-height:1.6">${dcs.full_caption}</div>`:''}<div class="dhtl">Suggested hashtags: <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="dhts">${d.hashtags}</div>${das.estimated_completion?`<div style="margin-top:10px;padding:8px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--bdr)"><div style="font-size:9px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:6px">Algorithm score</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px"><div style="font-size:10px"><span style="color:var(--ac);font-weight:600">Completion:</span> <span style="color:var(--t2)">${das.estimated_completion}</span></div><div style="font-size:10px"><span style="color:var(--gr);font-weight:600">Rewatch:</span> <span style="color:var(--t2)">${das.rewatch_potential||''}</span></div><div style="font-size:10px"><span style="color:var(--pk);font-weight:600">Comments:</span> <span style="color:var(--t2)">${das.comment_trigger||''}</span></div><div style="font-size:10px"><span style="color:var(--yl);font-weight:600">Saves:</span> <span style="color:var(--t2)">${das.save_trigger||''}</span></div></div></div>`:''} ${d.hook||d.relatability||d.share_trigger?`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--bdr);display:grid;grid-template-columns:1fr;gap:8px">${d.hook?`<div style="padding:10px;background:rgba(201,162,39,.06);border-radius:8px;border:1px solid rgba(201,162,39,.15)"><div style="font-size:10px;font-weight:700;color:var(--ac);margin-bottom:4px;text-transform:uppercase">Hook</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.hook}</div></div>`:''}${d.relatability?`<div style="padding:10px;background:rgba(74,222,128,.06);border-radius:8px;border:1px solid rgba(74,222,128,.15)"><div style="font-size:10px;font-weight:700;color:var(--gr);margin-bottom:4px;text-transform:uppercase">Relatability</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.relatability}</div></div>`:''}${d.share_trigger?`<div style="padding:10px;background:rgba(244,114,182,.06);border-radius:8px;border:1px solid rgba(244,114,182,.15)"><div style="font-size:10px;font-weight:700;color:var(--pk);margin-bottom:4px;text-transform:uppercase">Share trigger</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${d.share_trigger}</div></div>`:''}</div>`:''}</div>`}).join('')}</div><div class="tb pu"><span style="font-size:12px;font-weight:700;opacity:.7">TIP</span><span><strong>Creator tip:</strong> ${an.creator_tip}</span></div></div>
     <div class="aug"><div class="auc"><div class="aut">${isProd?'Target artists & listeners':'Likely audience'}</div><div class="aur"><span>Age:</span> <strong>${an.audience_age}</strong></div><div class="aur"><span>Interests:</span> <strong>${an.audience_interests}</strong></div><div class="aur"><span>Platforms:</span> <strong>${an.audience_platforms}</strong></div><div class="aur"><span>Content angle:</span> <strong>${an.audience_content_angle}</strong></div><div class="ib"><div class="il">Key insight</div><div class="it">${an.audience_key_insight}</div></div></div><div class="auc"><div class="aut">${isProd?'Discovery tags & references':'Discovery tags & references'}</div>${dt.bio_suggestion?`<div style="padding:12px;background:var(--ac-s);border-radius:var(--rs);margin-bottom:12px;font-size:13px;color:var(--ac);font-weight:500"><span style="font-size:11px;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px;opacity:.7">Bio / caption suggestion</span>${dt.bio_suggestion} <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.bio_suggestion||'').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div>`:''}${dt.youtube_title?`<div style="padding:12px;background:var(--gr-s);border-radius:var(--rs);margin-bottom:12px;font-size:13px;color:var(--gr);font-weight:500"><span style="font-size:11px;text-transform:uppercase;font-weight:700;display:block;margin-bottom:4px;opacity:.7">YouTube title</span>${dt.youtube_title} <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.youtube_title||'').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div>`:''}${(dt.artist_tags||dt.type_beat_tags||[]).length?`<div style="margin-bottom:10px"><span style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);display:block;margin-bottom:6px">${isProd?'Type beat tags':'Artist tags'} <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.artist_tags||dt.type_beat_tags||[]).join(' ').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy all</button></span><div style="display:flex;flex-wrap:wrap;gap:6px">${(dt.artist_tags||dt.type_beat_tags||[]).map(tag=>`<span class="mg">${tag}</span>`).join('')}</div></div>`:''}${(dt.genre_tags||[]).length?`<div style="margin-bottom:10px"><span style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);display:block;margin-bottom:6px">Genre tags <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.genre_tags||[]).join(' ').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy all</button></span><div style="display:flex;flex-wrap:wrap;gap:6px">${(dt.genre_tags||[]).map(tag=>`<span class="mg" style="background:var(--gr-s);color:var(--gr)">${tag}</span>`).join('')}</div></div>`:''}${(dt.trending_tags||[]).length?`<div style="margin-bottom:12px"><span style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);display:block;margin-bottom:6px">Trending tags <button class="copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${(dt.trending_tags||[]).join(' ').replace(/'/g,"\\'")}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy all</button></span><div style="display:flex;flex-wrap:wrap;gap:6px">${(dt.trending_tags||[]).map(tag=>`<span class="mg" style="background:var(--pk-s);color:var(--pk)">${tag}</span>`).join('')}</div></div>`:''}<div style="border-top:1px solid var(--bdr);padding-top:12px;margin-top:4px"><div style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--t2);margin-bottom:8px">${isProd?'Why these references':'Why these references'}</div>${refs.map(a=>`<div class="ra"><div class="rn">${a.name}</div><div class="rg">${a.genre}</div><div class="rd">${a.description}</div></div>`).join('')}</div></div></div>
     <div class="cd" style="margin-top:24px;padding:24px;background:linear-gradient(135deg,rgba(201,162,39,.06),rgba(244,114,182,.04));border:1px solid rgba(201,162,39,.15)"><div style="font-size:16px;font-weight:700;margin-bottom:16px">Keys to actually going viral</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"><div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:6px">1. The hook</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${vk.hook || 'The first 1-2 seconds decide everything. Start with something that stops the scroll.'}</div></div><div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:13px;font-weight:700;color:var(--gr);margin-bottom:6px">2. Relatability</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${vk.relatability || 'Make viewers think "that is so me".'}</div></div><div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:13px;font-weight:700;color:var(--pk);margin-bottom:6px">3. Share trigger</div><div style="font-size:12px;color:var(--t2);line-height:1.6">${vk.share_trigger || 'Give viewers a reason to send this to a friend.'}</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="padding:14px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--ac);margin-bottom:4px">Quality over quantity</div><div style="font-size:11px;color:var(--t2);line-height:1.5">One well-shot video beats ten lazy ones.</div></div><div style="padding:14px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--pk);margin-bottom:4px">Consistency is everything</div><div style="font-size:11px;color:var(--t2);line-height:1.5">Post 3-4 times per week. The algorithm rewards consistency.</div></div></div></div>
     ${ps.best_times?`<div class="cd" style="margin-top:24px;padding:24px;background:linear-gradient(135deg,rgba(59,130,246,.06),rgba(74,222,128,.04));border:1px solid rgba(59,130,246,.15)"><div style="font-size:16px;font-weight:700;margin-bottom:16px">When & how to post</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">${ps.best_times.tiktok?`<div style="padding:14px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--ac);margin-bottom:6px">TikTok</div><div style="font-size:11px;color:var(--t2);line-height:1.6">${ps.best_times.tiktok}</div></div>`:''}${ps.best_times.reels?`<div style="padding:14px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--pk);margin-bottom:6px">Reels</div><div style="font-size:11px;color:var(--t2);line-height:1.6">${ps.best_times.reels}</div></div>`:''}${ps.best_times.youtube_shorts?`<div style="padding:14px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--gr);margin-bottom:6px">YouTube Shorts</div><div style="font-size:11px;color:var(--t2);line-height:1.6">${ps.best_times.youtube_shorts}</div></div>`:''}</div>${ps.best_days?`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:600;color:var(--t1)">Best days: </span><span style="font-size:12px;color:var(--t2)">${(ps.best_days||[]).join(', ')}</span></div>`:''}${ps.posting_frequency?`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:600;color:var(--t1)">Frequency: </span><span style="font-size:12px;color:var(--t2)">${ps.posting_frequency}</span></div>`:''}${ps.cross_posting_order?`<div style="margin-bottom:12px"><span style="font-size:12px;font-weight:600;color:var(--t1)">Cross-posting order: </span><span style="font-size:12px;color:var(--t2)">${ps.cross_posting_order}</span></div>`:''}${ps.avoid_times?`<div style="margin-bottom:16px;padding:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.12);border-radius:var(--rs)"><span style="font-size:11px;font-weight:700;color:var(--yl)">Avoid:</span><span style="font-size:11px;color:var(--t2)">${ps.avoid_times}</span></div>`:''}${ps.engagement_window?`<div style="border-top:1px solid var(--bdr);padding-top:16px"><div style="font-size:14px;font-weight:700;margin-bottom:12px">After you hit post (engagement window)</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${ps.engagement_window.first_5_min?`<div style="padding:12px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:11px;font-weight:700;color:var(--ac);margin-bottom:4px">First 5 minutes</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${ps.engagement_window.first_5_min}</div></div>`:''}${ps.engagement_window.first_30_min?`<div style="padding:12px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:11px;font-weight:700;color:var(--gr);margin-bottom:4px">First 30 minutes</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${ps.engagement_window.first_30_min}</div></div>`:''}${ps.engagement_window.first_2_hours?`<div style="padding:12px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:11px;font-weight:700;color:var(--pk);margin-bottom:4px">First 2 hours</div><div style="font-size:11px;color:var(--t2);line-height:1.5">${ps.engagement_window.first_2_hours}</div></div>`:''}${ps.engagement_window.pin_comment?`<div style="padding:12px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="font-size:11px;font-weight:700;color:var(--yl);margin-bottom:4px">Pin this comment <button class="copy-btn" style="font-size:10px" onclick="event.stopPropagation();navigator.clipboard.writeText(this.closest('div').querySelector('.pin-txt').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)})">Copy</button></div><div class="pin-txt" style="font-size:11px;color:var(--t2);line-height:1.5">${ps.engagement_window.pin_comment}</div></div>`:''}</div></div>`:''}</div>`:''}`;
   pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
   document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
   initVideoButtons(t, vids, an);
+
+  // Regenerate buttons
+  pg.querySelectorAll('.regen-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const section = btn.dataset.section;
+      const trackId = btn.dataset.track;
+      btn.disabled = true;
+      btn.textContent = '⟳ Generating...';
+      btn.style.opacity = '0.6';
+      try {
+        const resp = await authFetch(A + '/tracks/' + trackId + '/regenerate/' + section, { method: 'POST' });
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        // Reload the full track to get updated analysis
+        const fullTrack = await (await authFetch(A + '/tracks/' + trackId)).json();
+        if (fullTrack.analysis) showAn(fullTrack, fullTrack.analysis);
+      } catch (err) {
+        alert('Failed to regenerate: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = '↻ New ideas';
+        btn.style.opacity = '1';
+      }
+    });
+  });
 
   // Show viral advice if available
   if (an.viral_advice) {
@@ -1151,6 +1231,7 @@ function showPromoPlan(track,plan){
           <div class="stl">${t.title||'Tactic '+(i+1)}</div>
         </div>
       </div>
+      ${t.lyric_anchor?`<div style="font-size:13px;color:var(--t1);font-style:italic;margin-bottom:10px;padding:8px 12px;background:rgba(201,162,39,.06);border-left:3px solid var(--ac);border-radius:0 var(--rs) var(--rs) 0">"${t.lyric_anchor}"</div>`:''}
       <div style="font-size:13px;color:var(--ac);font-weight:600;margin-bottom:10px">${t.why_it_works||''}</div>
       <div style="font-size:13px;color:var(--t1);line-height:1.7;margin-bottom:14px;padding:12px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)">${t.script||''}</div>
       <div style="display:flex;flex-direction:column;gap:8px">
@@ -1212,8 +1293,27 @@ function showPromoPlan(track,plan){
       <button class="share-btn" onclick="navigator.clipboard.writeText(window.location.origin).then(()=>{this.innerHTML='Link copied';setTimeout(()=>this.innerHTML='Share',2000)})">Share</button>
       <button class="share-btn" onclick="window.print()">Export PDF</button>
     </div>
+    <div style="text-align:center;font-size:11px;color:var(--t3);margin-bottom:20px;opacity:0.6">Powered by <span style="color:var(--ac);font-weight:700">ViralTrack</span></div>
 
     ${plan.viral_hook ? `<div style="font-size:18px;font-weight:700;color:var(--t1);line-height:1.4;padding:20px;margin-bottom:20px;background:linear-gradient(135deg,rgba(var(--ac-rgb,212,175,55),.08),rgba(var(--ac-rgb,212,175,55),.02));border-radius:var(--rl);border:1px solid var(--bdr);text-align:center">${plan.viral_hook}</div>` : ''}
+
+    <div class="cd" style="margin-bottom:20px;padding:20px;background:rgba(74,222,128,.04);border:1px solid rgba(74,222,128,.12)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="stl" style="margin-bottom:0">Your Checklist</div>
+        <div style="font-size:12px;color:var(--t2)" id="checklist-count">0/${3 + (plan.growth_moves||[]).length + 4} done</div>
+      </div>
+      <div class="checklist-progress"><div class="checklist-fill" id="checklist-bar" style="width:0%"></div></div>
+      <div id="checklist-items">
+        ${(plan.release_countdown ? [
+          {label: '7 days before: ' + (plan.release_countdown['7_days_before']||''), key: 'rc7'},
+          {label: '3 days before: ' + (plan.release_countdown['3_days_before']||''), key: 'rc3'},
+          {label: 'Release day: ' + (plan.release_countdown.release_day||''), key: 'rcd'},
+          {label: '48h after: ' + (plan.release_countdown['48_hours_after']||''), key: 'rc48'}
+        ] : []).map(item => `<label class="task-check" data-key="${item.key}"><input type="checkbox"><span class="task-label">${item.label}</span></label>`).join('')}
+        ${(plan.viral_tactics||[]).map((t,i) => `<label class="task-check" data-key="vt${i}"><input type="checkbox"><span class="task-label">Post: ${t.title} (${t.platform||'TikTok'})</span></label>`).join('')}
+        ${(plan.growth_moves||[]).map((g,i) => `<label class="task-check" data-key="gm${i}"><input type="checkbox"><span class="task-label">${g.move}</span></label>`).join('')}
+      </div>
+    </div>
 
     ${countdown}
 
@@ -1243,6 +1343,33 @@ function showPromoPlan(track,plan){
       </div>` : ''}
   `;
   pgs.forEach(p=>p.classList.remove('on'));nis.forEach(n=>n.classList.remove('on'));pg.classList.add('on');
+
+  // Checklist persistence
+  const clKey = 'vt_checklist_' + track.id;
+  const saved = JSON.parse(localStorage.getItem(clKey) || '{}');
+  const checks = pg.querySelectorAll('.task-check');
+  const totalTasks = checks.length;
+  function updateProgress() {
+    const done = pg.querySelectorAll('.task-check.done').length;
+    const pct = totalTasks ? Math.round(done / totalTasks * 100) : 0;
+    const bar = document.getElementById('checklist-bar');
+    const count = document.getElementById('checklist-count');
+    if (bar) bar.style.width = pct + '%';
+    if (count) count.textContent = done + '/' + totalTasks + ' done';
+  }
+  checks.forEach(c => {
+    const key = c.dataset.key;
+    const cb = c.querySelector('input[type=checkbox]');
+    if (saved[key]) { cb.checked = true; c.classList.add('done'); }
+    cb.addEventListener('change', () => {
+      const state = JSON.parse(localStorage.getItem(clKey) || '{}');
+      state[key] = cb.checked;
+      localStorage.setItem(clKey, JSON.stringify(state));
+      c.classList.toggle('done', cb.checked);
+      updateProgress();
+    });
+  });
+  updateProgress();
 }
 
 // ── REPORTS ──
@@ -1540,9 +1667,123 @@ document.getElementById('in-tk').addEventListener('change', function() {
   if (this.checked) { document.getElementById('in-nosocial').checked = false; }
 });
 
+// ── SHARE CARD GENERATOR ──
+async function generateShareCard(trackId, title, artist, genre, energy, moods) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080; canvas.height = 1080;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
+  grad.addColorStop(0, '#0a0a0a');
+  grad.addColorStop(0.5, '#1a1510');
+  grad.addColorStop(1, '#0a0a0a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1080, 1080);
+
+  // Decorative ring
+  ctx.strokeStyle = 'rgba(201,162,39,0.15)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(540, 400, 260, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(201,162,39,0.08)';
+  ctx.beginPath(); ctx.arc(540, 400, 300, 0, Math.PI * 2); ctx.stroke();
+
+  // "MY TRACK ANALYSIS" label
+  ctx.font = '800 14px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(201,162,39,0.8)';
+  ctx.textAlign = 'center';
+  ctx.fillText('MY TRACK ANALYSIS', 540, 200);
+
+  // Track title
+  ctx.font = '900 48px Inter, sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.fillText(title.length > 20 ? title.substring(0, 20) + '...' : title, 540, 360);
+
+  // Artist
+  ctx.font = '400 24px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fillText('by ' + artist, 540, 410);
+
+  // Genre badge
+  if (genre) {
+    ctx.font = '600 16px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(201,162,39,0.9)';
+    ctx.fillText(genre, 540, 470);
+  }
+
+  // Energy bar
+  const barW = 400, barH = 12, barX = 340, barY = 530;
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+  ctx.beginPath(); ctx.roundRect(barX, barY, barW, barH, 6); ctx.fill();
+  const eGrad = ctx.createLinearGradient(barX, 0, barX + barW * energy / 100, 0);
+  eGrad.addColorStop(0, '#c9a227');
+  eGrad.addColorStop(1, '#e8d076');
+  ctx.fillStyle = eGrad;
+  ctx.beginPath(); ctx.roundRect(barX, barY, barW * energy / 100, barH, 6); ctx.fill();
+
+  ctx.font = '700 14px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.textAlign = 'left';
+  ctx.fillText('ENERGY', barX, barY - 10);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#c9a227';
+  ctx.fillText(energy + '%', barX + barW, barY - 10);
+
+  // Mood tags
+  const moodArr = typeof moods === 'string' ? JSON.parse(moods) : (moods || []);
+  if (moodArr.length) {
+    ctx.textAlign = 'center';
+    ctx.font = '500 18px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText(moodArr.slice(0, 4).join('  ·  '), 540, 610);
+  }
+
+  // Divider
+  ctx.strokeStyle = 'rgba(201,162,39,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(340, 670); ctx.lineTo(740, 670); ctx.stroke();
+
+  // Bottom: "Analyze your track at viraltrack.app"
+  ctx.font = '400 16px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'center';
+  ctx.fillText('Analyze your track at', 540, 900);
+
+  // Powered by ViralTrack
+  ctx.font = '800 22px Inter, sans-serif';
+  ctx.fillStyle = '#c9a227';
+  ctx.fillText('VIRALTRACK', 540, 935);
+
+  ctx.font = '400 13px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('Powered by AI', 540, 960);
+
+  // Convert to blob and share/download
+  canvas.toBlob(async (blob) => {
+    const file = new File([blob], 'viraltrack-' + title.toLowerCase().replace(/\s+/g, '-') + '.png', { type: 'image/png' });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: title + ' — ViralTrack Analysis', text: 'Check out my track analysis on ViralTrack!' });
+        return;
+      } catch(e) {}
+    }
+    // Fallback: download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = file.name; a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
 // ── INIT ──
 // Warm up backend immediately so it's ready by the time user clicks login/signup
 fetch(A + '/health').catch(() => {});
+// Fetch live track count for landing page
+fetch(A + '/stats').then(r => r.json()).then(d => {
+  const el = document.getElementById('live-track-count');
+  if (el && d.tracks_analyzed > 0) el.textContent = d.tracks_analyzed;
+  else if (el) el.textContent = '0';
+}).catch(() => {});
 checkAuth();
 </script>
 <script>

@@ -291,6 +291,12 @@ class Database {
     return execute("SELECT * FROM video_generations WHERE status IN ('building_video', 'processing') AND created_at >= datetime('now', '-1 hour') ORDER BY created_at DESC LIMIT 10");
   }
 
+  // Public stats
+  async getTotalTrackCount() {
+    const rows = await execute("SELECT COUNT(*) as count FROM tracks WHERE status = 'analyzed'");
+    return rows[0]?.count || 0;
+  }
+
   // Admin
   async getAllUsers() {
     return execute("SELECT id, name, email, plan, created_at FROM users ORDER BY created_at DESC");
