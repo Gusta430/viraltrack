@@ -10,6 +10,7 @@ import db from './db.js';
 import { analyzeTrack, generatePromoPlan, regenerateSection } from './ai-service.js';
 import { analyzeAudio } from './audio-analysis.js';
 import { getTrends } from './trend-service.js';
+import { checkAnalysis, checkPromoPlan, checkRegenerate, checkVideoGeneration, recordAnalysis, recordPromoPlan, recordRegenerate, recordVideoGeneration, getUsageStats } from './rate-limiter.js';
 
 // Check FFmpeg availability — try ffmpeg-static first, then system ffmpeg
 let FFMPEG_BIN = null;
@@ -648,6 +649,9 @@ const server = http.createServer(async (req, res) => {
     if (analyzeMatch && method === 'POST') {
       const track = await db.getTrack(analyzeMatch[1]);
       if (!track || track.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
+      // Rate limit check
+      const rateCheck = checkAnalysis(user.id);
+      if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);
       await db.updateTrack(track.id, { status: 'analyzing' });
       const analysisId = uuid();
       await db.createAnalysis({ id: analysisId, track_id: track.id, status: 'processing' });
@@ -661,6 +665,7 @@ const server = http.createServer(async (req, res) => {
       const trends = await getTrends();
       console.log('Trends loaded:', JSON.stringify(trends).substring(0, 200));
       const result = await analyzeTrack(track, audioFeatures, trends);
+      recordAnalysis(user.id);
       await db.updateAnalysis(analysisId, result);
       await db.updateTrack(track.id, { status: 'analyzed' });
       await db.createReport({ id: uuid(), track_id: track.id, analysis_id: analysisId, type: 'analysis', title: `${track.title} - Analysis`, status: 'complete' });
@@ -675,11 +680,15 @@ const server = http.createServer(async (req, res) => {
     if (regenMatch && method === 'POST') {
       const track = await db.getTrack(regenMatch[1]);
       if (!track || track.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
+      // Rate limit check
+      const rateCheck = checkRegenerate(user.id);
+      if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);
       const analysis = await db.getAnalysisByTrack(track.id);
       if (!analysis) return json(res, { error: 'Analyze track first' }, 400);
       const section = regenMatch[2]; // video_edits or diy_content_ideas
       try {
         const result = await regenerateSection(track, analysis, section);
+        recordRegenerate(user.id);
         // Update the analysis with new section data
         await db.updateAnalysis(analysis.id, { [section]: JSON.stringify(result) });
         return json(res, { section, data: result });
@@ -692,10 +701,14 @@ const server = http.createServer(async (req, res) => {
     if (promoMatch && method === 'POST') {
       const track = await db.getTrack(promoMatch[1]);
       if (!track || track.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
+      // Rate limit check
+      const rateCheck = checkPromoPlan(user.id);
+      if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);
       const analysis = await db.getAnalysisByTrack(track.id);
       if (!analysis) return json(res, { error: 'Analyze track first' }, 400);
       const plan = await generatePromoPlan(track, analysis);
       if (plan) {
+        recordPromoPlan(user.id);
         await db.savePromoPlan(track.id, plan);
         await db.createReport({ id: uuid(), track_id: track.id, analysis_id: analysis.id, type: 'promo_plan', title: `${track.title} - Promo Plan`, status: 'complete' });
         return json(res, { plan });
@@ -704,11 +717,15 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === '/api/demo' && method === 'POST') {
+      // Rate limit — demo uses an analysis
+      const rateCheck = checkAnalysis(user.id);
+      if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);
       const trackId = uuid();
       await db.createTrack({ id: trackId, user_id: user.id, title: 'Midnight Thoughts', artist: 'Luna Rose', genre: 'Indie pop', similar_artists: 'Billie Eilish, Clairo', filename: null, original_name: null, file_size: null, spotify_url: null, want_tiktok_content: 1, main_goal: 'Grow fanbase', status: 'analyzing' });
       const analysisId = uuid();
       await db.createAnalysis({ id: analysisId, track_id: trackId, status: 'processing' });
       const result = await analyzeTrack({ title: 'Midnight Thoughts', artist: 'Luna Rose', genre: 'Indie pop', similar_artists: 'Billie Eilish, Clairo', main_goal: 'Grow fanbase', want_tiktok_content: 1 });
+      recordAnalysis(user.id);
       await db.updateAnalysis(analysisId, result);
       await db.updateTrack(trackId, { status: 'analyzed' });
       await db.createReport({ id: uuid(), track_id: trackId, analysis_id: analysisId, type: 'analysis', title: 'Midnight Thoughts - Analysis', status: 'complete' });
@@ -729,6 +746,9 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/videos/generate' && method === 'POST') {
       const FAL_KEY = process.env.FAL_API_KEY;
       if (!FAL_KEY) return json(res, { error: 'Video generation not configured' }, 500);
+      // Rate limit check
+      const rateCheck = checkVideoGeneration(user.id);
+      if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);
 
       const body = await parseBody(req);
       const lyricLines = body.lyric_lines || [];
@@ -740,6 +760,7 @@ const server = http.createServer(async (req, res) => {
       const bpm = body.bpm || 0;
       const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [], bpm };
       await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines), track_id: trackId });
+      recordVideoGeneration(user.id, lyricLines.length);
 
       // Fire background process: generate images → build slideshow → update DB
       processVideoGeneration(videoId, lyricLines, FAL_KEY, genre, songContext).catch(err => {
@@ -815,6 +836,12 @@ const server = http.createServer(async (req, res) => {
       if (user.email !== 'andre.s.gustad@gmail.com') return json(res, { error: 'Not authorized' }, 403);
       const users = await db.getAllUsers();
       return json(res, users);
+    }
+
+    // ── Admin: API usage stats ──
+    if (p === '/api/admin/usage' && method === 'GET') {
+      if (user.email !== 'andre.s.gustad@gmail.com') return json(res, { error: 'Not authorized' }, 403);
+      return json(res, getUsageStats());
     }
 
     if (p === '/api/settings' && method === 'GET') return json(res, { user_name: user.name, user_email: user.email, plan: user.plan, email_notifications: user.email_notifications, marketing_emails: user.marketing_emails });

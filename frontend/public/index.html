@@ -908,6 +908,10 @@
       <div class="fg"><label class="fl">Trending hashtags (comma separated)</label><input class="fi" id="admin-hashtags" placeholder="e.g. #fyp, #viral, #newsong, #trending"></div>
       <div style="display:flex;gap:10px;margin-top:14px"><button class="bt bp" id="btn-save-trends">Save Trends</button><button class="bt bs" id="btn-autofill-trends">Auto-fill with AI</button><span id="trends-status" style="font-size:12px;color:var(--gr);display:flex;align-items:center"></span></div>
     </div>
+    <div class="cd" style="margin-bottom:24px" id="admin-usage-card">
+      <div class="stl" style="margin-bottom:14px">API Usage Today</div>
+      <div id="admin-usage" style="font-size:13px;color:var(--t2)">Loading...</div>
+    </div>
     <div id="admin-stats" style="margin-bottom:20px"></div><div id="admin-users"></div></div>
   <div class="pg" id="pg-settings"><h1 class="pt" style="margin-bottom:28px">Settings</h1>
     <div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div>
@@ -1122,7 +1126,7 @@ document.getElementById('sp-tog').addEventListener('click',e=>{e.stopPropagation
 document.getElementById('btn-az').addEventListener('click',async()=>{const t=document.getElementById('in-t').value.trim(),a=document.getElementById('in-a').value.trim();if(!t||!a)return alert('Enter track title and artist name.');await submit('uploaded')});
 document.getElementById('btn-dr').addEventListener('click',()=>submit('draft'));
 
-async function submit(st){const fd=new FormData();if(selFile)fd.append('audio',selFile);fd.append('title',document.getElementById('in-t').value.trim());fd.append('artist',document.getElementById('in-a').value.trim());fd.append('genre',document.getElementById('in-g').value.trim());fd.append('similar_artists','');fd.append('lyrics',contentType==='artist'?document.getElementById('in-lyrics').value.trim():'');fd.append('spotify_url',document.getElementById('sp-url').value.trim());fd.append('want_tiktok_content',document.getElementById('in-tk').checked?'1':'0');fd.append('main_goal',contentType==='artist'?document.getElementById('in-gl').value:(document.getElementById('in-producer-goal').value||''));fd.append('audience_size',document.getElementById('in-audience-size').value);fd.append('no_social',contentType==='artist'&&document.getElementById('in-nosocial').checked?'1':'0');fd.append('target_region',document.getElementById('in-region').value);fd.append('social_vibe',document.getElementById('in-vibe').value);fd.append('content_type',contentType);fd.append('beat_store_url',contentType==='producer'?document.getElementById('in-beatstore').value.trim():'');fd.append('producer_goal',contentType==='producer'?document.getElementById('in-producer-goal').value:'');fd.append('status',st);if(st==='draft'){try{await authFetch(A+'/tracks',{method:'POST',body:fd});alert('Draft saved!')}catch(e){alert('Error.')}return}showLoad(true,contentType==='producer'?'Analyzing your beat... This can take a while':'Analyzing your track... This can take a while');try{const trk=await(await authFetch(A+'/tracks',{method:'POST',body:fd})).json();const res=await(await authFetch(A+'/tracks/'+trk.id+'/analyze',{method:'POST'})).json();showLoad(false);showAn(res.track,res.analysis)}catch(e){showLoad(false);alert('Analysis failed.');console.error(e)}}
+async function submit(st){const fd=new FormData();if(selFile)fd.append('audio',selFile);fd.append('title',document.getElementById('in-t').value.trim());fd.append('artist',document.getElementById('in-a').value.trim());fd.append('genre',document.getElementById('in-g').value.trim());fd.append('similar_artists','');fd.append('lyrics',contentType==='artist'?document.getElementById('in-lyrics').value.trim():'');fd.append('spotify_url',document.getElementById('sp-url').value.trim());fd.append('want_tiktok_content',document.getElementById('in-tk').checked?'1':'0');fd.append('main_goal',contentType==='artist'?document.getElementById('in-gl').value:(document.getElementById('in-producer-goal').value||''));fd.append('audience_size',document.getElementById('in-audience-size').value);fd.append('no_social',contentType==='artist'&&document.getElementById('in-nosocial').checked?'1':'0');fd.append('target_region',document.getElementById('in-region').value);fd.append('social_vibe',document.getElementById('in-vibe').value);fd.append('content_type',contentType);fd.append('beat_store_url',contentType==='producer'?document.getElementById('in-beatstore').value.trim():'');fd.append('producer_goal',contentType==='producer'?document.getElementById('in-producer-goal').value:'');fd.append('status',st);if(st==='draft'){try{await authFetch(A+'/tracks',{method:'POST',body:fd});alert('Draft saved!')}catch(e){alert('Error.')}return}showLoad(true,contentType==='producer'?'Analyzing your beat... This can take a while':'Analyzing your track... This can take a while');try{const trk=await(await authFetch(A+'/tracks',{method:'POST',body:fd})).json();const analyzeResp=await authFetch(A+'/tracks/'+trk.id+'/analyze',{method:'POST'});const res=await analyzeResp.json();showLoad(false);if(res.error){alert(res.error);return}showAn(res.track,res.analysis)}catch(e){showLoad(false);alert('Analysis failed.');console.error(e)}}
 
 
 function showAn(t,an){
@@ -1197,7 +1201,7 @@ function showAn(t,an){
   }
 }
 
-async function genPromo(trackId,track){showLoad(true,'Generating your promo plan... This can take a while');try{const res=await(await authFetch(A+'/tracks/'+trackId+'/promo-plan',{method:'POST'})).json();showLoad(false);if(res.plan)showPromoPlan(track,res.plan);else alert('Could not generate promo plan.')}catch(e){showLoad(false);alert('Error.');console.error(e)}}
+async function genPromo(trackId,track){showLoad(true,'Generating your promo plan... This can take a while');try{const resp=await authFetch(A+'/tracks/'+trackId+'/promo-plan',{method:'POST'});const res=await resp.json();showLoad(false);if(res.error){alert(res.error);return}if(res.plan)showPromoPlan(track,res.plan);else alert('Could not generate promo plan.')}catch(e){showLoad(false);alert('Error.');console.error(e)}}
 
 function showPromoPlan(track,plan){
   const isProd = track.content_type === 'producer';
@@ -1421,6 +1425,31 @@ async function loadAdmin() {
     } catch(e) { document.getElementById('trends-status').textContent = 'Failed'; }
     setTimeout(() => document.getElementById('trends-status').textContent = '', 3000);
   };
+
+  // Load API usage stats
+  try {
+    const usage = await (await authFetch(A + '/admin/usage')).json();
+    if (!usage.error) {
+      const g = usage.global;
+      const barHtml = (pct, color) => `<div style="height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.min(pct,100)}%;background:${pct > 80 ? 'var(--red,#ef4444)' : pct > 50 ? 'var(--yl)' : color};border-radius:4px;transition:width .3s"></div></div>`;
+      document.getElementById('admin-usage').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)">
+            <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:6px">Claude API</div>
+            <div style="font-size:24px;font-weight:900;color:${g.claude_pct > 80 ? 'var(--red,#ef4444)' : 'var(--t1)'}">${g.claude_calls} <span style="font-size:14px;color:var(--t3);font-weight:400">/ ${g.claude_limit}</span></div>
+            ${barHtml(g.claude_pct, 'var(--ac)')}
+          </div>
+          <div style="padding:16px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)">
+            <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;margin-bottom:6px">fal.ai Images</div>
+            <div style="font-size:24px;font-weight:900;color:${g.fal_pct > 80 ? 'var(--red,#ef4444)' : 'var(--t1)'}">${g.fal_images} <span style="font-size:14px;color:var(--t3);font-weight:400">/ ${g.fal_limit}</span></div>
+            ${barHtml(g.fal_pct, 'var(--gr)')}
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:12px">Per-user limits: ${usage.limits.user.analyses_per_day} analyses, ${usage.limits.user.promo_plans_per_day} promos, ${usage.limits.user.regenerates_per_day} regens, ${usage.limits.user.videos_per_day} videos per day</div>
+        ${usage.per_user.length ? `<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px;text-transform:uppercase">User activity today</div>` + usage.per_user.map(u => `<div style="font-size:12px;color:var(--t2);padding:6px 0;border-top:1px solid var(--bdr)">${u.user_id.slice(0,8)}… — ${u.analyses} analyses, ${u.promo_plans} promos, ${u.regenerations} regens, ${u.videos} videos</div>`).join('') : '<div style="font-size:12px;color:var(--t3)">No API usage today</div>'}
+      `;
+    }
+  } catch(e) { console.error('Usage load failed:', e); }
 
   try {
     const users = await (await authFetch(A + '/admin/users')).json();
