@@ -101,6 +101,7 @@ async function initDB() {
   try { await run('ALTER TABLE tracks ADD COLUMN social_vibe TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN audio_key TEXT'); } catch(e) {}
   try { await run('ALTER TABLE analyses ADD COLUMN audio_danceability INTEGER'); } catch(e) {}
+  try { await run('ALTER TABLE analyses ADD COLUMN audio_duration INTEGER'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN target_region TEXT'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN no_social TEXT'); } catch(e) {}
   try { await run('ALTER TABLE tracks ADD COLUMN audience_size TEXT'); } catch(e) {}
@@ -218,8 +219,8 @@ class Database {
   }
 
   async updateAnalysis(id, u) {
-    await run(`UPDATE analyses SET tempo_bpm=?, tempo_description=?, mood_tags=?, energy_percent=?, energy_description=?, genre_fit=?, audience_age=?, audience_interests=?, audience_platforms=?, audience_content_angle=?, audience_key_insight=?, reference_artists=?, video_edits=?, diy_content_ideas=?, pro_tip=?, creator_tip=?, model_used=?, audio_key=?, audio_danceability=?, viral_advice=?, viral_keys=?, lyric_themes=?, discovery_tags=?, posting_strategy=?, status=?, completed_at=? WHERE id=?`,
-      [u.tempo_bpm, u.tempo_description, u.mood_tags, u.energy_percent, u.energy_description, u.genre_fit, u.audience_age, u.audience_interests, u.audience_platforms, u.audience_content_angle, u.audience_key_insight, u.reference_artists, u.video_edits, u.diy_content_ideas, u.pro_tip, u.creator_tip, u.model_used, u.audio_key, u.audio_danceability, u.viral_advice, u.viral_keys, u.lyric_themes, u.discovery_tags, u.posting_strategy, u.status, u.completed_at, id]);
+    await run(`UPDATE analyses SET tempo_bpm=?, tempo_description=?, mood_tags=?, energy_percent=?, energy_description=?, genre_fit=?, audience_age=?, audience_interests=?, audience_platforms=?, audience_content_angle=?, audience_key_insight=?, reference_artists=?, video_edits=?, diy_content_ideas=?, pro_tip=?, creator_tip=?, model_used=?, audio_key=?, audio_danceability=?, audio_duration=?, viral_advice=?, viral_keys=?, lyric_themes=?, discovery_tags=?, posting_strategy=?, status=?, completed_at=? WHERE id=?`,
+      [u.tempo_bpm, u.tempo_description, u.mood_tags, u.energy_percent, u.energy_description, u.genre_fit, u.audience_age, u.audience_interests, u.audience_platforms, u.audience_content_angle, u.audience_key_insight, u.reference_artists, u.video_edits, u.diy_content_ideas, u.pro_tip, u.creator_tip, u.model_used, u.audio_key, u.audio_danceability, u.audio_duration, u.viral_advice, u.viral_keys, u.lyric_themes, u.discovery_tags, u.posting_strategy, u.status, u.completed_at, id]);
     return this.getAnalysis(id);
   }
 

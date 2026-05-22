@@ -481,11 +481,13 @@ async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext,
     // ── MUX AUDIO onto video ──
     if (audioFilePath && fs.existsSync(audioFilePath)) {
       try {
-        console.log(`🎵 Muxing audio from ${path.basename(audioFilePath)} onto video...`);
-        // Combine video + audio, trim audio to match video length, use shortest stream
-        await ffmpegRun([
-          '-y',
-          '-i', silentPath,
+        const audioStartSec = (songContext && songContext.audioStartSec) || 0;
+        console.log(`🎵 Muxing audio from ${path.basename(audioFilePath)} (seek to ${audioStartSec}s) onto video...`);
+        // Combine video + audio, seek into the audio so lyrics match, trim to video length
+        const ffArgs = ['-y', '-i', silentPath];
+        // -ss before -i for fast seek on the audio input
+        if (audioStartSec > 0) ffArgs.push('-ss', String(audioStartSec));
+        ffArgs.push(
           '-i', audioFilePath,
           '-c:v', 'copy',
           '-c:a', 'aac', '-b:a', '192k',
@@ -493,8 +495,9 @@ async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext,
           '-shortest',
           '-movflags', '+faststart',
           outputPath
-        ]);
-        console.log(`🎵 Audio muxed successfully`);
+        );
+        await ffmpegRun(ffArgs);
+        console.log(`🎵 Audio muxed successfully (offset: ${audioStartSec}s)`);
         // Clean up silent version
         fs.unlink(silentPath, () => {});
         // Clean up the source audio file — we don't keep artist music
@@ -799,7 +802,8 @@ const server = http.createServer(async (req, res) => {
       const genre = body.genre || '';
       const trackId = body.track_id || '';
       const bpm = body.bpm || 0;
-      const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [], bpm };
+      const audioStartSec = parseInt(body.audio_start_sec) || 0;
+      const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [], bpm, audioStartSec };
 
       // Check if audio file exists for this track
       let audioFilePath = null;

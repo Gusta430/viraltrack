@@ -571,6 +571,7 @@ Respond ONLY with JSON.`;
       posting_strategy: JSON.stringify(result.posting_strategy || {}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
+      audio_duration: audioFeatures?.duration || null,
       audio_analyzed: audioFeatures?.analyzed || false,
       status: 'completed', completed_at: new Date().toISOString(),
     };
