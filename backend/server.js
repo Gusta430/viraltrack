@@ -391,7 +391,7 @@ function buildScenePrompts(lyricLines, genre, title, artist, moodTags) {
   return uniqueScenes.slice(0, numImages);
 }
 
-async function processVideoGeneration(videoId, lyricLines, falKey, genre, songContext) {
+async function processVideoGeneration(videoId, lyricLines, falKey, genre, songContext, audioFilePath = null) {
   try {
     const { title, artist, mood_tags } = songContext || {};
     console.log(`🎬 Starting generation ${videoId}: ${lyricLines.length} lyrics, genre: ${genre}, title: ${title}`);
@@ -426,7 +426,7 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
       return;
     }
 
-    await buildVideoFromImages(videoId, imageUrls, lyricLines, songContext);
+    await buildVideoFromImages(videoId, imageUrls, lyricLines, songContext, audioFilePath);
 
   } catch (err) {
     console.error(`❌ Video ${videoId} failed:`, err.message);
@@ -435,7 +435,7 @@ async function processVideoGeneration(videoId, lyricLines, falKey, genre, songCo
 }
 
 // Separated so it can be called from recovery too
-async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext) {
+async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext, audioFilePath = null) {
   try {
     console.log(`🎬 Building MP4 with FFmpeg: ${FFMPEG_BIN}`);
 
@@ -465,8 +465,52 @@ async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext)
     const totalDuration = Math.max(8, imagePaths.length * clampedSecondsPerLine);
     console.log(`🎵 Timing: BPM=${bpm}, ${clampedSecondsPerLine.toFixed(2)}s per line, total=${totalDuration.toFixed(1)}s`);
 
+    const silentPath = path.join(VIDS_DIR, `${videoId}-silent.mp4`);
     const outputPath = path.join(VIDS_DIR, `${videoId}-lyrics.mp4`);
-    await createLyricsVideo(imagePaths, outputPath, lyricLines, totalDuration);
+
+    // Build silent video first
+    await createLyricsVideo(imagePaths, silentPath, lyricLines, totalDuration);
+
+    if (!fs.existsSync(silentPath) || fs.statSync(silentPath).size < 1000) {
+      console.log('⚠️ Silent video missing or too small — marking completed with images only');
+      await db.updateVideoGeneration(videoId, { status: 'completed' });
+      imagePaths.forEach(p => fs.unlink(p, () => {}));
+      return;
+    }
+
+    // ── MUX AUDIO onto video ──
+    if (audioFilePath && fs.existsSync(audioFilePath)) {
+      try {
+        console.log(`🎵 Muxing audio from ${path.basename(audioFilePath)} onto video...`);
+        // Combine video + audio, trim audio to match video length, use shortest stream
+        await ffmpegRun([
+          '-y',
+          '-i', silentPath,
+          '-i', audioFilePath,
+          '-c:v', 'copy',
+          '-c:a', 'aac', '-b:a', '192k',
+          '-t', totalDuration.toFixed(2),
+          '-shortest',
+          '-movflags', '+faststart',
+          outputPath
+        ]);
+        console.log(`🎵 Audio muxed successfully`);
+        // Clean up silent version
+        fs.unlink(silentPath, () => {});
+        // Clean up the source audio file — we don't keep artist music
+        fs.unlink(audioFilePath, () => {});
+      } catch (audioErr) {
+        console.log(`⚠️ Audio mux failed: ${audioErr.message} — using silent video`);
+        // Fall back to silent video
+        if (fs.existsSync(silentPath)) {
+          fs.renameSync(silentPath, outputPath);
+        }
+      }
+    } else {
+      // No audio file — just rename the silent video
+      console.log(`🎬 No audio file available — video will be silent`);
+      fs.renameSync(silentPath, outputPath);
+    }
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
       const mb = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
@@ -669,10 +713,7 @@ const server = http.createServer(async (req, res) => {
       await db.updateAnalysis(analysisId, result);
       await db.updateTrack(track.id, { status: 'analyzed' });
       await db.createReport({ id: uuid(), track_id: track.id, analysis_id: analysisId, type: 'analysis', title: `${track.title} - Analysis`, status: 'complete' });
-      // Delete uploaded audio file after analysis — we never keep artist music
-      if (track.filename) {
-        try { fs.unlinkSync(path.join(UPLOADS_DIR, track.filename)); } catch(e) {}
-      }
+      // Keep audio file for video generation — it will be cleaned up after video is built or by the cleanup timer
       return json(res, { track: await db.getTrack(track.id), analysis: await db.getAnalysis(analysisId) });
     }
 
@@ -759,11 +800,25 @@ const server = http.createServer(async (req, res) => {
       const trackId = body.track_id || '';
       const bpm = body.bpm || 0;
       const songContext = { title: body.title || '', artist: body.artist || '', mood_tags: body.mood_tags || [], bpm };
+
+      // Check if audio file exists for this track
+      let audioFilePath = null;
+      if (trackId) {
+        const srcTrack = await db.getTrack(trackId);
+        if (srcTrack && srcTrack.filename) {
+          const aPath = path.join(UPLOADS_DIR, srcTrack.filename);
+          if (fs.existsSync(aPath)) {
+            audioFilePath = aPath;
+            console.log(`🎵 Audio file found for video: ${srcTrack.filename}`);
+          }
+        }
+      }
+
       await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: genre + ' lyrics slideshow', status: 'processing', request_id: 'local', lyric_lines: JSON.stringify(lyricLines), track_id: trackId });
       recordVideoGeneration(user.id, lyricLines.length);
 
       // Fire background process: generate images → build slideshow → update DB
-      processVideoGeneration(videoId, lyricLines, FAL_KEY, genre, songContext).catch(err => {
+      processVideoGeneration(videoId, lyricLines, FAL_KEY, genre, songContext, audioFilePath).catch(err => {
         console.error(`❌ Unhandled video error ${videoId}:`, err);
         db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message || 'Unknown error' }).catch(() => {});
       });
@@ -883,9 +938,20 @@ async function recoverStuckVideos() {
           console.log(`⚠️ Video ${video.id}: no FFmpeg, marked completed with images`);
           continue;
         }
-        console.log(`🔄 Recovering video ${video.id} — ${imageUrls.length} images, ${lyricLines.length} lyrics`);
+        // Try to find audio file for this track
+        let recoveryAudioPath = null;
+        if (video.track_id) {
+          try {
+            const srcTrack = await db.getTrack(video.track_id);
+            if (srcTrack && srcTrack.filename) {
+              const aPath = path.join(UPLOADS_DIR, srcTrack.filename);
+              if (fs.existsSync(aPath)) recoveryAudioPath = aPath;
+            }
+          } catch(e) {}
+        }
+        console.log(`🔄 Recovering video ${video.id} — ${imageUrls.length} images, ${lyricLines.length} lyrics${recoveryAudioPath ? ', with audio' : ''}`);
         // Fire recovery in background
-        buildVideoFromImages(video.id, imageUrls, lyricLines, { bpm: 120 }).catch(err => {
+        buildVideoFromImages(video.id, imageUrls, lyricLines, { bpm: 120 }, recoveryAudioPath).catch(err => {
           console.error(`❌ Recovery failed for ${video.id}:`, err.message);
         });
       } catch (e) {
@@ -906,6 +972,24 @@ db.init().then(() => {
 
     // Recover any video builds interrupted by restart
     setTimeout(() => recoverStuckVideos(), 3000);
+
+    // ── Cleanup: delete audio files older than 24 hours ──
+    setInterval(() => {
+      try {
+        const now = Date.now();
+        const files = fs.readdirSync(UPLOADS_DIR);
+        let cleaned = 0;
+        for (const f of files) {
+          const fp = path.join(UPLOADS_DIR, f);
+          const stat = fs.statSync(fp);
+          if (now - stat.mtimeMs > 24 * 60 * 60 * 1000) {
+            fs.unlinkSync(fp);
+            cleaned++;
+          }
+        }
+        if (cleaned) console.log(`🧹 Cleaned up ${cleaned} old audio file(s)`);
+      } catch(e) {}
+    }, 60 * 60 * 1000); // check every hour
 
     // ── Keep-alive: prevent hosting platforms from sleeping the server ──
     // Pings itself every 14 minutes (Render free tier sleeps after 15 min idle)
