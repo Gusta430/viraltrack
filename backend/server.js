@@ -533,6 +533,40 @@ async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext,
   }
 }
 
+// ── TikTok token refresh helper ──
+async function refreshTikTokToken(refreshToken) {
+  const TT_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
+  const TT_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
+  if (!TT_CLIENT_KEY || !TT_CLIENT_SECRET) return null;
+
+  const body = new URLSearchParams({
+    client_key: TT_CLIENT_KEY,
+    client_secret: TT_CLIENT_SECRET,
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken
+  }).toString();
+
+  return new Promise((resolve, reject) => {
+    const r = https.request({
+      hostname: 'open.tiktokapis.com',
+      path: '/v2/oauth/token/',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) }
+    }, resp => {
+      const chunks = []; resp.on('data', c => chunks.push(c));
+      resp.on('end', () => {
+        try {
+          const data = JSON.parse(Buffer.concat(chunks).toString());
+          if (data.access_token) resolve(data);
+          else resolve(null);
+        } catch(e) { resolve(null); }
+      });
+    });
+    r.on('error', () => resolve(null));
+    r.write(body); r.end();
+  });
+}
+
 const uuid = () => crypto.randomUUID();
 const MIME_TYPES = { '.html':'text/html','.css':'text/css','.js':'application/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon' };
 
@@ -625,6 +659,87 @@ const server = http.createServer(async (req, res) => {
     // ── Health check (public, no auth — used by keep-alive + frontend warm-up) ──
     if (p === '/api/health' && method === 'GET') {
       return json(res, { status: 'ok', uptime: Math.floor(process.uptime()) });
+    }
+
+    // ── TikTok OAuth callback (public — TikTok redirects here, no auth header) ──
+    if (p === '/api/tiktok/callback' && method === 'GET') {
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state'); // contains our user token
+      const error = url.searchParams.get('error');
+
+      if (error || !code || !state) {
+        // Redirect back to app with error
+        res.writeHead(302, { 'Location': '/?tiktok=error&reason=' + encodeURIComponent(error || 'no_code') });
+        res.end();
+        return;
+      }
+
+      try {
+        // Exchange authorization code for access token
+        const TT_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
+        const TT_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
+        const TT_REDIRECT_URI = (process.env.RENDER_EXTERNAL_URL || process.env.APP_URL || 'http://localhost:3000') + '/api/tiktok/callback';
+
+        const tokenBody = new URLSearchParams({
+          client_key: TT_CLIENT_KEY,
+          client_secret: TT_CLIENT_SECRET,
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: TT_REDIRECT_URI
+        }).toString();
+
+        const tokenRes = await new Promise((resolve, reject) => {
+          const r = https.request({
+            hostname: 'open.tiktokapis.com',
+            path: '/v2/oauth/token/',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(tokenBody) }
+          }, resp => {
+            const chunks = []; resp.on('data', c => chunks.push(c));
+            resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
+          });
+          r.on('error', reject); r.write(tokenBody); r.end();
+        });
+
+        console.log('🎵 TikTok token response:', JSON.stringify(tokenRes).substring(0, 300));
+
+        if (tokenRes.error || !tokenRes.access_token) {
+          res.writeHead(302, { 'Location': '/?tiktok=error&reason=' + encodeURIComponent(tokenRes.error_description || tokenRes.error || 'token_exchange_failed') });
+          res.end();
+          return;
+        }
+
+        // Validate the state token and find the user
+        const tokenUser = await db.getUserByToken(state);
+        if (!tokenUser) {
+          res.writeHead(302, { 'Location': '/?tiktok=error&reason=invalid_session' });
+          res.end();
+          return;
+        }
+
+        // Calculate expiry timestamp
+        const expiresAt = tokenRes.expires_in
+          ? new Date(Date.now() + tokenRes.expires_in * 1000).toISOString()
+          : null;
+
+        // Save tokens to DB
+        await db.saveTikTokToken(tokenUser.id, {
+          access_token: tokenRes.access_token,
+          refresh_token: tokenRes.refresh_token || null,
+          open_id: tokenRes.open_id || null,
+          expires_at: expiresAt,
+          scope: tokenRes.scope || null
+        });
+
+        console.log(`✅ TikTok connected for user ${tokenUser.email}`);
+        res.writeHead(302, { 'Location': '/?tiktok=connected' });
+        res.end();
+      } catch (err) {
+        console.error('❌ TikTok callback error:', err.message);
+        res.writeHead(302, { 'Location': '/?tiktok=error&reason=' + encodeURIComponent(err.message) });
+        res.end();
+      }
+      return;
     }
 
     // ── Public stats (track count for landing page) ──
@@ -856,6 +971,205 @@ const server = http.createServer(async (req, res) => {
         return json(res, { ...video, status: 'processing' });
       }
       return json(res, video);
+    }
+
+    // ── TIKTOK INTEGRATION (protected) ──
+
+    // Start OAuth flow — redirect user to TikTok authorization
+    if (p === '/api/tiktok/auth' && method === 'GET') {
+      const TT_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
+      if (!TT_CLIENT_KEY) return json(res, { error: 'TikTok integration not configured. Set TIKTOK_CLIENT_KEY and TIKTOK_CLIENT_SECRET env vars.' }, 500);
+
+      const TT_REDIRECT_URI = (process.env.RENDER_EXTERNAL_URL || process.env.APP_URL || 'http://localhost:3000') + '/api/tiktok/callback';
+      const csrfState = authToken; // Use auth token as state — we verify it in callback
+      const scopes = 'user.info.basic,video.publish,video.upload';
+
+      const authUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${TT_CLIENT_KEY}&response_type=code&scope=${scopes}&redirect_uri=${encodeURIComponent(TT_REDIRECT_URI)}&state=${csrfState}`;
+
+      return json(res, { auth_url: authUrl });
+    }
+
+    // Check if TikTok is connected
+    if (p === '/api/tiktok/status' && method === 'GET') {
+      const tt = await db.getTikTokToken(user.id);
+      if (!tt) return json(res, { connected: false });
+
+      // Check if token is expired
+      const expired = tt.expires_at && new Date(tt.expires_at) < new Date();
+      if (expired && tt.refresh_token) {
+        // Try to refresh
+        try {
+          const refreshed = await refreshTikTokToken(tt.refresh_token);
+          if (refreshed) {
+            const newExpiry = refreshed.expires_in
+              ? new Date(Date.now() + refreshed.expires_in * 1000).toISOString()
+              : null;
+            await db.updateTikTokToken(user.id, refreshed.access_token, refreshed.refresh_token, newExpiry);
+            return json(res, { connected: true, open_id: tt.open_id, refreshed: true });
+          }
+        } catch(e) {
+          console.error('TikTok refresh failed:', e.message);
+        }
+        // Refresh failed — token is dead
+        return json(res, { connected: false, expired: true, reason: 'Token expired. Please reconnect.' });
+      }
+
+      return json(res, { connected: !expired, open_id: tt.open_id, expires_at: tt.expires_at });
+    }
+
+    // Disconnect TikTok
+    if (p === '/api/tiktok/disconnect' && method === 'POST') {
+      await db.deleteTikTokToken(user.id);
+      return json(res, { success: true });
+    }
+
+    // Publish video to TikTok
+    if (p === '/api/tiktok/publish' && method === 'POST') {
+      const tt = await db.getTikTokToken(user.id);
+      if (!tt) return json(res, { error: 'TikTok not connected. Connect your account in Settings first.' }, 400);
+
+      const body = await parseBody(req);
+      const videoId = body.video_id;
+      const caption = body.caption || '';
+
+      if (!videoId) return json(res, { error: 'No video specified' }, 400);
+
+      // Find the video file on disk
+      const videoFile = path.join(VIDS_DIR, videoId + '-lyrics.mp4');
+      if (!fs.existsSync(videoFile)) return json(res, { error: 'Video file not found. Generate a video first.' }, 404);
+
+      const fileSize = fs.statSync(videoFile).size;
+      const maxSize = 64 * 1024 * 1024; // TikTok allows up to 64MB for direct upload
+      if (fileSize > maxSize) return json(res, { error: 'Video too large for TikTok upload (max 64MB)' }, 400);
+
+      try {
+        // Check token expiry, refresh if needed
+        let accessToken = tt.access_token;
+        if (tt.expires_at && new Date(tt.expires_at) < new Date() && tt.refresh_token) {
+          const refreshed = await refreshTikTokToken(tt.refresh_token);
+          if (refreshed && refreshed.access_token) {
+            accessToken = refreshed.access_token;
+            const newExpiry = refreshed.expires_in
+              ? new Date(Date.now() + refreshed.expires_in * 1000).toISOString()
+              : null;
+            await db.updateTikTokToken(user.id, accessToken, refreshed.refresh_token, newExpiry);
+          } else {
+            return json(res, { error: 'TikTok session expired. Please reconnect in Settings.' }, 401);
+          }
+        }
+
+        // Step 1: Initialize video upload (Direct Post)
+        const initBody = JSON.stringify({
+          post_info: {
+            title: caption.substring(0, 150), // TikTok max caption 150 chars
+            privacy_level: 'SELF_ONLY', // Start as private — user can change on TikTok
+            disable_duet: false,
+            disable_comment: false,
+            disable_stitch: false
+          },
+          source_info: {
+            source: 'FILE_UPLOAD',
+            video_size: fileSize,
+            chunk_size: fileSize, // Single chunk for small videos
+            total_chunk_count: 1
+          }
+        });
+
+        const initRes = await new Promise((resolve, reject) => {
+          const r = https.request({
+            hostname: 'open.tiktokapis.com',
+            path: '/v2/post/publish/video/init/',
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + accessToken,
+              'Content-Type': 'application/json; charset=UTF-8',
+              'Content-Length': Buffer.byteLength(initBody)
+            }
+          }, resp => {
+            const chunks = []; resp.on('data', c => chunks.push(c));
+            resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
+          });
+          r.on('error', reject); r.write(initBody); r.end();
+        });
+
+        console.log('🎵 TikTok init response:', JSON.stringify(initRes).substring(0, 500));
+
+        if (initRes.error?.code !== 'ok' && initRes.error?.code) {
+          return json(res, { error: `TikTok error: ${initRes.error.message || initRes.error.code}` }, 400);
+        }
+
+        const uploadUrl = initRes.data?.upload_url;
+        const publishId = initRes.data?.publish_id;
+
+        if (!uploadUrl) {
+          return json(res, { error: 'TikTok did not return an upload URL. ' + JSON.stringify(initRes).substring(0, 200) }, 500);
+        }
+
+        // Step 2: Upload the video file to the upload URL
+        const videoData = fs.readFileSync(videoFile);
+        const uploadUrlObj = new URL(uploadUrl);
+
+        await new Promise((resolve, reject) => {
+          const r = https.request({
+            hostname: uploadUrlObj.hostname,
+            path: uploadUrlObj.pathname + uploadUrlObj.search,
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'video/mp4',
+              'Content-Length': fileSize,
+              'Content-Range': `bytes 0-${fileSize - 1}/${fileSize}`
+            }
+          }, resp => {
+            const chunks = []; resp.on('data', c => chunks.push(c));
+            resp.on('end', () => {
+              if (resp.statusCode >= 200 && resp.statusCode < 300) resolve();
+              else reject(new Error(`Upload failed: HTTP ${resp.statusCode}`));
+            });
+          });
+          r.on('error', reject); r.write(videoData); r.end();
+        });
+
+        console.log(`✅ Video uploaded to TikTok (publish_id: ${publishId})`);
+        return json(res, {
+          success: true,
+          publish_id: publishId,
+          message: 'Video uploaded to TikTok! It will appear as a private draft — open TikTok to review and publish it.'
+        });
+
+      } catch (err) {
+        console.error('❌ TikTok publish error:', err.message);
+        return json(res, { error: 'Failed to publish to TikTok: ' + err.message }, 500);
+      }
+    }
+
+    // Check TikTok publish status
+    const ttStatusMatch = p.match(/^\/api\/tiktok\/publish\/([^/]+)\/status$/);
+    if (ttStatusMatch && method === 'GET') {
+      const tt = await db.getTikTokToken(user.id);
+      if (!tt) return json(res, { error: 'TikTok not connected' }, 400);
+
+      try {
+        const statusBody = JSON.stringify({ publish_id: ttStatusMatch[1] });
+        const statusRes = await new Promise((resolve, reject) => {
+          const r = https.request({
+            hostname: 'open.tiktokapis.com',
+            path: '/v2/post/publish/status/fetch/',
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + tt.access_token,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(statusBody)
+            }
+          }, resp => {
+            const chunks = []; resp.on('data', c => chunks.push(c));
+            resp.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString())); } catch(e) { reject(e); } });
+          });
+          r.on('error', reject); r.write(statusBody); r.end();
+        });
+        return json(res, statusRes);
+      } catch(err) {
+        return json(res, { error: err.message }, 500);
+      }
     }
 
     // ── ADMIN (only your account) ──

@@ -917,6 +917,23 @@
     <div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div><div class="fg"><label class="fl">Name</label><input class="fi" id="st-n"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="st-e" type="email"></div><button class="bt bs" id="btn-sp">Save changes</button></div>
     <div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notifications</div><div class="tr"><div><div class="trl">Email notifications</div><div class="trd">Receive updates about your analyses</div></div><div class="tg on" id="tg-em" data-k="email_notifications"></div></div><div class="tr"><div><div class="trl">Marketing emails</div><div class="trd">Tips and best practices</div></div><div class="tg" id="tg-mk" data-k="marketing_emails"></div></div></div>
     <div class="stc"><div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Subscription</div><p class="pc">Current plan</p><p class="pn" id="st-pl">Pro Trial</p><button class="bt bs" style="margin-top:14px">Upgrade plan</button></div>
+    <div class="stc" id="tiktok-settings-card">
+      <div class="stt"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12a4 4 0 1 0 4-4M9 12a4 4 0 0 1 4-4M9 12H4m9-4V3c2 0 5 1 5 5"/></svg>TikTok</div>
+      <div id="tiktok-status" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div id="tt-dot" style="width:10px;height:10px;border-radius:50%;background:var(--t3)"></div>
+          <span id="tt-label" style="font-size:13px;color:var(--t2)">Checking...</span>
+        </div>
+      </div>
+      <div id="tiktok-actions">
+        <button class="bt bp" id="btn-tt-connect" style="display:none;gap:8px;font-size:13px;padding:10px 18px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+          Connect TikTok Account
+        </button>
+        <button class="bt" id="btn-tt-disconnect" style="display:none;font-size:12px;padding:8px 14px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:var(--rs)">Disconnect</button>
+      </div>
+      <p style="font-size:11px;color:var(--t3);margin-top:10px;line-height:1.5">Connect your TikTok account to post lyrics videos directly from ViralTrack. Videos are uploaded as private drafts — you can review and publish them in the TikTok app.</p>
+    </div>
     <button class="logout-btn" id="btn-logout">Log out</button>
   </div>
 <footer class="site-footer">© 2026 ViralTrack · <a href="/terms.html" target="_blank">Terms of Service</a> · <a href="/privacy.html" target="_blank">Privacy Policy</a></footer>
@@ -959,6 +976,7 @@ function showApp(user) {
   document.getElementById('uav').textContent = user.name.split(' ').map(n=>n[0]).join('').toUpperCase();
   document.getElementById('upl').textContent = user.plan || 'Free Trial';
   loadDash();
+  checkTikTokStatus();
   if (user.email === 'andre.s.gustad@gmail.com') {
     document.getElementById('admin-nav').style.display = 'flex';
   }
@@ -1380,7 +1398,7 @@ function showPromoPlan(track,plan){
 async function loadReports(){try{const reps=await(await authFetch(A+'/reports')).json();const el=document.getElementById('rlist');if(!reps.length){el.innerHTML='<div class="es"><p>No reports yet. Analyze a track to create your first report.</p></div>';return}el.innerHTML=reps.map(r=>`<div class="ri" data-t="${r.track_id}" data-type="${r.type}"><div class="ric"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="rim"><div class="rit">${r.title}</div><div class="ris">${r.track_artist} · ${new Date(r.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div></div><div class="ria"><span class="bg ${r.type==='promo_plan'?'bg-p':'bg-g'}">${r.type==='promo_plan'?'Promo Plan':'Analysis'}</span><button class="del-btn" data-del="${r.track_id}" onclick="event.stopPropagation();deleteTrack(this.dataset.del)">✕</button></div></div>`).join('');el.querySelectorAll('.ri').forEach(i=>i.addEventListener('click',async()=>{try{const d=await(await authFetch(A+'/tracks/'+i.dataset.t)).json();if(i.dataset.type==='promo_plan'&&d.promo_plan)showPromoPlan(d,d.promo_plan);else if(d.analysis)showAn(d,d.analysis);else if(d.promo_plan)showPromoPlan(d,d.promo_plan)}catch(e){console.error(e)}}))}catch(e){}}
 
 // ── SETTINGS ──
-async function loadSettings(){try{const s=await(await authFetch(A+'/settings')).json();document.getElementById('st-n').value=s.user_name||'';document.getElementById('st-e').value=s.user_email||'';document.getElementById('st-pl').textContent=s.plan||'Free';document.getElementById('tg-em').classList.toggle('on',s.email_notifications==='1');document.getElementById('tg-mk').classList.toggle('on',s.marketing_emails==='1')}catch(e){}}
+async function loadSettings(){try{const s=await(await authFetch(A+'/settings')).json();document.getElementById('st-n').value=s.user_name||'';document.getElementById('st-e').value=s.user_email||'';document.getElementById('st-pl').textContent=s.plan||'Free';document.getElementById('tg-em').classList.toggle('on',s.email_notifications==='1');document.getElementById('tg-mk').classList.toggle('on',s.marketing_emails==='1')}catch(e){} checkTikTokStatus();}
 document.getElementById('btn-sp').addEventListener('click',async()=>{await authFetch(A+'/settings',{method:'PUT',headers:authHeaders(),body:JSON.stringify({user_name:document.getElementById('st-n').value,user_email:document.getElementById('st-e').value})});document.getElementById('udn').textContent=document.getElementById('st-n').value;document.getElementById('uav').textContent=document.getElementById('st-n').value.split(' ').map(n=>n[0]).join('').toUpperCase()});
 document.querySelectorAll('.tg').forEach(t=>t.addEventListener('click',async()=>{t.classList.toggle('on');const k=t.dataset.k;if(k)await authFetch(A+'/settings',{method:'PUT',headers:authHeaders(),body:JSON.stringify({[k]:t.classList.contains('on')?'1':'0'})})}));
 
@@ -1504,13 +1522,17 @@ function showVideoResult(row, data) {
         <div style="position:relative;width:100%;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#000">
           <video id="${sid}" controls playsinline loop style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" src="${vUrl}"></video>
         </div>
-        <a class="bt bp" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;text-align:center;text-decoration:none;font-size:14px;font-weight:600;padding:14px 16px;margin-top:12px;border-radius:10px" href="${vUrl}" download="viraltrack-lyrics.mp4">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download MP4
-        </a>
-        <div style="font-size:12px;color:var(--t2);margin-top:8px;text-align:center;line-height:1.5">
-          Silent video — add your song on TikTok / Reels
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <a class="bt bp" style="display:flex;align-items:center;justify-content:center;gap:8px;flex:1;text-align:center;text-decoration:none;font-size:13px;font-weight:600;padding:12px 14px;border-radius:10px" href="${vUrl}" download="viraltrack-lyrics.mp4">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </a>
+          <button class="bt tt-publish-btn" data-video-id="${data.id}" style="display:flex;align-items:center;justify-content:center;gap:8px;flex:1;font-size:13px;font-weight:600;padding:12px 14px;border-radius:10px;background:rgba(0,0,0,.9);color:#fff;border:1px solid rgba(255,255,255,.15);cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12a4 4 0 1 0 4-4M9 12a4 4 0 0 1 4-4M9 12H4m9-4V3c2 0 5 1 5 5"/></svg>
+            Post to TikTok
+          </button>
         </div>
+        <div id="tt-publish-msg-${data.id}" style="display:none;font-size:12px;margin-top:8px;text-align:center;line-height:1.5;padding:8px 12px;border-radius:8px"></div>
       </div>`;
     const vid = document.getElementById(sid);
     if (vid) vid.play().catch(() => {});
@@ -1851,6 +1873,129 @@ async function generateShareCard(trackId, title, artist, genre, energy, moods) {
 }
 
 // ── INIT ──
+// ── TIKTOK INTEGRATION ──
+let tiktokConnected = false;
+
+async function checkTikTokStatus() {
+  try {
+    const res = await authFetch(A + '/tiktok/status');
+    const data = await res.json();
+    tiktokConnected = data.connected;
+    const dot = document.getElementById('tt-dot');
+    const label = document.getElementById('tt-label');
+    const connectBtn = document.getElementById('btn-tt-connect');
+    const disconnectBtn = document.getElementById('btn-tt-disconnect');
+    if (data.connected) {
+      dot.style.background = 'var(--gr)';
+      label.textContent = 'Connected';
+      label.style.color = 'var(--gr)';
+      connectBtn.style.display = 'none';
+      disconnectBtn.style.display = 'inline-flex';
+    } else {
+      dot.style.background = 'var(--t3)';
+      label.textContent = data.expired ? 'Expired — reconnect' : 'Not connected';
+      label.style.color = 'var(--t2)';
+      connectBtn.style.display = 'inline-flex';
+      disconnectBtn.style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('tt-label').textContent = 'Unable to check';
+  }
+}
+
+document.getElementById('btn-tt-connect').addEventListener('click', async () => {
+  try {
+    const res = await authFetch(A + '/tiktok/auth');
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    if (data.auth_url) window.location.href = data.auth_url;
+  } catch(e) { alert('Failed to start TikTok connection.'); }
+});
+
+document.getElementById('btn-tt-disconnect').addEventListener('click', async () => {
+  if (!confirm('Disconnect your TikTok account?')) return;
+  try {
+    await authFetch(A + '/tiktok/disconnect', { method: 'POST', headers: authHeaders() });
+    tiktokConnected = false;
+    checkTikTokStatus();
+  } catch(e) { alert('Failed to disconnect.'); }
+});
+
+// Handle TikTok publish button clicks (delegated)
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.tt-publish-btn');
+  if (!btn) return;
+  const videoId = btn.dataset.videoId;
+  if (!videoId) return;
+
+  if (!tiktokConnected) {
+    alert('Connect your TikTok account first! Go to Settings → TikTok.');
+    return;
+  }
+
+  const msgEl = document.getElementById('tt-publish-msg-' + videoId);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> Posting...';
+
+  try {
+    const res = await authFetch(A + '/tiktok/publish', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ video_id: videoId, caption: document.title + ' #viraltrack #music #lyrics' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      btn.innerHTML = 'Posted!';
+      btn.style.background = 'rgba(52,211,153,.15)';
+      btn.style.color = 'var(--gr)';
+      btn.style.borderColor = 'rgba(52,211,153,.3)';
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(52,211,153,.08)';
+        msgEl.style.color = 'var(--gr)';
+        msgEl.textContent = data.message || 'Video uploaded to TikTok as a private draft!';
+      }
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12a4 4 0 1 0 4-4M9 12a4 4 0 0 1 4-4M9 12H4m9-4V3c2 0 5 1 5 5"/></svg> Retry';
+      if (msgEl) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(239,68,68,.08)';
+        msgEl.style.color = '#ef4444';
+        msgEl.textContent = data.error || 'Failed to post. Try again.';
+      }
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = 'Retry';
+    if (msgEl) {
+      msgEl.style.display = 'block';
+      msgEl.style.background = 'rgba(239,68,68,.08)';
+      msgEl.style.color = '#ef4444';
+      msgEl.textContent = 'Connection error. Check your network.';
+    }
+  }
+});
+
+// Check URL params for TikTok OAuth callback results
+(function checkTikTokCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const ttStatus = params.get('tiktok');
+  if (ttStatus === 'connected') {
+    // Clean URL
+    window.history.replaceState({}, '', '/');
+    setTimeout(() => {
+      alert('TikTok account connected successfully! You can now post videos directly from ViralTrack.');
+    }, 500);
+  } else if (ttStatus === 'error') {
+    const reason = params.get('reason') || 'Unknown error';
+    window.history.replaceState({}, '', '/');
+    setTimeout(() => {
+      alert('TikTok connection failed: ' + reason);
+    }, 500);
+  }
+})();
+
 // Warm up backend immediately so it's ready by the time user clicks login/signup
 fetch(A + '/health').catch(() => {});
 // Fetch live track count for landing page

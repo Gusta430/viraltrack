@@ -119,6 +119,18 @@ async function initDB() {
   try { await run('ALTER TABLE video_generations ADD COLUMN image_urls TEXT'); } catch(e) {}
   try { await run('ALTER TABLE video_generations ADD COLUMN track_id TEXT'); } catch(e) {}
   await run('CREATE TABLE IF NOT EXISTS trends (id INTEGER PRIMARY KEY, data TEXT, updated_at TEXT DEFAULT (CURRENT_TIMESTAMP))');
+
+  // TikTok OAuth tokens per user
+  await run(`CREATE TABLE IF NOT EXISTS tiktok_tokens (
+    user_id TEXT PRIMARY KEY,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    open_id TEXT,
+    expires_at TEXT,
+    scope TEXT,
+    connected_at TEXT DEFAULT (CURRENT_TIMESTAMP)
+  )`);
+
   console.log('✅ Database ready!');
 }
 
@@ -318,6 +330,27 @@ class Database {
   async saveTrends(data) {
     await run('DELETE FROM trends');
     await run('INSERT INTO trends (id, data) VALUES (1, ?)', [JSON.stringify(data)]);
+  }
+
+  // TikTok tokens
+  async saveTikTokToken(userId, tokenData) {
+    await run('DELETE FROM tiktok_tokens WHERE user_id = ?', [userId]);
+    await run('INSERT INTO tiktok_tokens (user_id, access_token, refresh_token, open_id, expires_at, scope) VALUES (?,?,?,?,?,?)',
+      [userId, tokenData.access_token, tokenData.refresh_token || null, tokenData.open_id || null, tokenData.expires_at || null, tokenData.scope || null]);
+  }
+
+  async getTikTokToken(userId) {
+    const rows = await execute('SELECT * FROM tiktok_tokens WHERE user_id = ?', [userId]);
+    return rows[0] || null;
+  }
+
+  async deleteTikTokToken(userId) {
+    await run('DELETE FROM tiktok_tokens WHERE user_id = ?', [userId]);
+  }
+
+  async updateTikTokToken(userId, accessToken, refreshToken, expiresAt) {
+    await run('UPDATE tiktok_tokens SET access_token = ?, refresh_token = ?, expires_at = ? WHERE user_id = ?',
+      [accessToken, refreshToken || null, expiresAt || null, userId]);
   }
 
   // Dashboard
