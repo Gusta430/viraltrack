@@ -4,6 +4,7 @@
  */
 
 import https from 'https';
+import { formatTrendsForPrompt } from './trend-service.js';
 
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
 
@@ -536,9 +537,7 @@ BPM: ${audioFeatures.bpm} | Key: ${audioFeatures.key} | Energy: ${audioFeatures.
 Duration: ${audioFeatures.duration}s
 Peak moments: ${audioFeatures.peakMoments?.map(p => p.label).join(', ') || 'unknown'}` : 'No audio uploaded — estimate from genre. Mark as estimates.'}
 
-${trends && trends.trends && trends.trends.length > 0 ? `TRENDING FORMATS (adapt 1-2 to this song — don't force):
-${trends.trends.slice(0, 6).map(t => '- ' + t.name + ': ' + t.description).join('\n')}
-Trending hashtags: ${(trends.trending_hashtags || []).join(', ')}` : ''}
+${formatTrendsForPrompt(trends)}
 
 SELF-CHECK (run this for EVERY video_edit and diy_content_idea before finalizing):
 1. Does the "lyric_anchor.exact_line" contain a WORD-FOR-WORD quote from the lyrics above? If not → fix it
@@ -828,9 +827,7 @@ BPM: ${audioFeatures.bpm} | Key: ${audioFeatures.key} | Energy: ${audioFeatures.
 Duration: ${audioFeatures.duration}s
 Peak moments: ${audioFeatures.peakMoments?.map(p => p.label).join(', ') || 'unknown'}` : 'No audio uploaded — estimate from genre. Mark as estimates.'}
 
-${trends && trends.trends && trends.trends.length > 0 ? `TRENDING FORMATS (adapt 1-2 to beat content):
-${trends.trends.slice(0, 6).map(t => '- ' + t.name + ': ' + t.description).join('\n')}
-Trending hashtags: ${(trends.trending_hashtags || []).join(', ')}` : ''}
+${formatTrendsForPrompt(trends)}
 
 SELF-CHECK: For each suggestion — "if I swap this beat for any random beat, does this still work?" If yes → rewrite with specific references to THIS beat's sound, vibe, or arrangement.
 

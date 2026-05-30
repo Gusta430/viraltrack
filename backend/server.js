@@ -9,7 +9,7 @@ import ffmpegPath from 'ffmpeg-static';
 import db from './db.js';
 import { analyzeTrack, generatePromoPlan, regenerateSection } from './ai-service.js';
 import { analyzeAudio } from './audio-analysis.js';
-import { getTrends } from './trend-service.js';
+import { getTrends, refreshTrends, formatTrendsForPrompt } from './trend-service.js';
 import { checkAnalysis, checkPromoPlan, checkRegenerate, checkVideoGeneration, recordAnalysis, recordPromoPlan, recordRegenerate, recordVideoGeneration, getUsageStats } from './rate-limiter.js';
 
 // Check FFmpeg availability — try ffmpeg-static first, then system ffmpeg
@@ -1181,20 +1181,10 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/api/admin/trends/autofill' && method === 'POST') {
       if (user.email !== 'andre.s.gustad@gmail.com') return json(res, { error: 'Not authorized' }, 403);
-      const { analyzeTrack } = await import('./ai-service.js');
-      const trendPrompt = 'List 10 current viral TikTok and Instagram Reels trends that musicians can use to promote songs. For each: name and 1-sentence description. Also list 5 trending hashtags. Respond ONLY with JSON: {"trends":[{"name":"","description":"","music_fit":""}],"trending_hashtags":["","","","",""]}';
       try {
-        const https = await import('https');
-        const body = JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1500, messages:[{role:'user',content:trendPrompt}] });
-        const trendRes = await new Promise((resolve,reject) => {
-          const r = https.default.request({ hostname:'api.anthropic.com', path:'/v1/messages', method:'POST', headers:{'Content-Type':'application/json','x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','Content-Length':Buffer.byteLength(body)} }, resp => {
-            const chunks=[]; resp.on('data',c=>chunks.push(c)); resp.on('end',()=>{try{resolve(JSON.parse(Buffer.concat(chunks).toString()))}catch(e){reject(e)}});
-          }); r.on('error',reject); r.write(body); r.end();
-        });
-        const text = trendRes.content?.[0]?.text || '';
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) return json(res, JSON.parse(match[0]));
-        return json(res, { error: 'No trends found' }, 500);
+        const fresh = await refreshTrends();
+        if (fresh) return json(res, fresh);
+        return json(res, { error: 'Failed to fetch trends' }, 500);
       } catch(e) { return json(res, { error: e.message }, 500); }
     }
 
