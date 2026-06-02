@@ -359,75 +359,67 @@ HARD BANNED (ANY of these = entire response invalid):
 - Asking fans to create content or participate in challenges if the artist has under 5K followers
 - Posting times in the wrong timezone for the target region
 
-JSON structure:
+GENRE-SPECIFIC VIRAL STRATEGY:
+Think deeply about how songs in this SPECIFIC GENRE go viral. Different genres have completely different viral mechanics:
+- Drill/Trap: aggressive hooks, quotable punchlines, dark visuals, street credibility
+- R&B/Soul: emotional vulnerability, relationship scenarios, mood lighting, slow-mo
+- Pop: catchy chorus loops, dance-worthy moments, bright/colorful aesthetics
+- Indie/Alternative: aesthetic world-building, artsy visuals, niche community appeal
+- Afrobeats/Amapiano: rhythm-first content, dance challenges that actually work, cultural pride
+- Lo-fi/Chill: study/vibe content, atmospheric visuals, playlist culture
+- Phonk/Pluggnb: car edits, drift videos, aggressive visual effects, bass-heavy moments
+- Country/Folk: storytelling, authenticity, acoustic moments, lifestyle content
+Tailor EVERYTHING to the genre — the hooks, the visual style, the caption voice, the hashtags.
+
+JSON structure (output ONLY these fields — nothing else):
 {
   "tempo_bpm": <number>,
-  "tempo_description": "<what the tempo FEELS like — head-nod? driving pace? late-night slow burn?>",
   "mood_tags": ["<tag1>", "<tag2>", "<tag3>"],
   "energy_percent": <1-100>,
-  "energy_description": "<physical feeling — chest-heavy? floaty? aggressive?>",
   "genre_fit": "<specific subgenre>",
   "lyric_themes": {
     "core_story": "<2-3 sentences: what is this song about? Who's talking, to whom, about what?>",
     "quotable_lines": ["<exact lyric that works as a caption>", "<another>", "<another>"],
     "video_bars": ["<bar 1>", "<bar 2>", "<bar 3>", "<bar 4>", "<bar 5>", "<bar 6>"],
-    "video_bars_section": "<which section these bars come from, e.g. 'Verse 1', 'Chorus', 'Hook'>",
-    "emotional_core": "<the universal feeling that makes listeners think 'this is me'>",
-    "visual_world": "<colors, settings, time of day, textures matching lyrics + sound>"
+    "video_bars_section": "<which section these bars come from>",
+    "emotional_core": "<the universal feeling>",
+    "visual_world": "<colors, settings, time of day, textures>"
   },
   "audience_age": "<age range>",
-  "audience_interests": "<2-3 SPECIFIC subcultures, not demographics>",
-  "audience_platforms": "<platforms ranked by priority>",
-  "audience_content_angle": "<what this audience actually watches and shares>",
-  "audience_key_insight": "<one counterintuitive insight about reaching this audience>",
+  "audience_platforms": "<platforms ranked>",
   "reference_artists": [
-    {"name": "<artist>", "genre": "<genre>", "description": "<WHY tagging this artist helps discovery — e.g. 'Use #[artist] in TikTok bio and captions — their fans actively search this tag and your sound fits their taste'>"},
-    {"name": "<artist>", "genre": "<genre>", "description": "<discovery reason + specific tag usage tip>"},
-    {"name": "<lesser-known artist under 100K listeners>", "genre": "<genre>", "description": "<why this niche tag works — less competition, highly engaged fanbase>"},
-    {"name": "<artist>", "genre": "<genre>", "description": "<tag/hashtag strategy for this reference>"}
+    {"name": "<artist>", "genre": "<genre>", "description": "<WHY tagging helps discovery>"},
+    {"name": "<artist>", "genre": "<genre>", "description": "<discovery reason>"},
+    {"name": "<lesser-known artist under 100K>", "genre": "<genre>", "description": "<niche tag value>"},
+    {"name": "<artist>", "genre": "<genre>", "description": "<tag strategy>"}
   ],
   "discovery_tags": {
     "artist_tags": ["#<artist1>", "#<artist2>", "#<artist3>", "#<artist4>"],
     "genre_tags": ["#<subgenre>", "#<mood>music", "#<scene>"],
     "trending_tags": ["#<relevant trending tag>", "#<another>"],
-    "bio_suggestion": "<one-line bio/description using these references — e.g. 'If you like [artist1] and [artist2], you'll love this'>"
+    "bio_suggestion": "<one-line bio using these references>"
   },
   "video_edits": [
     {
       "title": "<title>",
       "caption_structured": {
-        "hook_line": "<first line — the scroll-stopper. Question, bold claim, or mystery. This is the ONLY line most people read>",
-        "body": "<1-2 lines of story/context — tweet energy, reference a lyric>",
-        "cta": "<call to action that drives the algorithm signal you want — e.g. 'tag someone who needs this' (shares), 'wait for it...' (completion), 'save this for later' (saves)>",
-        "full_caption": "<the complete caption as one string, ready to paste>"
+        "hook_line": "<scroll-stopper first line>",
+        "body": "<1-2 lines story/context>",
+        "cta": "<call to action>",
+        "full_caption": "<complete caption ready to paste>"
       },
-      "hashtags": "<ORDERED: 2 niche tags under 500K first (higher chance of ranking) → 2 mid-size 500K-5M → 1 broad discovery tag. Order matters — TikTok weights earlier tags more>",
-      "duration": "<7-15 sec for max completion>",
-      "timestamp": "<specific song section to use>",
+      "hashtags": "<ORDERED: 2 niche under 500K → 2 mid 500K-5M → 1 broad>",
+      "duration": "<7-15 sec>",
+      "timestamp": "<song section>",
       "platforms": ["TikTok", "Reels"],
       "lyric_anchor": {
-        "exact_line": "<EXACT lyric line quoted word-for-word from the lyrics that this video is built around>",
-        "sound_moment": "<specific sonic element — e.g. 'the 808 drop before the chorus', 'the vocal break at 0:45', 'the key change in verse 2'>",
-        "how_its_used": "<HOW this lyric/sound appears in the video — e.g. 'text overlay appearing word-by-word as artist walks toward camera', 'beat drop syncs with visual transition from dark to bright'>"
+        "exact_line": "<EXACT lyric quoted word-for-word>",
+        "sound_moment": "<specific sonic element>",
+        "how_its_used": "<HOW lyric/sound appears visually>"
       },
-      "concept": "<FULL second-by-second brief: First 2 sec = hook (what stops scroll). Middle = tension or payoff. End = share trigger or loop point. Include camera angle, lighting, edit style — 'handheld warm tungsten slow push-in with grain' not 'cinematic'. MUST reference the specific lyric line and describe how it appears visually>",
-      "cover_frame": "<EXACT frame to use as thumbnail/cover: describe the visual, text overlay if any, and why this frame makes people tap from the profile grid. The cover frame is your second chance to get views — 60% of views come from profile visits, not the feed>",
-      "song_moment": "<which lyric line, beat drop, or energy shift this is built around — QUOTE the exact lyric>",
-      "share_trigger": "<why someone sends this to a friend>",
-      "algorithm_score": {
-        "estimated_completion": "<percentage estimate + why — e.g. '82% — short duration + curiosity hook holds attention'>",
-        "rewatch_potential": "<Low/Medium/High + reason — e.g. 'High — hidden detail viewers catch on second watch'>",
-        "comment_trigger": "<what will make people comment — e.g. 'The lyric reference will make fans debate the meaning'>",
-        "save_trigger": "<why someone saves this — e.g. 'Tutorial element people want to reference later'>",
-        "share_trigger": "<why someone sends this to a friend>"
-      },
-      "cross_post_strategy": {
-        "post_first_on": "<which platform to post on FIRST and why — usually whichever has stronger organic reach for this content type>",
-        "wait_before_repost": "<hours to wait before posting on second platform — typically 24-48h. Posting simultaneously kills reach on both>",
-        "platform_tweaks": "<what to change between platforms — e.g. 'TikTok: add trending sound as secondary. Reels: use original audio only. Shorts: add end screen to channel'>"
-      }
+      "concept": "<FULL second-by-second brief. First 2 sec = hook. Middle = tension/payoff. End = share trigger/loop. Camera angle, lighting, edit style. MUST reference specific lyric and describe visual execution>"
     },
-    {"title":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"concept":"","cover_frame":"","song_moment":"","share_trigger":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":"","share_trigger":""},"cross_post_strategy":{"post_first_on":"","wait_before_repost":"","platform_tweaks":""}}
+    {"title":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"concept":""}
   ],
   "diy_content_ideas": [
     {
@@ -436,59 +428,29 @@ JSON structure:
       "duration": "<length>",
       "virality": <1-100>,
       "lyric_anchor": {
-        "exact_line": "<EXACT lyric line quoted word-for-word that this content is built around>",
-        "sound_moment": "<specific sonic element tied to this idea>",
-        "how_its_used": "<HOW the lyric/sound appears in the content — text overlay, lip sync, visual metaphor, etc.>"
+        "exact_line": "<EXACT lyric quoted word-for-word>",
+        "sound_moment": "<specific sonic element>",
+        "how_its_used": "<HOW lyric/sound appears visually>"
       },
-      "description": "<FULL brief: what to film, how to edit, what the viewer experiences. MUST describe how the specific lyric line or sound moment is used visually — not just 'vibe to the beat'>",
-      "hook": "<what stops the scroll in first 1-2 seconds — reference the specific lyric or sound>",
-      "relatability": "<what universal feeling viewers recognize>",
-      "share_trigger": "<why someone sends this to a friend>",
+      "description": "<FULL brief: what to film, how to edit, how the specific lyric is used visually>",
       "howTo": ["<step 1 — specific>", "<step 2>", "<step 3>"],
       "hashtags": "<niche + broad mix>",
-      "why_it_works": "<psychological trigger — relatability, curiosity, emotion, humor?>",
       "caption_structured": {
         "hook_line": "<scroll-stopping first line>",
         "body": "<story/context>",
-        "cta": "<action that drives algorithm signal>",
+        "cta": "<action>",
         "full_caption": "<complete caption ready to paste>"
-      },
-      "cover_frame": "<what the thumbnail/cover should show>",
-      "algorithm_score": {
-        "estimated_completion": "<% + reason>",
-        "rewatch_potential": "<Low/Medium/High + reason>",
-        "comment_trigger": "<what drives comments>",
-        "save_trigger": "<why someone saves>"
       }
     },
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}}
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"description":"","howTo":["","",""],"hashtags":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"description":"","howTo":["","",""],"hashtags":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"description":"","howTo":["","",""],"hashtags":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""}}
   ],
-  "posting_strategy": {
-    "best_days": ["<day1>", "<day2>", "<day3>"],
-    "best_times": {
-      "tiktok": "<exact time in TARGET REGION timezone + reasoning — e.g. '18:30 CET — post 30 min before the 19:00-21:00 peak so the algorithm has time to test it during high-traffic hours'>",
-      "reels": "<exact time + reasoning>",
-      "youtube_shorts": "<exact time + reasoning>"
-    },
-    "posting_frequency": "<how many posts per week + spacing — e.g. '4x/week, never two days in a row on the same platform. Mon/Wed/Fri/Sun rotation'>",
-    "engagement_window": {
-      "first_5_min": "<what to do immediately after posting — e.g. 'Share to Stories with a poll sticker. Send to 3-5 close friends for early engagement signal'>",
-      "first_30_min": "<stay active and reply to EVERY comment within 30 min — this tells the algorithm the post is generating conversation. Pin a comment that asks a question to drive more replies>",
-      "first_2_hours": "<check analytics: if completion rate is above 60%, share to additional platforms. If below 40%, the hook isn't working — note for next post>",
-      "pin_comment": "<exact comment to pin on the post — should ask a question or create debate to drive reply chains>"
-    },
-    "cross_posting_order": "<which platform first, second, third + time gaps — e.g. 'TikTok first (strongest organic). Wait 24h. Reels second (slightly different crop/caption). Wait 48h. Shorts last (add end screen).'>",
-    "avoid_times": "<when NOT to post and why — e.g. 'Never post Friday 22:00+ in Norway — audience is out, content dies before morning'>"
-  },
-  "pro_tip": "<one specific production tip for THIS song's visual style — not generic>",
-  "creator_tip": "<one growth tactic for this artist's audience tier>",
-  "viral_advice": "<2-3 sentences of specific advice for this artist at their current level>",
+  "viral_advice": "<2-3 sentences: the #1 specific move this artist should make RIGHT NOW to go viral with this song in this genre — not generic, reference lyrics>",
   "viral_keys": {
-    "hook": "<specific hook for THIS song — reference a lyric or sonic moment>",
-    "relatability": "<what universal experience from the lyrics will the audience recognize?>",
-    "share_trigger": "<specific reason someone sends this to a friend>"
+    "hook": "<the specific scroll-stopper for THIS song — reference a lyric or sonic moment that makes people stop>",
+    "relatability": "<what universal experience from the lyrics will the audience recognize and think 'this is me'?>",
+    "share_trigger": "<the specific reason someone sends this to a friend — 'this reminds me of us' or 'you NEED to hear this line'>"
   }
 }`;
 
@@ -553,21 +515,21 @@ Respond ONLY with JSON.`;
     const result = parseJSON(response);
     console.log('✅ Analysis complete!');
     return {
-      tempo_bpm: result.tempo_bpm || 120, tempo_description: result.tempo_description || '',
+      tempo_bpm: result.tempo_bpm || 120, tempo_description: '',
       mood_tags: JSON.stringify(result.mood_tags || []),
-      energy_percent: result.energy_percent || 50, energy_description: result.energy_description || '',
+      energy_percent: result.energy_percent || 50, energy_description: '',
       genre_fit: result.genre_fit || '',
       lyric_themes: JSON.stringify(result.lyric_themes || {}),
-      audience_age: result.audience_age || '', audience_interests: result.audience_interests || '',
-      audience_platforms: result.audience_platforms || '', audience_content_angle: result.audience_content_angle || '',
-      audience_key_insight: result.audience_key_insight || '',
+      audience_age: result.audience_age || '', audience_interests: '',
+      audience_platforms: result.audience_platforms || '', audience_content_angle: '',
+      audience_key_insight: '',
       reference_artists: JSON.stringify(result.reference_artists || []),
       video_edits: JSON.stringify(result.video_edits || []),
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
-      pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
+      pro_tip: '', creator_tip: '',
       viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
       discovery_tags: JSON.stringify(result.discovery_tags || {}),
-      posting_strategy: JSON.stringify(result.posting_strategy || {}),
+      posting_strategy: JSON.stringify({}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_duration: audioFeatures?.duration || null,
