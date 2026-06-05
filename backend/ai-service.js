@@ -544,9 +544,23 @@ Respond ONLY with JSON.`;
 
 // ── REGENERATE INDIVIDUAL SECTION ──
 export async function regenerateSection(track, analysis, section) {
+  const isProd = track.content_type === 'producer';
+
   const sectionPrompts = {
     video_edits: {
-      system: `You are an elite music content strategist. Generate 2 NEW, completely different video content ideas for a song. These must be DIFFERENT from any previous suggestions. Every idea MUST be anchored to a specific lyric line (quoted word-for-word) and describe exactly how that lyric appears visually. Always respond in English. Respond ONLY with valid JSON array.
+      system: isProd
+        ? `You are an elite beat marketing strategist. Generate 2 NEW TikTok/Reels content ideas for a beat that will drive beat sales. These must be DIFFERENT from previous suggestions. Every idea MUST reference a specific sonic element of THIS beat. Always respond in English. Respond ONLY with valid JSON array.
+
+PROVEN PRODUCER FORMATS: "The Drop" (buildup → drop), making-of speedruns, before/after, A/B comparison ("which version?"), open verse challenges, beat switch, "How [song] was probably made", DAW screen recordings, duets with artists, quick production tips.
+
+Return a JSON array of 2 objects:
+[{
+  "title": "", "caption_structured": {"hook_line":"","body":"","cta":"","full_caption":""},
+  "hashtags": "", "duration": "", "timestamp": "", "platforms": ["TikTok","Reels"],
+  "lyric_anchor": {"exact_line":"<specific sonic element>","sound_moment":"","how_its_used":""},
+  "concept": "<second-by-second brief — what appears on screen, DAW visuals, editing style>"
+}]`
+        : `You are an elite music content strategist. Generate 2 NEW, completely different video content ideas for a song. These must be DIFFERENT from any previous suggestions. Every idea MUST be anchored to a specific lyric line (quoted word-for-word) and describe exactly how that lyric appears visually. Always respond in English. Respond ONLY with valid JSON array.
 
 LYRIC ANCHORING (CRITICAL):
 - Quote the EXACT lyric line(s) the idea is built around
@@ -558,14 +572,20 @@ Return a JSON array of 2 video_edit objects with this structure:
   "title": "", "caption_structured": {"hook_line":"","body":"","cta":"","full_caption":""},
   "hashtags": "", "duration": "", "timestamp": "", "platforms": ["TikTok","Reels"],
   "lyric_anchor": {"exact_line":"<word-for-word lyric>","sound_moment":"","how_its_used":""},
-  "concept": "<second-by-second brief referencing the specific lyric>",
-  "cover_frame": "", "song_moment": "", "share_trigger": "",
-  "algorithm_score": {"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":"","share_trigger":""},
-  "cross_post_strategy": {"post_first_on":"","wait_before_repost":"","platform_tweaks":""}
+  "concept": "<second-by-second brief referencing the specific lyric>"
 }]`,
       user: (track, analysis) => {
         const lt = (() => { try { return JSON.parse(analysis.lyric_themes || '{}'); } catch(e) { return {}; } })();
-        return `Generate 2 NEW video ideas for "${track.title}" by ${track.artist}.
+        return isProd
+          ? `Generate 2 NEW TikTok/Reels content ideas for beat "${track.title}" by ${track.artist}.
+Genre: ${analysis.genre_fit || track.genre || 'Unknown'}
+${track.social_vibe ? `On-camera preference: ${track.social_vibe}. ALL content must respect this.` : ''}
+${track.target_region ? `Target region: ${track.target_region}` : ''}
+${lt.core_story ? `Beat vibe: ${lt.core_story}` : ''}
+${lt.emotional_core ? `Emotional core: ${lt.emotional_core}` : ''}
+Each idea must use a COMPLETELY DIFFERENT format (e.g., one "Drop" video and one making-of, NOT two previews). Reference THIS beat's specific sound.
+Respond with JSON array only.`
+          : `Generate 2 NEW video ideas for "${track.title}" by ${track.artist}.
 Genre: ${analysis.genre_fit || track.genre || 'Unknown'}
 ${track.social_vibe ? `On-camera preference: ${track.social_vibe}. ALL content must respect this.` : ''}
 ${track.target_region ? `Target region: ${track.target_region}` : ''}
@@ -576,22 +596,40 @@ Respond with JSON array only.`;
       }
     },
     diy_content_ideas: {
-      system: `You are an elite DIY content strategist for musicians. Generate 4 NEW, creative content ideas that an artist can film themselves. Every idea MUST reference a specific lyric line (word-for-word) and describe how it's used. Always respond in English. Respond ONLY with valid JSON array.
+      system: isProd
+        ? `You are an elite beat content strategist. Generate 4 NEW content ideas a producer can create to promote a beat and drive sales. Every idea MUST connect to THIS beat's specific sound. Always respond in English. Respond ONLY with valid JSON array.
+
+FORMATS THAT SELL BEATS: A/B comparisons, open verse challenges, production tutorials using this beat, "how I made this sound" breakdowns, beat remixes, DAW walkthroughs, before/after transformations, artist collaboration duets.
+
+Return a JSON array of 4 objects:
+[{
+  "title": "", "difficulty": "Easy|Medium|Hard", "duration": "", "virality": 0,
+  "lyric_anchor": {"exact_line":"<specific sonic element>","sound_moment":"","how_its_used":""},
+  "description": "<what to create and how — specific to this beat>",
+  "howTo": ["","",""], "hashtags": "",
+  "caption_structured": {"hook_line":"","body":"","cta":"","full_caption":""}
+}]`
+        : `You are an elite DIY content strategist for musicians. Generate 4 NEW, creative content ideas that an artist can film themselves. Every idea MUST reference a specific lyric line (word-for-word) and describe how it's used. Always respond in English. Respond ONLY with valid JSON array.
 
 Return a JSON array of 4 objects:
 [{
   "title": "", "difficulty": "Easy|Medium|Hard", "duration": "", "virality": 0,
   "lyric_anchor": {"exact_line":"<word-for-word lyric>","sound_moment":"","how_its_used":""},
   "description": "<must describe how the specific lyric appears visually>",
-  "hook": "", "relatability": "", "share_trigger": "",
-  "howTo": ["","",""], "hashtags": "", "why_it_works": "",
-  "caption_structured": {"hook_line":"","body":"","cta":"","full_caption":""},
-  "cover_frame": "",
-  "algorithm_score": {"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}
+  "howTo": ["","",""], "hashtags": "",
+  "caption_structured": {"hook_line":"","body":"","cta":"","full_caption":""}
 }]`,
       user: (track, analysis) => {
         const lt = (() => { try { return JSON.parse(analysis.lyric_themes || '{}'); } catch(e) { return {}; } })();
-        return `Generate 4 NEW DIY content ideas for "${track.title}" by ${track.artist}.
+        return isProd
+          ? `Generate 4 NEW content ideas for beat "${track.title}" by ${track.artist}.
+Genre: ${analysis.genre_fit || track.genre || 'Unknown'}
+${track.social_vibe ? `On-camera preference: ${track.social_vibe}` : ''}
+${track.target_region ? `Target region: ${track.target_region}` : ''}
+${lt.core_story ? `Beat vibe: ${lt.core_story}` : ''}
+Each must reference this beat's specific sound and use a different content format.
+Respond with JSON array only.`
+          : `Generate 4 NEW DIY content ideas for "${track.title}" by ${track.artist}.
 Genre: ${analysis.genre_fit || track.genre || 'Unknown'}
 ${track.social_vibe ? `On-camera preference: ${track.social_vibe}` : ''}
 ${track.target_region ? `Target region: ${track.target_region}` : ''}
@@ -624,47 +662,69 @@ async function analyzeProducerBeat(track, audioFeatures = null, trends = null) {
   const audienceSize = track.audience_size || 'small';
   const tierPrompt = getProducerTierPrompt(audienceSize);
 
-  const systemPrompt = `You are an elite beat marketing strategist who understands how producers actually sell beats and get placements in ${new Date().getFullYear()}. You think like a successful type beat YouTuber and BeatStars seller, not a marketing textbook. Always respond in English. Respond ONLY with valid JSON.
+  const systemPrompt = `You are an elite beat marketing strategist who understands how producers actually sell beats and get placements in ${new Date().getFullYear()}. You think like a successful type beat YouTuber and BeatStars seller who has built a real following. Always respond in English. Respond ONLY with valid JSON.
 
 YOUR PROCESS:
 1. SONIC IDENTITY: Analyze the beat's sound — BPM, energy, mood, arrangement. What type of artist would use this beat? What subgenre does it serve?
-2. TYPE BEAT POSITIONING: What "type beat" search terms would artists use to find this beat? This is the #1 discovery mechanism.
-3. TARGET ARTISTS: Who is actively looking for this sound? Not "rappers" — specific niches of artists at specific career stages.
-4. CONTENT STRATEGY: How to make this beat go viral as content, not just as a product listing.
+2. TYPE BEAT POSITIONING: What "type beat" search terms would artists use to find this beat? This is the #1 discovery mechanism for beat sales.
+3. TARGET ARTISTS: Who is actively looking for this sound? Not "rappers" — specific niches of artists at specific career stages who would BUY this beat.
+4. CONTENT STRATEGY: How to make this beat go viral as TikTok/Reels content that drives actual beat sales, not just views.
 
-WHAT MAKES BEAT CONTENT VIRAL:
-- "The Drop" format: 5-8 seconds of buildup → hard-hitting drop. Completion rate skyrockets.
-- Making-of timelapses: Watching a beat come together in 30-60 seconds is mesmerizing.
-- A/B format: "Which version is better?" — drives comments and engagement.
-- Open verse challenges: Leave space for vocals, invite artists to hop on it. Creates user-generated content.
+WHAT MAKES PRODUCERS GO VIRAL ON TIKTOK IN ${new Date().getFullYear()} (proven formats):
+- "The Drop" format: 5-8 seconds of buildup → hard-hitting drop. Gets 3-5x the completion rate of flat beat previews. THE most reliable format.
+- Making-of speedruns: Screen record the DAW, show the beat coming together in 30-60 seconds. People are mesmerized by watching the process.
+- Before/After transformation: Raw loop → finished beat. The contrast is the hook. Use dramatic cuts and lighting changes.
+- A/B comparison: "Which version is better? 1 or 2?" — drives 4x more comments than regular posts because people HAVE to choose.
+- Open verse challenges: Post a beat with 8-16 bars of space for vocals, invite artists to duet/stitch. Creates free marketing — every artist who hops on drives traffic back to you.
 - Beat switch: Play a simple loop → flip it into something fire. The transformation is the hook.
-- Screen recordings of the DAW: People love watching the process. Show the mixer, the arrangement, the sound selection.
-- Song reference recreations: "How [famous song] was probably made" — drives search traffic.
+- "How [famous song] was probably made": Recreate the vibe of a hit song's beat in your DAW. Drives massive search traffic from fans of that artist.
+- DAW screen recordings: Show the mixer, the arrangement, sound selection. People love the craft.
+- Duets with artists: When an artist raps/sings on your beat, it's the most powerful social proof. Every duet leads directly back to your page.
+- Quick production tips: "How to make your 808s hit harder" — educational content builds authority and trust.
 
-BEAT MARKETING REALITY:
-- YouTube type beat SEO is the #1 organic discovery channel for selling beats
-- Title format matters: "[Artist] Type Beat 2025 - [Mood/Vibe Word]" — study what ranks
+WHAT MAKES AN ARTIST CLICK "BUY" (not just watch):
+- They can HEAR themselves on the beat within 3 seconds of listening
+- The beat matches an artist they already want to sound like (type beat positioning)
+- The producer has content showing real artists using their beats (social proof)
+- The beat preview showcases the best 15-second section, not a random middle part
+- The caption/description makes it easy to find the beat store link
+- Free beats with producer tags build trust → artists come back for exclusives and leases
+
+BEAT MARKETING REALITY ${new Date().getFullYear()}:
+- Social media drives 58% of beat sales. A single viral TikTok can generate $5K-$20K in sales within one month.
+- YouTube type beat SEO is STILL the #1 organic sales channel — TikTok drives awareness, YouTube drives purchases.
+- Title format matters: "[Artist] Type Beat ${new Date().getFullYear()} - [Mood/Vibe Word]"
 - BeatStars/Airbit are storefronts, not marketing channels — you drive traffic TO them
-- Instagram Reels and TikTok drive awareness, YouTube drives sales
-- Free beats with tags build catalog trust — artists come back for exclusives
+- Free beats with tags build catalog trust → artists come back for exclusives
 - 80% of beat sales happen because an artist already trusts the producer's brand
+- You need 70%+ completion rate to go viral in ${new Date().getFullYear()} — hooks must be STRONG
+- First 3 seconds decide everything. Start with the most interesting sonic element.
+- Diversifying content formats = 45% higher engagement than posting the same type of content
+
+GENRE-SPECIFIC PRODUCER CONTENT (different subgenres need different approaches):
+- Dark Trap/Drill: Aggressive DAW visuals with dark color grading, bass-heavy preview clips, "how menacing is this 808?" hooks
+- Melodic Trap/R&B: Emotional melody showcases, piano/guitar loop highlights, "vibe check" format, soft lighting
+- Pluggnb/Hyperpop: Fast-paced editing, colorful effects, pitch-shifted vocal chops as hooks, chaotic energy
+- Boom Bap/Lo-fi: Vinyl sampling process, SP-404/MPC footage, "old school vs new school" comparisons, chill aesthetic
+- Afrobeats/Amapiano: Rhythm-first content, percussion pattern breakdowns, cultural pride, dance-worthy previews
+- Phonk: Drift edit compilations, aggressive cowbell patterns, car bass test videos, dark aesthetic
+- Pop/EDM: Clean production breakdowns, synth design tutorials, drop-focused previews, bright visuals
 
 HARD BANNED:
 - "Just post beats and wait" — passive marketing never works
-- Generic "fire beat" captions
-- Spamming rapper DMs with beat links
-- Copying another producer's brand/visual identity
+- Generic "fire beat 🔥" captions — cringe and doesn't convert
+- Spamming rapper DMs with beat links — destroys reputation
+- Flat, boring beat previews with no visual hook — automatic scroll-past
 - "Run ads" for producers under 5K followers
 - Hand signs or custom gestures
 - Loyalty tests or "comment if you're a real producer"
+- Any content idea that works for ANY random beat — must be specific to THIS beat's sound
 
-JSON structure:
+JSON structure (output ONLY these fields — nothing else):
 {
   "tempo_bpm": <number>,
-  "tempo_description": "<what the tempo FEELS like for an artist recording on this>",
   "mood_tags": ["<tag1>", "<tag2>", "<tag3>"],
   "energy_percent": <1-100>,
-  "energy_description": "<physical vibe — how does this beat make you move?>",
   "genre_fit": "<specific subgenre: dark trap, melodic drill, pluggnb, etc.>",
   "lyric_themes": {
     "core_story": "<what kind of song would an artist write on this beat? What mood/topic does it pull out?>",
@@ -672,101 +732,68 @@ JSON structure:
     "emotional_core": "<the vibe/feeling this beat creates>",
     "visual_world": "<colors, settings, time of day, textures matching this beat's mood>"
   },
-  "audience_age": "<age range of artists who'd buy this + listeners>",
-  "audience_interests": "<2-3 specific producer/artist communities>",
+  "audience_age": "<age range of artists who'd buy this>",
   "audience_platforms": "<platforms ranked: where do artists find beats?>",
-  "audience_content_angle": "<what type of content this audience engages with>",
-  "audience_key_insight": "<one insight about reaching beat buyers in this niche>",
   "reference_artists": [
-    {"name": "<producer/artist>", "genre": "<genre>", "description": "<WHY using this name as a type beat tag drives sales — e.g. '#metroboomintypebeat gets 50K+ monthly searches, your beat fits this lane'>"},
-    {"name": "<producer/artist>", "genre": "<genre>", "description": "<type beat SEO value + tag usage>"},
-    {"name": "<lesser-known producer/artist>", "genre": "<genre>", "description": "<niche type beat tag with less competition but targeted buyers>"},
-    {"name": "<artist who raps/sings on this style>", "genre": "<genre>", "description": "<why '[artist] type beat' tag attracts their fanbase of aspiring artists>"}
+    {"name": "<producer/artist>", "genre": "<genre>", "description": "<WHY this type beat tag drives sales + search volume>"},
+    {"name": "<producer/artist>", "genre": "<genre>", "description": "<type beat SEO value>"},
+    {"name": "<lesser-known producer>", "genre": "<genre>", "description": "<niche tag with less competition>"},
+    {"name": "<artist who raps/sings on this style>", "genre": "<genre>", "description": "<why their fans are your buyers>"}
   ],
   "discovery_tags": {
     "type_beat_tags": ["<artist1> type beat", "<artist2> type beat", "<artist3> type beat"],
     "genre_tags": ["#<subgenre>beats", "#<mood>beats", "#<style>producer"],
     "trending_tags": ["#typebeat${new Date().getFullYear()}", "#<relevant trending tag>"],
-    "youtube_title": "<optimized YouTube title: '[Artist] Type Beat ${new Date().getFullYear()} - [Mood Word]' format>",
-    "bio_suggestion": "<one-line producer bio using these references — e.g. 'Dark trap & drill beats inspired by Metro Boomin x Southside'>"
+    "youtube_title": "<optimized YouTube title: '[Artist] Type Beat ${new Date().getFullYear()} - [Mood Word]'>",
+    "bio_suggestion": "<one-line producer bio>"
   },
   "video_edits": [
     {
-      "title": "<beat preview / content concept>",
+      "title": "<TikTok-ready content concept — format name + beat reference>",
       "caption_structured": {
-        "hook_line": "<first line scroll-stopper — question, bold claim, or mystery>",
-        "body": "<1-2 lines — reference the beat's vibe, not ad copy>",
-        "cta": "<action that drives algorithm signal — 'tag a rapper who needs this' (shares), 'wait for the drop...' (completion)>",
-        "full_caption": "<complete caption ready to paste>"
+        "hook_line": "<scroll-stopper first line — question, bold claim, or 'wait for it'>",
+        "body": "<1-2 lines — reference the beat's vibe + tease what's coming>",
+        "cta": "<drive algorithm signal — 'tag a rapper who needs this' (shares), 'which version?' (comments), 'save for later' (saves)>",
+        "full_caption": "<complete caption ready to paste, include 'link in bio' or beat store mention>"
       },
-      "hashtags": "<ORDERED: 2 niche tags under 500K first → 2 mid 500K-5M → 1 broad. Order matters>",
+      "hashtags": "<ORDERED: 2 niche under 500K → 2 mid 500K-5M → 1 broad>",
       "duration": "<7-15 sec for previews, 30-60 sec for making-of>",
-      "timestamp": "<which part of the beat to feature>",
-      "platforms": ["TikTok", "Reels", "YouTube Shorts"],
-      "concept": "<FULL brief: what to show, how to edit, DAW screenshots, waveform visuals, etc.>",
-      "cover_frame": "<exact frame for thumbnail — describe visual + any text overlay. This determines clicks from profile grid>",
-      "song_moment": "<which sonic element this is built around>",
-      "share_trigger": "<why a producer or artist sends this to someone>",
-      "algorithm_score": {
-        "estimated_completion": "<% + reason>",
-        "rewatch_potential": "<Low/Medium/High + reason>",
-        "comment_trigger": "<what drives comments>",
-        "save_trigger": "<why someone saves>",
-        "share_trigger": "<why someone shares>"
+      "timestamp": "<which part of the beat to feature — always the strongest section>",
+      "platforms": ["TikTok", "Reels"],
+      "lyric_anchor": {
+        "exact_line": "<the specific sonic element this content is built around — e.g. 'the 808 pattern in the drop', 'the melody chop at 0:12', 'the hi-hat roll before the chorus'>",
+        "sound_moment": "<exact timestamp or section of beat>",
+        "how_its_used": "<HOW this sound appears in the video — DAW screenshot, waveform zoom, bass test, etc.>"
       },
-      "cross_post_strategy": {
-        "post_first_on": "<platform + why>",
-        "wait_before_repost": "<hours between platforms>",
-        "platform_tweaks": "<what to change per platform>"
-      }
+      "concept": "<FULL second-by-second brief. What appears on screen each second. DAW screenshot? Waveform? Camera on face? Text overlay? Be specific about the visual format, editing style, and pacing. MUST reference this beat's specific sound.>"
     },
-    {"title":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"concept":"","cover_frame":"","song_moment":"","share_trigger":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":"","share_trigger":""},"cross_post_strategy":{"post_first_on":"","wait_before_repost":"","platform_tweaks":""}}
+    {"title":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"hashtags":"","duration":"","timestamp":"","platforms":["TikTok","Reels"],"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"concept":""}
   ],
   "diy_content_ideas": [
     {
-      "title": "<content idea>",
+      "title": "<content idea name>",
       "difficulty": "Easy|Medium|Hard",
       "duration": "<length>",
       "virality": <1-100>,
-      "description": "<FULL brief: what to create, how to edit. Must connect to THIS beat's specific sound>",
-      "hook": "<what stops the scroll in first 1-2 seconds>",
-      "relatability": "<what universal producer/artist experience this taps into>",
-      "share_trigger": "<why someone shares this>",
-      "howTo": ["<step 1>", "<step 2>", "<step 3>"],
+      "lyric_anchor": {
+        "exact_line": "<specific sonic element from THIS beat>",
+        "sound_moment": "<section/timestamp>",
+        "how_its_used": "<how it appears visually>"
+      },
+      "description": "<FULL brief: what to film/screen-record, how to edit, what text overlays. Must connect to THIS beat's specific sound, not generic producer content>",
+      "howTo": ["<step 1 — specific>", "<step 2>", "<step 3>"],
       "hashtags": "<tags>",
-      "why_it_works": "<psychological trigger>",
-      "caption_structured": {"hook_line": "<>", "body": "<>", "cta": "<>", "full_caption": "<>"},
-      "cover_frame": "<thumbnail description>",
-      "algorithm_score": {"estimated_completion": "<>", "rewatch_potential": "<>", "comment_trigger": "<>", "save_trigger": "<>"}
+      "caption_structured": {"hook_line": "<>", "body": "<>", "cta": "<>", "full_caption": "<>"}
     },
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}},
-    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"description":"","howTo":["","",""],"hashtags":"","why_it_works":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""},"cover_frame":"","algorithm_score":{"estimated_completion":"","rewatch_potential":"","comment_trigger":"","save_trigger":""}}
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"description":"","howTo":["","",""],"hashtags":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"description":"","howTo":["","",""],"hashtags":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""}},
+    {"title":"","difficulty":"Easy|Medium|Hard","duration":"","virality":0,"lyric_anchor":{"exact_line":"","sound_moment":"","how_its_used":""},"description":"","howTo":["","",""],"hashtags":"","caption_structured":{"hook_line":"","body":"","cta":"","full_caption":""}}
   ],
-  "posting_strategy": {
-    "best_days": ["<day1>", "<day2>", "<day3>"],
-    "best_times": {
-      "tiktok": "<exact time in TARGET REGION timezone + reasoning>",
-      "reels": "<exact time + reasoning>",
-      "youtube_shorts": "<exact time + reasoning>"
-    },
-    "posting_frequency": "<posts per week + spacing>",
-    "engagement_window": {
-      "first_5_min": "<what to do immediately after posting>",
-      "first_30_min": "<reply strategy + pin comment>",
-      "first_2_hours": "<analytics check + next steps>",
-      "pin_comment": "<exact comment to pin>"
-    },
-    "cross_posting_order": "<platform order + time gaps>",
-    "avoid_times": "<when NOT to post and why>"
-  },
-  "pro_tip": "<one specific production/visual tip for THIS beat's content>",
-  "creator_tip": "<one growth tactic for this producer's tier>",
-  "viral_advice": "<2-3 sentences of specific advice for this producer at their current level>",
+  "viral_advice": "<2-3 sentences: the #1 specific move this producer should make RIGHT NOW to go viral with this beat and drive sales — not generic, reference this beat's sound>",
   "viral_keys": {
-    "hook": "<specific hook for THIS beat — what sonic moment stops the scroll>",
-    "relatability": "<what universal producer/artist experience will the audience recognize?>",
-    "share_trigger": "<specific reason someone sends this to a friend>"
+    "hook": "<the specific sonic moment in THIS beat that stops scrolling — e.g. 'the 808 slide at 0:08 is filthy enough to build a Drop video around'>",
+    "relatability": "<what universal producer/artist experience will make people engage — e.g. 'every rapper looking for a dark drill beat will hear themselves on this'>",
+    "share_trigger": "<why someone tags a friend or sends this — e.g. 'rappers tag each other saying I need this beat'>"
   }
 }`;
 
@@ -801,21 +828,21 @@ Respond ONLY with JSON.`;
     const result = parseJSON(response);
     console.log('✅ Beat analysis complete!');
     return {
-      tempo_bpm: result.tempo_bpm || 120, tempo_description: result.tempo_description || '',
+      tempo_bpm: result.tempo_bpm || 120, tempo_description: '',
       mood_tags: JSON.stringify(result.mood_tags || []),
-      energy_percent: result.energy_percent || 50, energy_description: result.energy_description || '',
+      energy_percent: result.energy_percent || 50, energy_description: '',
       genre_fit: result.genre_fit || '',
       lyric_themes: JSON.stringify(result.lyric_themes || {}),
-      audience_age: result.audience_age || '', audience_interests: result.audience_interests || '',
-      audience_platforms: result.audience_platforms || '', audience_content_angle: result.audience_content_angle || '',
-      audience_key_insight: result.audience_key_insight || '',
+      audience_age: result.audience_age || '', audience_interests: '',
+      audience_platforms: result.audience_platforms || '', audience_content_angle: '',
+      audience_key_insight: '',
       reference_artists: JSON.stringify(result.reference_artists || []),
       video_edits: JSON.stringify(result.video_edits || []),
       diy_content_ideas: JSON.stringify(result.diy_content_ideas || []),
-      pro_tip: result.pro_tip || '', creator_tip: result.creator_tip || '',
+      pro_tip: '', creator_tip: '',
       viral_advice: result.viral_advice || '', viral_keys: JSON.stringify(result.viral_keys || {}),
       discovery_tags: JSON.stringify(result.discovery_tags || {}),
-      posting_strategy: JSON.stringify(result.posting_strategy || {}),
+      posting_strategy: JSON.stringify({}),
       model_used: 'claude-sonnet-4-20250514', audio_key: audioFeatures?.key || null,
       audio_danceability: audioFeatures?.danceability || null,
       audio_analyzed: audioFeatures?.analyzed || false,

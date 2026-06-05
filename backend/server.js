@@ -533,6 +533,92 @@ async function buildVideoFromImages(videoId, imageUrls, lyricLines, songContext,
   }
 }
 
+// ── BEAT VISUALIZER (waveform pulse video for producers) ──
+async function createBeatVisualizer(videoId, audioFilePath, songContext) {
+  try {
+    const { title, artist, bpm, audioStartSec } = songContext || {};
+    const genre = songContext.genre || '';
+    const key = songContext.key || '';
+    const duration = 15; // TikTok-optimal: 15 seconds
+    const seekSec = audioStartSec || 0;
+
+    console.log(`🎵 Creating beat visualizer for "${title}" by ${artist} (BPM: ${bpm}, seek: ${seekSec}s)`);
+
+    const outputPath = path.join(VIDS_DIR, `${videoId}-beat.mp4`);
+
+    // ── Build FFmpeg filter complex for waveform pulse visualization ──
+    // Vertical 9:16 (720x1280), dark background, pulsing waveform, text overlays
+    const W = 720, H = 1280;
+
+    // Escape text for FFmpeg drawtext (single quotes, colons, backslashes)
+    const esc = (s) => (s || '').replace(/\\/g, '\\\\\\\\').replace(/'/g, "'\\\\\\''").replace(/:/g, '\\\\:').replace(/%/g, '%%');
+    const safeTitle = esc(title);
+    const safeArtist = esc(artist);
+    const safeBpm = esc(`${bpm || '?'} BPM`);
+    const safeKey = key ? esc(`Key: ${key}`) : '';
+    const safeGenre = esc(genre);
+
+    // Build the filter graph:
+    // 1. showwaves creates a waveform visualization from the audio
+    // 2. We overlay it centered on a dark background
+    // 3. Text overlays for title, artist, BPM, genre
+    const filterComplex = [
+      // Create dark background
+      `color=c=#09090b:s=${W}x${H}:d=${duration}:r=30[bg]`,
+      // Create waveform visualization — single line mode, gold color, centered
+      `[0:a]showwaves=s=${W - 80}x200:mode=cline:rate=30:colors=#c9a227|#c9a22744:scale=sqrt[wave]`,
+      // Overlay waveform on background, centered vertically
+      `[bg][wave]overlay=40:(${H}-200)/2:shortest=1[v1]`,
+      // Add subtle glow line behind the waveform
+      `[0:a]showwaves=s=${W - 60}x240:mode=cline:rate=30:colors=#c9a22718:scale=sqrt[glow]`,
+      `[v1][glow]overlay=30:(${H}-240)/2:shortest=1[v2]`,
+      // Title text — large, centered, above waveform
+      `[v2]drawtext=text='${safeTitle}':fontsize=48:fontcolor=white:x=(w-text_w)/2:y=${H/2 - 200}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf[v3]`,
+      // Artist name — medium, centered, below title
+      `[v3]drawtext=text='${safeArtist}':fontsize=28:fontcolor=#a1a1aa:x=(w-text_w)/2:y=${H/2 - 145}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf[v4]`,
+      // BPM badge — bottom area
+      `[v4]drawtext=text='${safeBpm}':fontsize=22:fontcolor=#c9a227:x=(w-text_w)/2:y=${H/2 + 200}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf[v5]`,
+      // Genre + Key — smaller, below BPM
+      `[v5]drawtext=text='${safeGenre}${safeKey ? '  •  ' + safeKey : ''}':fontsize=18:fontcolor=#52525b:x=(w-text_w)/2:y=${H/2 + 235}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf[v6]`,
+      // "Link in bio" text at bottom
+      `[v6]drawtext=text='${esc('link in bio')}':fontsize=16:fontcolor=#52525b:x=(w-text_w)/2:y=${H - 80}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf[vout]`,
+    ].join(';');
+
+    const ffArgs = [
+      '-y',
+      '-ss', String(seekSec),
+      '-i', audioFilePath,
+      '-filter_complex', filterComplex,
+      '-map', '[vout]',
+      '-map', '0:a',
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+      '-c:a', 'aac', '-b:a', '192k',
+      '-t', String(duration),
+      '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart',
+      '-shortest',
+      outputPath
+    ];
+
+    await ffmpegRun(ffArgs, 180000); // 3 min timeout
+
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+      const mb = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
+      console.log(`✅ Beat visualizer ready (${mb}MB)`);
+      await db.updateVideoGeneration(videoId, { status: 'completed', video_url: `/api/videos/${videoId}/file` });
+    } else {
+      throw new Error('Output file missing or too small');
+    }
+
+    // Clean up source audio
+    fs.unlink(audioFilePath, () => {});
+
+  } catch (err) {
+    console.error(`❌ Beat visualizer ${videoId} failed:`, err.message);
+    await db.updateVideoGeneration(videoId, { status: 'error', error_message: 'Beat visualizer failed: ' + err.message }).catch(() => {});
+  }
+}
+
 // ── TikTok token refresh helper ──
 async function refreshTikTokToken(refreshToken) {
   const TT_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
@@ -751,7 +837,9 @@ const server = http.createServer(async (req, res) => {
     // ── PUBLIC: Serve video files (no auth — loaded via <video src> which can't send headers) ──
     const videoFileMatch = p.match(/^\/api\/videos\/([^/]+)\/file$/);
     if (videoFileMatch && method === 'GET') {
-      const videoFile = path.join(VIDS_DIR, videoFileMatch[1] + '-lyrics.mp4');
+      const lyricsFile = path.join(VIDS_DIR, videoFileMatch[1] + '-lyrics.mp4');
+      const beatFile = path.join(VIDS_DIR, videoFileMatch[1] + '-beat.mp4');
+      const videoFile = fs.existsSync(lyricsFile) ? lyricsFile : beatFile;
       if (fs.existsSync(videoFile)) {
         const stat = fs.statSync(videoFile);
         res.writeHead(200, {
@@ -945,6 +1033,46 @@ const server = http.createServer(async (req, res) => {
       return json(res, { id: videoId, status: 'processing' });
     }
 
+    // ── BEAT VISUALIZER endpoint (producers only — no fal.ai needed) ──
+    if (p === '/api/videos/beat-visualizer' && method === 'POST') {
+      if (!FFMPEG_BIN) return json(res, { error: 'Video generation not available (no FFmpeg)' }, 500);
+
+      const rateCheck = checkVideoGeneration(user.id);
+      if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);
+
+      const body = await parseBody(req);
+      const trackId = body.track_id || '';
+      if (!trackId) return json(res, { error: 'track_id is required' }, 400);
+
+      // Find audio file for this track
+      const srcTrack = await db.getTrack(trackId);
+      if (!srcTrack || !srcTrack.filename) return json(res, { error: 'No audio file found for this track. Upload audio first.' }, 400);
+      const audioPath = path.join(UPLOADS_DIR, srcTrack.filename);
+      if (!fs.existsSync(audioPath)) return json(res, { error: 'Audio file missing. Re-upload your beat.' }, 400);
+
+      const videoId = uuid();
+      const audioStartSec = parseInt(body.audio_start_sec) || 0;
+      const songContext = {
+        title: body.title || srcTrack.title || 'Untitled',
+        artist: body.artist || srcTrack.artist || 'Producer',
+        bpm: body.bpm || 120,
+        key: body.key || '',
+        genre: body.genre || '',
+        audioStartSec
+      };
+
+      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: 'beat-visualizer', status: 'processing', request_id: 'beat-vis', lyric_lines: '[]', track_id: trackId });
+      recordVideoGeneration(user.id, 1);
+
+      // Fire background process
+      createBeatVisualizer(videoId, audioPath, songContext).catch(err => {
+        console.error(`❌ Beat visualizer error ${videoId}:`, err);
+        db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message || 'Unknown error' }).catch(() => {});
+      });
+
+      return json(res, { id: videoId, status: 'processing' });
+    }
+
     // (Video file serving moved above auth check)
 
     const videoStatusMatch = p.match(/^\/api\/videos\/([^/]+)\/status$/);
@@ -1034,8 +1162,10 @@ const server = http.createServer(async (req, res) => {
 
       if (!videoId) return json(res, { error: 'No video specified' }, 400);
 
-      // Find the video file on disk
-      const videoFile = path.join(VIDS_DIR, videoId + '-lyrics.mp4');
+      // Find the video file on disk (lyrics video or beat visualizer)
+      const lyrFile = path.join(VIDS_DIR, videoId + '-lyrics.mp4');
+      const btFile = path.join(VIDS_DIR, videoId + '-beat.mp4');
+      const videoFile = fs.existsSync(lyrFile) ? lyrFile : btFile;
       if (!fs.existsSync(videoFile)) return json(res, { error: 'Video file not found. Generate a video first.' }, 404);
 
       const fileSize = fs.statSync(videoFile).size;
