@@ -653,15 +653,57 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     const MY = WY + WH + 8, MB = H - 170, MH = MB - MY;
     const IY = MB + 24;
 
-    // Arrangement block patterns per track [start_fraction, end_fraction]
-    const bPat = [
-      [[0, .23], [.25, .48], [.5, .73], [.75, .98]],
-      [[.03, .21], [.26, .47], [.52, .73], [.76, .96]],
-      [[0, .34], [.37, .7], [.74, 1]],
-      [[0, .32], [.5, .82]],
-      [[0, .46], [.54, 1]],
-      [[.14, .27], [.48, .56], [.72, .88]],
-    ];
+    // ── BPM-AWARE ARRANGEMENT ──
+    // Calculate how many bars fit in the 15-second clip
+    const realBpm = bpm || 120;
+    const beatsPerSec = realBpm / 60;
+    const totalBeats = beatsPerSec * dur;
+    const totalBars = Math.floor(totalBeats / 4);
+    const barFrac = 1 / totalBars; // fraction of grid width per bar
+
+    // Generate block patterns aligned to bar boundaries
+    // Each track type has a characteristic pattern (in bar units)
+    function makeBlocks(trackIdx) {
+      const blocks = [];
+      switch (trackIdx) {
+        case 0: // DRUMS — plays almost every bar, small gaps
+          for (let b = 0; b < totalBars; b += 4) {
+            const end = Math.min(b + 3.9, totalBars);
+            blocks.push([b * barFrac, end * barFrac]);
+          }
+          break;
+        case 1: // HI-HAT — similar to drums but offset
+          for (let b = 0; b < totalBars; b += 4) {
+            const end = Math.min(b + 3.8, totalBars);
+            blocks.push([(b + 0.1) * barFrac, end * barFrac]);
+          }
+          break;
+        case 2: // 808 — 2-bar patterns with gaps
+          for (let b = 0; b < totalBars; b += 4) {
+            blocks.push([b * barFrac, Math.min((b + 2) * barFrac, 1)]);
+            if (b + 2.5 < totalBars) blocks.push([(b + 2.5) * barFrac, Math.min((b + 4) * barFrac, 1)]);
+          }
+          break;
+        case 3: // MELODY — longer phrases, 4-8 bar blocks
+          for (let b = 0; b < totalBars; b += 8) {
+            blocks.push([b * barFrac, Math.min((b + 4) * barFrac, 1)]);
+            if (b + 5 < totalBars) blocks.push([(b + 5) * barFrac, Math.min((b + 8) * barFrac, 1)]);
+          }
+          break;
+        case 4: // CHORDS — sustained, long blocks
+          for (let b = 0; b < totalBars; b += 8) {
+            blocks.push([b * barFrac, Math.min((b + 7) * barFrac, 1)]);
+          }
+          break;
+        case 5: // FX — sparse hits on transitions
+          for (let b = 0; b < totalBars; b += 4) {
+            blocks.push([(b + 3.5) * barFrac, Math.min((b + 4) * barFrac, 1)]);
+            if (b === 0 || b % 8 === 0) blocks.push([b * barFrac, (b + 0.5) * barFrac]);
+          }
+          break;
+      }
+      return blocks.filter(([s, e]) => s < 1 && e > 0 && e - s > 0.005);
+    }
 
     // Mixer channel names
     const mCh = ['KCK', 'SNR', 'HH', 'MEL', 'PAD', 'FX', 'MST'];
@@ -695,17 +737,26 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
       box(GX, AY + 3 + i * (TH + TG), GW, TH, '#141420');
     }
 
-    // ── GRID LINES (vertical bar markers) ──
-    for (let g = 1; g < 4; g++) {
-      box(GX + Math.round(g / 4 * GW), AY, 1, AH, '#1a1a28');
+    // ── GRID LINES (every 4 bars, aligned to BPM) ──
+    const gridEvery = 4; // draw a line every 4 bars
+    for (let b = gridEvery; b < totalBars; b += gridEvery) {
+      const gx = GX + Math.round(b * barFrac * GW);
+      if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#1a1a28');
+    }
+    // Beat-level sub-grid lines (every bar, very faint)
+    for (let b = 1; b < totalBars; b++) {
+      if (b % gridEvery === 0) continue; // skip — already drawn above
+      const gx = GX + Math.round(b * barFrac * GW);
+      if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#12121a');
     }
 
-    // ── ARRANGEMENT BLOCKS ──
+    // ── ARRANGEMENT BLOCKS (BPM-aligned) ──
     for (let i = 0; i < tracks.length; i++) {
       const y = AY + 3 + i * (TH + TG);
-      for (const [s, e] of bPat[i]) {
+      const tBlocks = makeBlocks(i);
+      for (const [s, e] of tBlocks) {
         const bx = GX + Math.round(s * GW) + 1;
-        const bw = Math.max(6, Math.round((e - s) * GW) - 2);
+        const bw = Math.max(4, Math.round((e - s) * GW) - 2);
         box(bx, y + 3, bw, TH - 6, tracks[i].c + '35');
         box(bx, y + 3, bw, 2, tracks[i].c + 'aa');
       }
@@ -729,10 +780,10 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     boxE(`${GX}+(t/${dur})*${GW}`, AY, 2, AH, '#ffffffd9');
     boxE(`${GX}+(t/${dur})*${GW}-3`, AY - 3, 8, 3, '#ffffffee');
 
-    // ── TEXT: Timeline bar numbers ──
-    for (let i = 0; i <= 4; i++) {
-      const bar = i * 4 + 1;
-      txt(String(bar), 9, '#444455', GX + Math.round(i / 4 * GW) + 2, 9, FM);
+    // ── TEXT: Timeline bar numbers (BPM-aligned) ──
+    for (let b = 0; b < totalBars; b += gridEvery) {
+      const mx = GX + Math.round(b * barFrac * GW) + 2;
+      if (mx < GX + GW - 20) txt(String(b + 1), 9, '#444455', mx, 9, FM);
     }
 
     // ── TEXT: Track labels ──
