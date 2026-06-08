@@ -1210,10 +1210,13 @@ function showAn(t,an){
     ${isProd && an.audio_analyzed ? `<div class="cd" style="margin-bottom:20px;padding:24px;background:linear-gradient(135deg,rgba(201,162,39,.04),rgba(96,165,250,.04));border:1px solid rgba(201,162,39,.15)">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><path d="M2 12h2m4-6v12m4-8v8m4-10v10m4-6v6"/></svg>
-        <div><div style="font-size:16px;font-weight:700">Generate Beat Video</div><div style="font-size:12px;color:var(--t2)">TikTok-ready waveform visualizer — no DAW needed</div></div>
+        <div><div style="font-size:16px;font-weight:700">Generate Beat Video</div><div style="font-size:12px;color:var(--t2)">TikTok-ready — choose your visual style</div></div>
       </div>
-      <div style="font-size:12px;color:var(--t3);margin-bottom:14px;line-height:1.6">Creates a 15-second video with a pulsing waveform visualization synced to your beat, overlaid with your producer name, beat title, BPM, and genre. Ready to post directly to TikTok.</div>
       <div id="beat-vis-section">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <label style="flex:1;cursor:pointer"><input type="radio" name="beat-style" value="daw" checked style="display:none"><div class="beat-style-opt" style="padding:12px;border:2px solid var(--ac);border-radius:var(--rs);background:rgba(201,162,39,.06);text-align:center"><div style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:2px">DAW View</div><div style="font-size:10px;color:var(--t2)">Arrangement + mixer + playhead</div></div></label>
+          <label style="flex:1;cursor:pointer"><input type="radio" name="beat-style" value="waveform" style="display:none"><div class="beat-style-opt" style="padding:12px;border:2px solid var(--bdr);border-radius:var(--rs);text-align:center"><div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:2px">Waveform</div><div style="font-size:10px;color:var(--t2)">Pulsing waveform line</div></div></label>
+        </div>
         ${an.audio_duration ? `<div style="margin-bottom:10px;padding:10px 12px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bdr)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:11px;font-weight:600;color:var(--t2)">Start point</div><div style="font-size:11px;color:var(--ac);font-weight:700" id="beat-vis-offset-label">0:00</div></div><input type="range" id="beat-vis-offset" min="0" max="${an.audio_duration}" value="0" style="width:100%;accent-color:var(--ac);height:4px" oninput="document.getElementById('beat-vis-offset-label').textContent=Math.floor(this.value/60)+':'+String(this.value%60).padStart(2,'0')"><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-top:2px"><span>0:00</span><span>${Math.floor(an.audio_duration/60)}:${String(an.audio_duration%60).padStart(2,'0')}</span></div></div>` : ''}
         <button class="bt bp" id="btn-beat-vis" style="width:100%;padding:12px 20px;font-size:14px;font-weight:700">Generate Beat Video</button>
         <div id="beat-vis-progress" style="display:none;text-align:center;padding:16px"><div class="sp" style="width:28px;height:28px;border-width:2px;margin:0 auto 10px"></div><div style="font-size:13px;color:var(--t2)">Creating your beat video...</div></div>
@@ -1230,6 +1233,15 @@ function showAn(t,an){
   document.getElementById('btn-gen-promo').addEventListener('click',()=>genPromo(t.id,t));
   initVideoButtons(t, vids, an);
 
+  // Beat visualizer style toggle (producer only)
+  document.querySelectorAll('input[name="beat-style"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.beat-style-opt').forEach(opt => { opt.style.border = '2px solid var(--bdr)'; opt.style.background = 'transparent'; });
+      const sel = radio.closest('label').querySelector('.beat-style-opt');
+      sel.style.border = '2px solid var(--ac)'; sel.style.background = 'rgba(201,162,39,.06)';
+    });
+  });
+
   // Beat visualizer button (producer only)
   const beatVisBtn = document.getElementById('btn-beat-vis');
   if (beatVisBtn) {
@@ -1244,10 +1256,12 @@ function showAn(t,an){
       try {
         const offsetEl = document.getElementById('beat-vis-offset');
         const audioStart = offsetEl ? parseInt(offsetEl.value) || 0 : 0;
+        const styleRadio = document.querySelector('input[name="beat-style"]:checked');
+        const style = styleRadio ? styleRadio.value : 'daw';
         const resp = await authFetch(A + '/videos/beat-visualizer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ track_id: t.id, title: t.title, artist: t.artist, bpm: an.tempo_bpm, key: an.audio_key || '', genre: an.genre_fit || t.genre || '', audio_start_sec: audioStart })
+          body: JSON.stringify({ track_id: t.id, title: t.title, artist: t.artist, bpm: an.tempo_bpm, key: an.audio_key || '', genre: an.genre_fit || t.genre || '', audio_start_sec: audioStart, style })
         });
         const data = await resp.json();
         if (data.error) throw new Error(data.error);

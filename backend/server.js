@@ -619,6 +619,173 @@ async function createBeatVisualizer(videoId, audioFilePath, songContext) {
   }
 }
 
+// ── DAW-STYLE VIDEO (fake DAW screen recording for producers) ──
+async function createDAWVideo(videoId, audioFilePath, songContext) {
+  try {
+    const { title, artist, bpm, audioStartSec } = songContext || {};
+    const genre = songContext.genre || '';
+    const key = songContext.key || '';
+    const dur = 15;
+    const seek = audioStartSec || 0;
+    const W = 720, H = 1280;
+    const FN = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+    const FB = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+    const FM = '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf';
+
+    console.log(`🎹 Creating DAW video for "${title}" by ${artist}`);
+    const outputPath = path.join(VIDS_DIR, `${videoId}-beat.mp4`);
+
+    const esc = (s) => (s || '').replace(/\\/g, '\\\\\\\\').replace(/'/g, "'\\\\\\''").replace(/:/g, '\\\\:').replace(/%/g, '%%');
+
+    // Track definitions
+    const tracks = [
+      { name: 'DRUMS', c: '#e89522' }, { name: 'HI-HAT', c: '#4ecdc4' },
+      { name: '808', c: '#ff6b6b' }, { name: 'MELODY', c: '#45b7d1' },
+      { name: 'CHORDS', c: '#96ceb4' }, { name: 'FX', c: '#a06cd5' },
+    ];
+
+    // Layout constants
+    const LW = 64, GX = LW, GW = W - GX - 8;
+    const TH = 38, TG = 3;
+    const TLH = 30;
+    const AY = TLH, AH = tracks.length * (TH + TG) + 6;
+    const WY = AY + AH + 8, WH = 130;
+    const MY = WY + WH + 8, MB = H - 170, MH = MB - MY;
+    const IY = MB + 24;
+
+    // Arrangement block patterns per track [start_fraction, end_fraction]
+    const bPat = [
+      [[0, .23], [.25, .48], [.5, .73], [.75, .98]],
+      [[.03, .21], [.26, .47], [.52, .73], [.76, .96]],
+      [[0, .34], [.37, .7], [.74, 1]],
+      [[0, .32], [.5, .82]],
+      [[0, .46], [.54, 1]],
+      [[.14, .27], [.48, .56], [.72, .88]],
+    ];
+
+    // Mixer channel names
+    const mCh = ['KCK', 'SNR', 'HH', 'MEL', 'PAD', 'FX', 'MST'];
+    const mW = Math.floor((W - 16) / mCh.length);
+
+    // Filter chain builder
+    const p = [];
+    let ni = 0;
+    const cv = () => `q${ni}`;
+    const nv = () => `q${++ni}`;
+
+    const box = (x, y, w, h, col) => p.push(`[${cv()}]drawbox=x=${x}:y=${y}:w=${w}:h=${h}:color=${col}:t=fill[${nv()}]`);
+    const boxE = (xE, y, w, h, col) => p.push(`[${cv()}]drawbox=x='${xE}':y=${y}:w=${w}:h=${h}:color=${col}:t=fill[${nv()}]`);
+    const txt = (t, sz, col, x, y, f) => p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=${x}:y=${y}:fontfile=${f || FN}[${nv()}]`);
+    const txtC = (t, sz, col, y, f) => p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=(w-text_w)/2:y=${y}:fontfile=${f || FN}[${nv()}]`);
+
+    // ── BASE ──
+    p.push(`color=c=#0c0c12:s=${W}x${H}:d=${dur}:r=30[${cv()}]`);
+    p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=30:colors=#c9a22755:scale=sqrt:draw=full[wv]`);
+    p.push(`[${cv()}][wv]overlay=8:${WY}:shortest=1[${nv()}]`);
+
+    // ── SECTION BACKGROUNDS ──
+    box(0, 0, W, TLH, '#08080e');
+    box(0, AY, W, AH, '#0e0e16');
+    box(0, AY, LW - 2, AH, '#0a0a12');
+    box(0, MY, W, MH, '#08080e');
+    box(0, MB - 28, W, 28, '#060610');
+
+    // ── TRACK LANES ──
+    for (let i = 0; i < tracks.length; i++) {
+      box(GX, AY + 3 + i * (TH + TG), GW, TH, '#141420');
+    }
+
+    // ── GRID LINES (vertical bar markers) ──
+    for (let g = 1; g < 4; g++) {
+      box(GX + Math.round(g / 4 * GW), AY, 1, AH, '#1a1a28');
+    }
+
+    // ── ARRANGEMENT BLOCKS ──
+    for (let i = 0; i < tracks.length; i++) {
+      const y = AY + 3 + i * (TH + TG);
+      for (const [s, e] of bPat[i]) {
+        const bx = GX + Math.round(s * GW) + 1;
+        const bw = Math.max(6, Math.round((e - s) * GW) - 2);
+        box(bx, y + 3, bw, TH - 6, tracks[i].c + '35');
+        box(bx, y + 3, bw, 2, tracks[i].c + 'aa');
+      }
+    }
+
+    // ── MIXER CHANNEL DIVIDERS ──
+    for (let i = 1; i < mCh.length; i++) {
+      box(8 + i * mW, MY + 4, 1, MH - 36, '#1a1a28');
+    }
+
+    // ── FADER KNOBS ──
+    const fPos = [.35, .42, .38, .28, .50, .55, .20];
+    for (let i = 0; i < mCh.length; i++) {
+      const cx = 8 + i * mW + Math.floor(mW / 2);
+      box(cx - 1, MY + 16, 3, MH - 50, '#1c1c2c');
+      const fy = MY + 20 + Math.round((fPos[i] || .4) * (MH - 80));
+      box(cx - 10, fy, 20, 5, '#778899');
+    }
+
+    // ── MOVING PLAYHEAD ──
+    boxE(`${GX}+(t/${dur})*${GW}`, AY, 2, AH, '#ffffffd9');
+    boxE(`${GX}+(t/${dur})*${GW}-3`, AY - 3, 8, 3, '#ffffffee');
+
+    // ── TEXT: Timeline bar numbers ──
+    for (let i = 0; i <= 4; i++) {
+      const bar = i * 4 + 1;
+      txt(String(bar), 9, '#444455', GX + Math.round(i / 4 * GW) + 2, 9, FM);
+    }
+
+    // ── TEXT: Track labels ──
+    for (let i = 0; i < tracks.length; i++) {
+      txt(tracks[i].name, 9, '#666680', 5, AY + 3 + i * (TH + TG) + 14, FB);
+    }
+
+    // ── TEXT: Mixer channel labels ──
+    for (let i = 0; i < mCh.length; i++) {
+      const cx = 8 + i * mW + Math.floor(mW / 2);
+      txt(mCh[i], 9, '#555566', cx - mCh[i].length * 3, MB - 18, FB);
+    }
+
+    // ── TEXT: Beat info ──
+    txtC(title, 36, 'white', IY, FB);
+    txtC(artist, 22, '#888899', IY + 48, FN);
+    const infoStr = [bpm ? `${bpm} BPM` : '', key || '', genre || ''].filter(Boolean).join('    ');
+    txtC(infoStr, 15, '#555566', IY + 82, FN);
+    txtC('link in bio', 13, '#333344', H - 50, FN);
+
+    // ── BUILD VIDEO ──
+    const filterComplex = p.join(';');
+    const lastLabel = `q${ni}`;
+
+    const ffArgs = [
+      '-y', '-ss', String(seek), '-i', audioFilePath,
+      '-filter_complex', filterComplex,
+      '-map', `[${lastLabel}]`, '-map', '0:a',
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+      '-c:a', 'aac', '-b:a', '192k',
+      '-t', String(dur), '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart', '-shortest',
+      outputPath
+    ];
+
+    await ffmpegRun(ffArgs, 300000);
+
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+      const mb = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
+      console.log(`✅ DAW video ready (${mb}MB)`);
+      await db.updateVideoGeneration(videoId, { status: 'completed', video_url: `/api/videos/${videoId}/file` });
+    } else {
+      throw new Error('Output file missing or too small');
+    }
+
+    fs.unlink(audioFilePath, () => {});
+
+  } catch (err) {
+    console.error(`❌ DAW video ${videoId} failed:`, err.message);
+    await db.updateVideoGeneration(videoId, { status: 'error', error_message: 'DAW video failed: ' + err.message }).catch(() => {});
+  }
+}
+
 // ── TikTok token refresh helper ──
 async function refreshTikTokToken(refreshToken) {
   const TT_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
@@ -1061,12 +1228,14 @@ const server = http.createServer(async (req, res) => {
         audioStartSec
       };
 
-      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: 'beat-visualizer', status: 'processing', request_id: 'beat-vis', lyric_lines: '[]', track_id: trackId });
+      const style = body.style || 'waveform';
+      await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: 'beat-' + style, status: 'processing', request_id: 'beat-vis', lyric_lines: '[]', track_id: trackId });
       recordVideoGeneration(user.id, 1);
 
-      // Fire background process
-      createBeatVisualizer(videoId, audioPath, songContext).catch(err => {
-        console.error(`❌ Beat visualizer error ${videoId}:`, err);
+      // Fire background process — choose style
+      const generator = style === 'daw' ? createDAWVideo : createBeatVisualizer;
+      generator(videoId, audioPath, songContext).catch(err => {
+        console.error(`❌ Beat video error ${videoId}:`, err);
         db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message || 'Unknown error' }).catch(() => {});
       });
 
