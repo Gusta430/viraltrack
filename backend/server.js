@@ -156,11 +156,29 @@ function ffmpegRun(args, timeoutMs = 120000) {
     const bin = FFMPEG_BIN || 'ffmpeg';
     execFile(bin, args, { timeout: timeoutMs, maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
       if (err) {
-        const tail = stderr ? stderr.substring(Math.max(0, stderr.length - 500)) : err.message;
-        reject(new Error(tail));
+        // Show more stderr context for debugging — find the actual error line
+        if (stderr) {
+          const lines = stderr.split('\n');
+          const errorLine = lines.find(l => /error|not found|invalid|no such/i.test(l)) || '';
+          const tail = stderr.substring(Math.max(0, stderr.length - 800));
+          console.error('FFmpeg error detail:', errorLine);
+          reject(new Error(errorLine || tail));
+        } else {
+          reject(new Error(err.message));
+        }
       } else resolve();
     });
   });
+}
+
+// Check if drawtext filter is available in this FFmpeg build
+let HAS_DRAWTEXT = false;
+if (FFMPEG_BIN) {
+  try {
+    const out = execFileSync(FFMPEG_BIN, ['-filters'], { timeout: 5000, stdio: 'pipe' }).toString();
+    HAS_DRAWTEXT = out.includes('drawtext');
+    console.log(`🔤 FFmpeg drawtext filter: ${HAS_DRAWTEXT ? 'available' : 'NOT available'}`);
+  } catch(e) { console.log('⚠️ Could not check FFmpeg filters'); }
 }
 
 // Burn lyric text onto an image using ImageMagick (no FFmpeg drawtext needed)
@@ -558,11 +576,24 @@ async function createBeatVisualizer(videoId, audioFilePath, songContext) {
     const safeKey = key ? esc(`Key: ${key}`) : '';
     const safeGenre = esc(genre);
 
+    // Find available font
+    const fontPaths = [
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+      '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+    ];
+    const FN = fontPaths.find(f => fs.existsSync(f)) || '';
+    const FB = fs.existsSync('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
+      ? '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' : FN;
+    const useText = HAS_DRAWTEXT && FN;
+
+    console.log(`🎵 Beat visualizer drawtext: ${useText ? 'yes' : 'no'}`);
+
     // Build the filter graph:
     // 1. showwaves creates a waveform visualization from the audio
     // 2. We overlay it centered on a dark background
-    // 3. Text overlays for title, artist, BPM, genre
-    const filterComplex = [
+    // 3. Text overlays for title, artist, BPM, genre (if drawtext available)
+    const parts = [
       // Create dark background
       `color=c=#09090b:s=${W}x${H}:d=${duration}:r=30[bg]`,
       // Create waveform visualization — single line mode, gold color, centered
@@ -572,17 +603,35 @@ async function createBeatVisualizer(videoId, audioFilePath, songContext) {
       // Add subtle glow line behind the waveform
       `[0:a]showwaves=s=${W - 60}x240:mode=cline:rate=30:colors=#c9a22718:scale=sqrt[glow]`,
       `[v1][glow]overlay=30:(${H}-240)/2:shortest=1[v2]`,
+    ];
+
+    let lastLabel = 'v2';
+    let labelN = 2;
+
+    if (useText) {
+      const nextL = () => `v${++labelN}`;
       // Title text — large, centered, above waveform
-      `[v2]drawtext=text='${safeTitle}':fontsize=48:fontcolor=white:x=(w-text_w)/2:y=${H/2 - 200}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf[v3]`,
-      // Artist name — medium, centered, below title
-      `[v3]drawtext=text='${safeArtist}':fontsize=28:fontcolor=#a1a1aa:x=(w-text_w)/2:y=${H/2 - 145}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf[v4]`,
-      // BPM badge — bottom area
-      `[v4]drawtext=text='${safeBpm}':fontsize=22:fontcolor=#c9a227:x=(w-text_w)/2:y=${H/2 + 200}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf[v5]`,
-      // Genre + Key — smaller, below BPM
-      `[v5]drawtext=text='${safeGenre}${safeKey ? '  •  ' + safeKey : ''}':fontsize=18:fontcolor=#52525b:x=(w-text_w)/2:y=${H/2 + 235}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf[v6]`,
-      // "Link in bio" text at bottom
-      `[v6]drawtext=text='${esc('link in bio')}':fontsize=16:fontcolor=#52525b:x=(w-text_w)/2:y=${H - 80}:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf[vout]`,
-    ].join(';');
+      parts.push(`[${lastLabel}]drawtext=text='${safeTitle}':fontsize=48:fontcolor=white:x=(w-text_w)/2:y=${H/2 - 200}:fontfile=${FB}[${nextL()}]`);
+      lastLabel = `v${labelN}`;
+      // Artist name
+      parts.push(`[${lastLabel}]drawtext=text='${safeArtist}':fontsize=28:fontcolor=#a1a1aa:x=(w-text_w)/2:y=${H/2 - 145}:fontfile=${FN}[${nextL()}]`);
+      lastLabel = `v${labelN}`;
+      // BPM badge
+      parts.push(`[${lastLabel}]drawtext=text='${safeBpm}':fontsize=22:fontcolor=#c9a227:x=(w-text_w)/2:y=${H/2 + 200}:fontfile=${FB}[${nextL()}]`);
+      lastLabel = `v${labelN}`;
+      // Genre + Key
+      const genreKeyText = `${safeGenre}${safeKey ? '  •  ' + safeKey : ''}`;
+      if (genreKeyText.trim()) {
+        parts.push(`[${lastLabel}]drawtext=text='${genreKeyText}':fontsize=18:fontcolor=#52525b:x=(w-text_w)/2:y=${H/2 + 235}:fontfile=${FN}[${nextL()}]`);
+        lastLabel = `v${labelN}`;
+      }
+      // "Link in bio"
+      parts.push(`[${lastLabel}]drawtext=text='${esc('link in bio')}':fontsize=16:fontcolor=#52525b:x=(w-text_w)/2:y=${H - 80}:fontfile=${FN}[${nextL()}]`);
+      lastLabel = `v${labelN}`;
+    }
+
+    // Rename last label to vout
+    const filterComplex = parts.join(';').replace(new RegExp(`\\[${lastLabel}\\]$`), '[vout]');
 
     const ffArgs = [
       '-y',
@@ -628,14 +677,34 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     const dur = 15;
     const seek = audioStartSec || 0;
     const W = 720, H = 1280;
-    const FN = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
-    const FB = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
-    const FM = '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf';
 
-    console.log(`🎹 Creating DAW video for "${title}" by ${artist}`);
+    // Find available font — check multiple paths
+    const fontPaths = [
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+      '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf',
+      '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+      '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
+    ];
+    const FN = fontPaths.find(f => fs.existsSync(f)) || '';
+    const FB = fs.existsSync('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
+      ? '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' : FN;
+    const FM = fs.existsSync('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
+      ? '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf' : FN;
+    const useText = HAS_DRAWTEXT && FN;
+
+    console.log(`🎹 Creating DAW video for "${title}" by ${artist} (drawtext: ${useText ? 'yes' : 'no'}, font: ${FN || 'none'})`);
     const outputPath = path.join(VIDS_DIR, `${videoId}-beat.mp4`);
 
-    const esc = (s) => (s || '').replace(/\\/g, '\\\\\\\\').replace(/'/g, "'\\\\\\''").replace(/:/g, '\\\\:').replace(/%/g, '%%');
+    // FFmpeg drawtext escaping — escape characters that have special meaning
+    const esc = (s) => (s || '')
+      .replace(/\\/g, '\\\\\\\\')
+      .replace(/'/g, "'\\\\\\''")
+      .replace(/:/g, '\\\\:')
+      .replace(/%/g, '%%')
+      .replace(/\[/g, '\\\\[')
+      .replace(/\]/g, '\\\\]')
+      .replace(/;/g, '\\\\;');
 
     // Track definitions
     const tracks = [
@@ -654,58 +723,25 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     const IY = MB + 24;
 
     // ── BPM-AWARE ARRANGEMENT ──
-    // Calculate how many bars fit in the 15-second clip
     const realBpm = bpm || 120;
     const beatsPerSec = realBpm / 60;
     const totalBeats = beatsPerSec * dur;
     const totalBars = Math.floor(totalBeats / 4);
-    const barFrac = 1 / totalBars; // fraction of grid width per bar
+    const barFrac = 1 / totalBars;
 
-    // Generate block patterns aligned to bar boundaries
-    // Each track type has a characteristic pattern (in bar units)
     function makeBlocks(trackIdx) {
       const blocks = [];
       switch (trackIdx) {
-        case 0: // DRUMS — plays almost every bar, small gaps
-          for (let b = 0; b < totalBars; b += 4) {
-            const end = Math.min(b + 3.9, totalBars);
-            blocks.push([b * barFrac, end * barFrac]);
-          }
-          break;
-        case 1: // HI-HAT — similar to drums but offset
-          for (let b = 0; b < totalBars; b += 4) {
-            const end = Math.min(b + 3.8, totalBars);
-            blocks.push([(b + 0.1) * barFrac, end * barFrac]);
-          }
-          break;
-        case 2: // 808 — 2-bar patterns with gaps
-          for (let b = 0; b < totalBars; b += 4) {
-            blocks.push([b * barFrac, Math.min((b + 2) * barFrac, 1)]);
-            if (b + 2.5 < totalBars) blocks.push([(b + 2.5) * barFrac, Math.min((b + 4) * barFrac, 1)]);
-          }
-          break;
-        case 3: // MELODY — longer phrases, 4-8 bar blocks
-          for (let b = 0; b < totalBars; b += 8) {
-            blocks.push([b * barFrac, Math.min((b + 4) * barFrac, 1)]);
-            if (b + 5 < totalBars) blocks.push([(b + 5) * barFrac, Math.min((b + 8) * barFrac, 1)]);
-          }
-          break;
-        case 4: // CHORDS — sustained, long blocks
-          for (let b = 0; b < totalBars; b += 8) {
-            blocks.push([b * barFrac, Math.min((b + 7) * barFrac, 1)]);
-          }
-          break;
-        case 5: // FX — sparse hits on transitions
-          for (let b = 0; b < totalBars; b += 4) {
-            blocks.push([(b + 3.5) * barFrac, Math.min((b + 4) * barFrac, 1)]);
-            if (b === 0 || b % 8 === 0) blocks.push([b * barFrac, (b + 0.5) * barFrac]);
-          }
-          break;
+        case 0: for (let b = 0; b < totalBars; b += 4) { blocks.push([b * barFrac, Math.min(b + 3.9, totalBars) * barFrac]); } break;
+        case 1: for (let b = 0; b < totalBars; b += 4) { blocks.push([(b + 0.1) * barFrac, Math.min(b + 3.8, totalBars) * barFrac]); } break;
+        case 2: for (let b = 0; b < totalBars; b += 4) { blocks.push([b * barFrac, Math.min((b + 2) * barFrac, 1)]); if (b + 2.5 < totalBars) blocks.push([(b + 2.5) * barFrac, Math.min((b + 4) * barFrac, 1)]); } break;
+        case 3: for (let b = 0; b < totalBars; b += 8) { blocks.push([b * barFrac, Math.min((b + 4) * barFrac, 1)]); if (b + 5 < totalBars) blocks.push([(b + 5) * barFrac, Math.min((b + 8) * barFrac, 1)]); } break;
+        case 4: for (let b = 0; b < totalBars; b += 8) { blocks.push([b * barFrac, Math.min((b + 7) * barFrac, 1)]); } break;
+        case 5: for (let b = 0; b < totalBars; b += 4) { blocks.push([(b + 3.5) * barFrac, Math.min((b + 4) * barFrac, 1)]); if (b === 0 || b % 8 === 0) blocks.push([b * barFrac, (b + 0.5) * barFrac]); } break;
       }
       return blocks.filter(([s, e]) => s < 1 && e > 0 && e - s > 0.005);
     }
 
-    // Mixer channel names
     const mCh = ['KCK', 'SNR', 'HH', 'MEL', 'PAD', 'FX', 'MST'];
     const mW = Math.floor((W - 16) / mCh.length);
 
@@ -717,12 +753,19 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
 
     const box = (x, y, w, h, col) => p.push(`[${cv()}]drawbox=x=${x}:y=${y}:w=${w}:h=${h}:color=${col}:t=fill[${nv()}]`);
     const boxE = (xE, y, w, h, col) => p.push(`[${cv()}]drawbox=x='${xE}':y=${y}:w=${w}:h=${h}:color=${col}:t=fill[${nv()}]`);
-    const txt = (t, sz, col, x, y, f) => p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=${x}:y=${y}:fontfile=${f || FN}[${nv()}]`);
-    const txtC = (t, sz, col, y, f) => p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=(w-text_w)/2:y=${y}:fontfile=${f || FN}[${nv()}]`);
+    const txt = (t, sz, col, x, y, f) => {
+      if (!useText) return;
+      p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=${x}:y=${y}:fontfile=${f || FN}[${nv()}]`);
+    };
+    const txtC = (t, sz, col, y, f) => {
+      if (!useText) return;
+      p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=(w-text_w)/2:y=${y}:fontfile=${f || FN}[${nv()}]`);
+    };
 
     // ── BASE ──
     p.push(`color=c=#0c0c12:s=${W}x${H}:d=${dur}:r=30[${cv()}]`);
-    p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=30:colors=#c9a22755:scale=sqrt:draw=full[wv]`);
+    // showwaves — omit draw=full (not available in older FFmpeg builds)
+    p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=30:colors=#c9a22755:scale=sqrt[wv]`);
     p.push(`[${cv()}][wv]overlay=8:${WY}:shortest=1[${nv()}]`);
 
     // ── SECTION BACKGROUNDS ──
@@ -733,19 +776,16 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     box(0, MB - 28, W, 28, '#060610');
 
     // ── TRACK LANES ──
-    for (let i = 0; i < tracks.length; i++) {
-      box(GX, AY + 3 + i * (TH + TG), GW, TH, '#141420');
-    }
+    for (let i = 0; i < tracks.length; i++) box(GX, AY + 3 + i * (TH + TG), GW, TH, '#141420');
 
-    // ── GRID LINES (every 4 bars, aligned to BPM) ──
-    const gridEvery = 4; // draw a line every 4 bars
+    // ── GRID LINES (BPM-aligned) ──
+    const gridEvery = 4;
     for (let b = gridEvery; b < totalBars; b += gridEvery) {
       const gx = GX + Math.round(b * barFrac * GW);
       if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#1a1a28');
     }
-    // Beat-level sub-grid lines (every bar, very faint)
     for (let b = 1; b < totalBars; b++) {
-      if (b % gridEvery === 0) continue; // skip — already drawn above
+      if (b % gridEvery === 0) continue;
       const gx = GX + Math.round(b * barFrac * GW);
       if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#12121a');
     }
@@ -753,8 +793,7 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     // ── ARRANGEMENT BLOCKS (BPM-aligned) ──
     for (let i = 0; i < tracks.length; i++) {
       const y = AY + 3 + i * (TH + TG);
-      const tBlocks = makeBlocks(i);
-      for (const [s, e] of tBlocks) {
+      for (const [s, e] of makeBlocks(i)) {
         const bx = GX + Math.round(s * GW) + 1;
         const bw = Math.max(4, Math.round((e - s) * GW) - 2);
         box(bx, y + 3, bw, TH - 6, tracks[i].c + '35');
@@ -762,51 +801,38 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
       }
     }
 
-    // ── MIXER CHANNEL DIVIDERS ──
-    for (let i = 1; i < mCh.length; i++) {
-      box(8 + i * mW, MY + 4, 1, MH - 36, '#1a1a28');
-    }
-
-    // ── FADER KNOBS ──
+    // ── MIXER ──
+    for (let i = 1; i < mCh.length; i++) box(8 + i * mW, MY + 4, 1, MH - 36, '#1a1a28');
     const fPos = [.35, .42, .38, .28, .50, .55, .20];
     for (let i = 0; i < mCh.length; i++) {
       const cx = 8 + i * mW + Math.floor(mW / 2);
       box(cx - 1, MY + 16, 3, MH - 50, '#1c1c2c');
-      const fy = MY + 20 + Math.round((fPos[i] || .4) * (MH - 80));
-      box(cx - 10, fy, 20, 5, '#778899');
+      box(cx - 10, MY + 20 + Math.round((fPos[i] || .4) * (MH - 80)), 20, 5, '#778899');
     }
 
     // ── MOVING PLAYHEAD ──
     boxE(`${GX}+(t/${dur})*${GW}`, AY, 2, AH, '#ffffffd9');
     boxE(`${GX}+(t/${dur})*${GW}-3`, AY - 3, 8, 3, '#ffffffee');
 
-    // ── TEXT: Timeline bar numbers (BPM-aligned) ──
+    // ── TEXT (only if drawtext is available) ──
     for (let b = 0; b < totalBars; b += gridEvery) {
       const mx = GX + Math.round(b * barFrac * GW) + 2;
       if (mx < GX + GW - 20) txt(String(b + 1), 9, '#444455', mx, 9, FM);
     }
-
-    // ── TEXT: Track labels ──
-    for (let i = 0; i < tracks.length; i++) {
-      txt(tracks[i].name, 9, '#666680', 5, AY + 3 + i * (TH + TG) + 14, FB);
-    }
-
-    // ── TEXT: Mixer channel labels ──
+    for (let i = 0; i < tracks.length; i++) txt(tracks[i].name, 9, '#666680', 5, AY + 3 + i * (TH + TG) + 14, FB);
     for (let i = 0; i < mCh.length; i++) {
-      const cx = 8 + i * mW + Math.floor(mW / 2);
-      txt(mCh[i], 9, '#555566', cx - mCh[i].length * 3, MB - 18, FB);
+      txt(mCh[i], 9, '#555566', 8 + i * mW + Math.floor(mW / 2) - mCh[i].length * 3, MB - 18, FB);
     }
-
-    // ── TEXT: Beat info ──
-    txtC(title, 36, 'white', IY, FB);
-    txtC(artist, 22, '#888899', IY + 48, FN);
-    const infoStr = [bpm ? `${bpm} BPM` : '', key || '', genre || ''].filter(Boolean).join('    ');
-    txtC(infoStr, 15, '#555566', IY + 82, FN);
+    txtC(title || 'Untitled', 36, 'white', IY, FB);
+    txtC(artist || 'Producer', 22, '#888899', IY + 48, FN);
+    const infoStr = [bpm ? `${bpm} BPM` : '', key || '', genre || ''].filter(Boolean).join('  ');
+    if (infoStr) txtC(infoStr, 15, '#555566', IY + 82, FN);
     txtC('link in bio', 13, '#333344', H - 50, FN);
 
     // ── BUILD VIDEO ──
     const filterComplex = p.join(';');
     const lastLabel = `q${ni}`;
+    console.log(`🎹 Filter chain: ${p.length} operations, ${filterComplex.length} chars, last=[${lastLabel}]`);
 
     const ffArgs = [
       '-y', '-ss', String(seek), '-i', audioFilePath,
