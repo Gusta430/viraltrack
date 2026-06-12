@@ -593,15 +593,16 @@ async function createBeatVisualizer(videoId, audioFilePath, songContext) {
     // 1. showwaves creates a waveform visualization from the audio
     // 2. We overlay it centered on a dark background
     // 3. Text overlays for title, artist, BPM, genre (if drawtext available)
+    const FPS = 15; // Lower fps to reduce memory on free-tier hosting
     const parts = [
       // Create dark background
-      `color=c=#09090b:s=${W}x${H}:d=${duration}:r=30[bg]`,
+      `color=c=#09090b:s=${W}x${H}:d=${duration}:r=${FPS}[bg]`,
       // Create waveform visualization — single line mode, gold color, centered
-      `[0:a]showwaves=s=${W - 80}x200:mode=cline:rate=30:colors=#c9a227|#c9a22744:scale=sqrt[wave]`,
+      `[0:a]showwaves=s=${W - 80}x200:mode=cline:rate=${FPS}:colors=#c9a227|#c9a22744:scale=sqrt[wave]`,
       // Overlay waveform on background, centered vertically
       `[bg][wave]overlay=40:(${H}-200)/2:shortest=1[v1]`,
       // Add subtle glow line behind the waveform
-      `[0:a]showwaves=s=${W - 60}x240:mode=cline:rate=30:colors=#c9a22718:scale=sqrt[glow]`,
+      `[0:a]showwaves=s=${W - 60}x240:mode=cline:rate=${FPS}:colors=#c9a22718:scale=sqrt[glow]`,
       `[v1][glow]overlay=30:(${H}-240)/2:shortest=1[v2]`,
     ];
 
@@ -634,21 +635,22 @@ async function createBeatVisualizer(videoId, audioFilePath, songContext) {
     const filterComplex = parts.join(';').replace(new RegExp(`\\[${lastLabel}\\]$`), '[vout]');
 
     const ffArgs = [
-      '-y',
+      '-y', '-threads', '1',
       '-ss', String(seekSec),
       '-i', audioFilePath,
       '-filter_complex', filterComplex,
       '-map', '[vout]',
       '-map', '0:a',
-      '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
-      '-c:a', 'aac', '-b:a', '192k',
-      '-t', String(duration),
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '26',
+      '-c:a', 'aac', '-b:a', '128k',
+      '-r', String(FPS), '-t', String(duration),
       '-pix_fmt', 'yuv420p',
       '-movflags', '+faststart',
       '-shortest',
       outputPath
     ];
 
+    console.log('🎵 Starting FFmpeg waveform render...');
     await ffmpegRun(ffArgs, 180000); // 3 min timeout
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
@@ -762,10 +764,11 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
       p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=(w-text_w)/2:y=${y}:fontfile=${f || FN}[${nv()}]`);
     };
 
-    // ── BASE ──
-    p.push(`color=c=#0c0c12:s=${W}x${H}:d=${dur}:r=30[${cv()}]`);
+    // ── BASE (use 15fps to reduce memory on free-tier hosting) ──
+    const FPS = 15;
+    p.push(`color=c=#0c0c12:s=${W}x${H}:d=${dur}:r=${FPS}[${cv()}]`);
     // showwaves — omit draw=full (not available in older FFmpeg builds)
-    p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=30:colors=#c9a22755:scale=sqrt[wv]`);
+    p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=${FPS}:colors=#c9a22755:scale=sqrt[wv]`);
     p.push(`[${cv()}][wv]overlay=8:${WY}:shortest=1[${nv()}]`);
 
     // ── SECTION BACKGROUNDS ──
@@ -778,15 +781,15 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     // ── TRACK LANES ──
     for (let i = 0; i < tracks.length; i++) box(GX, AY + 3 + i * (TH + TG), GW, TH, '#141420');
 
-    // ── GRID LINES (BPM-aligned) ──
+    // ── GRID LINES (BPM-aligned, every 4 bars only to save filter ops) ──
     const gridEvery = 4;
     for (let b = gridEvery; b < totalBars; b += gridEvery) {
       const gx = GX + Math.round(b * barFrac * GW);
       if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#1a1a28');
     }
-    for (let b = 1; b < totalBars; b++) {
-      if (b % gridEvery === 0) continue;
-      const gx = GX + Math.round(b * barFrac * GW);
+    // Skip per-bar sub-grid to reduce filter chain complexity
+    for (let b = gridEvery * 2; b < totalBars; b += gridEvery * 2) {
+      const gx = GX + Math.round((b - gridEvery/2) * barFrac * GW);
       if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#12121a');
     }
 
@@ -835,16 +838,17 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     console.log(`🎹 Filter chain: ${p.length} operations, ${filterComplex.length} chars, last=[${lastLabel}]`);
 
     const ffArgs = [
-      '-y', '-ss', String(seek), '-i', audioFilePath,
+      '-y', '-threads', '1', '-ss', String(seek), '-i', audioFilePath,
       '-filter_complex', filterComplex,
       '-map', `[${lastLabel}]`, '-map', '0:a',
-      '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
-      '-c:a', 'aac', '-b:a', '192k',
-      '-t', String(dur), '-pix_fmt', 'yuv420p',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '26',
+      '-c:a', 'aac', '-b:a', '128k',
+      '-r', String(FPS), '-t', String(dur), '-pix_fmt', 'yuv420p',
       '-movflags', '+faststart', '-shortest',
       outputPath
     ];
 
+    console.log('🎹 Starting FFmpeg render...');
     await ffmpegRun(ffArgs, 300000);
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
@@ -1620,9 +1624,15 @@ async function recoverStuckVideos() {
         const imageUrls = JSON.parse(video.image_urls || '[]');
         const lyricLines = JSON.parse(video.lyric_lines || '[]');
         if (imageUrls.length === 0) {
-          // No images — can't recover, mark completed (images-only fallback)
-          await db.updateVideoGeneration(video.id, { status: 'completed' });
-          console.log(`⚠️ Video ${video.id}: no images, marked completed`);
+          // No images — check if it's a beat video (can't recover those)
+          const isBeatVideo = (video.prompt || '').startsWith('beat-');
+          if (isBeatVideo) {
+            await db.updateVideoGeneration(video.id, { status: 'error', error_message: 'Beat video generation was interrupted. Please try again.' });
+            console.log(`⚠️ Video ${video.id}: beat video interrupted, marked error`);
+          } else {
+            await db.updateVideoGeneration(video.id, { status: 'completed' });
+            console.log(`⚠️ Video ${video.id}: no images, marked completed`);
+          }
           continue;
         }
         if (!FFMPEG_BIN) {

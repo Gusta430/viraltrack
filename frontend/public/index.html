@@ -1270,24 +1270,36 @@ function showAn(t,an){
         const data = await resp.json();
         console.log('🎬 Beat vis response data:', data);
         if (data.error) throw new Error(data.error);
-        // Poll for completion
+        // Poll for completion (timeout after 3 minutes)
         const vidId = data.id;
+        let pollCount = 0;
+        const maxPolls = 60; // 60 * 3s = 3 min timeout
         const poll = setInterval(async () => {
+          pollCount++;
+          if (pollCount > maxPolls) {
+            clearInterval(poll);
+            prog.style.display = 'none';
+            beatVisBtn.style.display = 'block';
+            beatVisBtn.disabled = false;
+            errEl.textContent = 'Video generation timed out. Please try again.';
+            return;
+          }
           try {
             const sr = await authFetch(A + '/videos/' + vidId + '/status');
             const st = await sr.json();
+            console.log('🎬 Poll #' + pollCount + ':', st.status, st.video_url || '');
             if (st.status === 'completed' && st.video_url) {
               clearInterval(poll);
               prog.style.display = 'none';
               result.style.display = 'block';
               const vUrl = location.origin + st.video_url;
               result.innerHTML = `<video src="${vUrl}" controls playsinline style="width:100%;max-height:400px;border-radius:var(--rs);background:#000;margin-bottom:10px"></video><div style="display:flex;gap:8px"><a href="${vUrl}" download="beat-video.mp4" class="bt bp" style="flex:1;text-align:center;padding:10px;font-size:13px;text-decoration:none">Download MP4</a>${document.querySelector('.tt-publish-btn')?`<button class="bt bs tt-publish-btn" data-video-id="${vidId}" style="flex:1;padding:10px;font-size:13px">Post to TikTok</button>`:''}</div>`;
-            } else if (st.status === 'error') {
+            } else if (st.status === 'error' || (st.status === 'completed' && !st.video_url)) {
               clearInterval(poll);
               prog.style.display = 'none';
               beatVisBtn.style.display = 'block';
               beatVisBtn.disabled = false;
-              errEl.textContent = st.error_message || 'Failed to generate beat video';
+              errEl.textContent = st.error_message || 'Video generation failed. Please try again.';
             }
           } catch(pe) { console.error('Poll error:', pe); }
         }, 3000);
