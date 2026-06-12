@@ -1279,7 +1279,8 @@ const server = http.createServer(async (req, res) => {
 
     // ── BEAT VISUALIZER endpoint (producers only — no fal.ai needed) ──
     if (p === '/api/videos/beat-visualizer' && method === 'POST') {
-      if (!FFMPEG_BIN) return json(res, { error: 'Video generation not available (no FFmpeg)' }, 500);
+      console.log('🎬 Beat visualizer endpoint hit by user:', user.id.slice(0,8));
+      if (!FFMPEG_BIN) { console.log('❌ No FFMPEG_BIN'); return json(res, { error: 'Video generation not available (no FFmpeg)' }, 500); }
 
       const rateCheck = checkVideoGeneration(user.id);
       if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);

@@ -1244,8 +1244,10 @@ function showAn(t,an){
 
   // Beat visualizer button (producer only)
   const beatVisBtn = document.getElementById('btn-beat-vis');
+  console.log('🎬 Beat vis button found:', !!beatVisBtn);
   if (beatVisBtn) {
     beatVisBtn.addEventListener('click', async () => {
+      console.log('🎬 Beat vis button clicked');
       beatVisBtn.disabled = true;
       beatVisBtn.style.display = 'none';
       const prog = document.getElementById('beat-vis-progress');
@@ -1258,12 +1260,15 @@ function showAn(t,an){
         const audioStart = offsetEl ? parseInt(offsetEl.value) || 0 : 0;
         const styleRadio = document.querySelector('input[name="beat-style"]:checked');
         const style = styleRadio ? styleRadio.value : 'daw';
+        console.log('🎬 Sending beat-visualizer request:', { track_id: t.id, style, audioStart });
         const resp = await authFetch(A + '/videos/beat-visualizer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ track_id: t.id, title: t.title, artist: t.artist, bpm: an.tempo_bpm, key: an.audio_key || '', genre: an.genre_fit || t.genre || '', audio_start_sec: audioStart, style })
         });
+        console.log('🎬 Beat vis response status:', resp.status);
         const data = await resp.json();
+        console.log('🎬 Beat vis response data:', data);
         if (data.error) throw new Error(data.error);
         // Poll for completion
         const vidId = data.id;
