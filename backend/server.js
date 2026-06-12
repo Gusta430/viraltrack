@@ -1280,19 +1280,24 @@ const server = http.createServer(async (req, res) => {
     // ── BEAT VISUALIZER endpoint (producers only — no fal.ai needed) ──
     if (p === '/api/videos/beat-visualizer' && method === 'POST') {
       console.log('🎬 Beat visualizer endpoint hit by user:', user.id.slice(0,8));
+      console.log('🎬 FFMPEG_BIN:', FFMPEG_BIN || 'NOT SET');
       if (!FFMPEG_BIN) { console.log('❌ No FFMPEG_BIN'); return json(res, { error: 'Video generation not available (no FFmpeg)' }, 500); }
 
       const rateCheck = checkVideoGeneration(user.id);
+      console.log('🎬 Rate check:', JSON.stringify(rateCheck));
       if (!rateCheck.allowed) return json(res, { error: rateCheck.reason, retry_after: rateCheck.retry_after }, 429);
 
       const body = await parseBody(req);
+      console.log('🎬 Body:', JSON.stringify({ track_id: body.track_id, style: body.style, title: body.title }));
       const trackId = body.track_id || '';
       if (!trackId) return json(res, { error: 'track_id is required' }, 400);
 
       // Find audio file for this track
       const srcTrack = await db.getTrack(trackId);
+      console.log('🎬 Track found:', !!srcTrack, 'filename:', srcTrack?.filename || 'none');
       if (!srcTrack || !srcTrack.filename) return json(res, { error: 'No audio file found for this track. Upload audio first.' }, 400);
       const audioPath = path.join(UPLOADS_DIR, srcTrack.filename);
+      console.log('🎬 Audio path:', audioPath, 'exists:', fs.existsSync(audioPath));
       if (!fs.existsSync(audioPath)) return json(res, { error: 'Audio file missing. Re-upload your beat.' }, 400);
 
       const videoId = uuid();
@@ -1307,11 +1312,13 @@ const server = http.createServer(async (req, res) => {
       };
 
       const style = body.style || 'waveform';
+      console.log('🎬 Creating video gen record:', videoId, 'style:', style);
       await db.createVideoGeneration({ id: videoId, user_id: user.id, prompt: 'beat-' + style, status: 'processing', request_id: 'beat-vis', lyric_lines: '[]', track_id: trackId });
       recordVideoGeneration(user.id, 1);
 
       // Fire background process — choose style
       const generator = style === 'daw' ? createDAWVideo : createBeatVisualizer;
+      console.log('🎬 Launching generator:', style, 'videoId:', videoId);
       generator(videoId, audioPath, songContext).catch(err => {
         console.error(`❌ Beat video error ${videoId}:`, err);
         db.updateVideoGeneration(videoId, { status: 'error', error_message: err.message || 'Unknown error' }).catch(() => {});
