@@ -171,13 +171,16 @@ function ffmpegRun(args, timeoutMs = 120000) {
   });
 }
 
-// Check if drawtext filter is available in this FFmpeg build
+// Check which filters are available in this FFmpeg build
 let HAS_DRAWTEXT = false;
+let HAS_SHOWWAVES = false;
 if (FFMPEG_BIN) {
   try {
     const out = execFileSync(FFMPEG_BIN, ['-filters'], { timeout: 5000, stdio: 'pipe' }).toString();
     HAS_DRAWTEXT = out.includes('drawtext');
+    HAS_SHOWWAVES = out.includes('showwaves');
     console.log(`🔤 FFmpeg drawtext filter: ${HAS_DRAWTEXT ? 'available' : 'NOT available'}`);
+    console.log(`🔤 FFmpeg showwaves filter: ${HAS_SHOWWAVES ? 'available' : 'NOT available'}`);
   } catch(e) { console.log('⚠️ Could not check FFmpeg filters'); }
 }
 
@@ -597,14 +600,19 @@ async function createBeatVisualizer(videoId, audioFilePath, songContext) {
     const parts = [
       // Create dark background
       `color=c=#09090b:s=${W}x${H}:d=${duration}:r=${FPS}[bg]`,
-      // Create waveform visualization — single line mode, gold color, centered
-      `[0:a]showwaves=s=${W - 80}x200:mode=cline:rate=${FPS}:colors=#c9a227|#c9a22744:scale=sqrt[wave]`,
-      // Overlay waveform on background, centered vertically
-      `[bg][wave]overlay=40:(${H}-200)/2:shortest=1[v1]`,
-      // Add subtle glow line behind the waveform
-      `[0:a]showwaves=s=${W - 60}x240:mode=cline:rate=${FPS}:colors=#c9a22718:scale=sqrt[glow]`,
-      `[v1][glow]overlay=30:(${H}-240)/2:shortest=1[v2]`,
     ];
+
+    if (HAS_SHOWWAVES) {
+      // Animated waveform visualization
+      parts.push(`[0:a]showwaves=s=${W - 80}x200:mode=cline:rate=${FPS}:colors=#c9a227|#c9a22744:scale=sqrt[wave]`);
+      parts.push(`[bg][wave]overlay=40:(${H}-200)/2:shortest=1[v1]`);
+      parts.push(`[0:a]showwaves=s=${W - 60}x240:mode=cline:rate=${FPS}:colors=#c9a22718:scale=sqrt[glow]`);
+      parts.push(`[v1][glow]overlay=30:(${H}-240)/2:shortest=1[v2]`);
+    } else {
+      // Fallback: static horizontal line (no showwaves)
+      parts.push(`[bg]drawbox=x=40:y=${H/2 - 1}:w=${W - 80}:h=2:color=#c9a22766:t=fill[v1]`);
+      parts.push(`[v1]drawbox=x=30:y=${H/2 - 2}:w=${W - 60}:h=4:color=#c9a22718:t=fill[v2]`);
+    }
 
     let lastLabel = 'v2';
     let labelN = 2;
@@ -767,9 +775,14 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     // ── BASE (use 15fps to reduce memory on free-tier hosting) ──
     const FPS = 15;
     p.push(`color=c=#0c0c12:s=${W}x${H}:d=${dur}:r=${FPS}[${cv()}]`);
-    // showwaves — omit draw=full (not available in older FFmpeg builds)
-    p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=${FPS}:colors=#c9a22755:scale=sqrt[wv]`);
-    p.push(`[${cv()}][wv]overlay=8:${WY}:shortest=1[${nv()}]`);
+    if (HAS_SHOWWAVES) {
+      p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=${FPS}:colors=#c9a22755:scale=sqrt[wv]`);
+      p.push(`[${cv()}][wv]overlay=8:${WY}:shortest=1[${nv()}]`);
+    } else {
+      // Fallback: static waveform area with colored bar
+      box(8, WY, W - 16, WH, '#0e0e16');
+      box(8, WY + Math.floor(WH/2) - 1, W - 16, 2, '#c9a22733');
+    }
 
     // ── SECTION BACKGROUNDS ──
     box(0, 0, W, TLH, '#08080e');
