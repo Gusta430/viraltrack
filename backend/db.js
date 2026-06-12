@@ -204,6 +204,9 @@ class Database {
 
   async updateTrack(id, updates) {
     if (updates.status) await run('UPDATE tracks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [updates.status, id]);
+    if (updates.filename) await run('UPDATE tracks SET filename = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [updates.filename, id]);
+    if (updates.original_name) await run('UPDATE tracks SET original_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [updates.original_name, id]);
+    if (updates.file_size) await run('UPDATE tracks SET file_size = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [updates.file_size, id]);
     return this.getTrack(id);
   }
 

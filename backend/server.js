@@ -1156,6 +1156,20 @@ const server = http.createServer(async (req, res) => {
       return json(res, { success: true });
     }
 
+    // ── RE-UPLOAD AUDIO (attach audio to existing track without re-analyzing) ──
+    const reuploadMatch = p.match(/^\/api\/tracks\/([^/]+)\/reupload$/);
+    if (reuploadMatch && method === 'POST') {
+      const track = await db.getTrack(reuploadMatch[1]);
+      if (!track || track.user_id !== user.id) return json(res, { error: 'Not found' }, 404);
+      const isMultipart = req.headers['content-type']?.includes('multipart');
+      if (!isMultipart) return json(res, { error: 'Audio file required' }, 400);
+      const { file } = await parseMultipart(req);
+      if (!file || !file.filename) return json(res, { error: 'No audio file received' }, 400);
+      await db.updateTrack(track.id, { filename: file.filename, original_name: file.originalname, file_size: file.size });
+      console.log(`🔄 Re-uploaded audio for track ${track.id}: ${file.originalname} (${(file.size/1024/1024).toFixed(1)}MB)`);
+      return json(res, { success: true, filename: file.filename });
+    }
+
     const analyzeMatch = p.match(/^\/api\/tracks\/([^/]+)\/analyze$/);
     if (analyzeMatch && method === 'POST') {
       const track = await db.getTrack(analyzeMatch[1]);
