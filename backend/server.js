@@ -678,7 +678,7 @@ async function createBeatVisualizer(videoId, audioFilePath, songContext) {
   }
 }
 
-// ── DAW-STYLE VIDEO (fake DAW screen recording for producers) ──
+// ── DAW-STYLE VIDEO (FL Studio-inspired with animated pattern drops) ──
 async function createDAWVideo(videoId, audioFilePath, songContext) {
   try {
     const { title, artist, bpm, audioStartSec } = songContext || {};
@@ -687,56 +687,51 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
     const dur = 15;
     const seek = audioStartSec || 0;
     const W = 720, H = 1280;
+    const FPS = 15;
 
-    // Find available font — check multiple paths
-    const fontPaths = [
-      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-      '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf',
-      '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-      '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
-    ];
-    const FN = fontPaths.find(f => fs.existsSync(f)) || '';
-    const FB = fs.existsSync('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
-      ? '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' : FN;
-    const FM = fs.existsSync('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
-      ? '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf' : FN;
-    const useText = HAS_DRAWTEXT && FN;
+    // Font paths
+    const FN = ['/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf','/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'].find(f=>fs.existsSync(f))||'';
+    const FB = fs.existsSync('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf') ? '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' : FN;
+    const hasFont = !!FN;
 
-    console.log(`🎹 Creating DAW video for "${title}" by ${artist} (drawtext: ${useText ? 'yes' : 'no'}, font: ${FN || 'none'})`);
+    console.log(`🎹 Creating DAW video (v2) for "${title}" by ${artist} (font: ${hasFont}, magick: ${!!MAGICK_BIN})`);
+
+    if (!MAGICK_BIN) {
+      throw new Error('ImageMagick not available — cannot render DAW video');
+    }
+
     const outputPath = path.join(VIDS_DIR, `${videoId}-beat.mp4`);
-
-    // FFmpeg drawtext escaping — escape characters that have special meaning
-    const esc = (s) => (s || '')
-      .replace(/\\/g, '\\\\\\\\')
-      .replace(/'/g, "'\\\\\\''")
-      .replace(/:/g, '\\\\:')
-      .replace(/%/g, '%%')
-      .replace(/\[/g, '\\\\[')
-      .replace(/\]/g, '\\\\]')
-      .replace(/;/g, '\\\\;');
+    const bgPath = path.join(VIDS_DIR, `${videoId}-daw-bg.png`);
 
     // Track definitions
     const tracks = [
-      { name: 'DRUMS', c: '#e89522' }, { name: 'HI-HAT', c: '#4ecdc4' },
-      { name: '808', c: '#ff6b6b' }, { name: 'MELODY', c: '#45b7d1' },
-      { name: 'CHORDS', c: '#96ceb4' }, { name: 'FX', c: '#a06cd5' },
+      { name: 'Drums', color: '#e89522' },
+      { name: 'Hi-Hats', color: '#4ecdc4' },
+      { name: '808 Bass', color: '#ff6b6b' },
+      { name: 'Melody', color: '#45b7d1' },
+      { name: 'Chords', color: '#96ceb4' },
+      { name: 'FX/Perc', color: '#a06cd5' },
     ];
 
     // Layout constants
-    const LW = 64, GX = LW, GW = W - GX - 8;
-    const TH = 38, TG = 3;
-    const TLH = 30;
-    const AY = TLH, AH = tracks.length * (TH + TG) + 6;
-    const WY = AY + AH + 8, WH = 130;
-    const MY = WY + WH + 8, MB = H - 170, MH = MB - MY;
-    const IY = MB + 24;
+    const TB_H = 44;           // Toolbar
+    const TH = 38;             // Track height
+    const TG = 2;              // Track gap
+    const HDR_W = 108;         // Track header width
+    const ARR_X = HDR_W;
+    const ARR_Y = TB_H;
+    const ARR_W = W - HDR_W - 4;
+    const ARR_H = tracks.length * (TH + TG);
+    const WAVE_Y = ARR_Y + ARR_H + 8;
+    const WAVE_H = 110;
+    const MIX_Y = WAVE_Y + WAVE_H + 10;
+    const MIX_B = H - 155;
+    const MIX_H = MIX_B - MIX_Y;
+    const INFO_Y = MIX_B + 16;
 
-    // ── BPM-AWARE ARRANGEMENT ──
+    // BPM calculations
     const realBpm = bpm || 120;
-    const beatsPerSec = realBpm / 60;
-    const totalBeats = beatsPerSec * dur;
-    const totalBars = Math.floor(totalBeats / 4);
+    const totalBars = Math.floor((realBpm / 60 * dur) / 4);
     const barFrac = 1 / totalBars;
 
     function makeBlocks(trackIdx) {
@@ -752,117 +747,309 @@ async function createDAWVideo(videoId, audioFilePath, songContext) {
       return blocks.filter(([s, e]) => s < 1 && e > 0 && e - s > 0.005);
     }
 
-    const mCh = ['KCK', 'SNR', 'HH', 'MEL', 'PAD', 'FX', 'MST'];
-    const mW = Math.floor((W - 16) / mCh.length);
+    // Color blending helper (simulate transparency against dark bg)
+    function blend(hex, alpha, bg = '#0e0e18') {
+      const p = (s, i) => parseInt(s.slice(i, i + 2), 16);
+      const r = Math.round(p(bg, 1) + (p(hex, 1) - p(bg, 1)) * alpha);
+      const g = Math.round(p(bg, 3) + (p(hex, 3) - p(bg, 3)) * alpha);
+      const b = Math.round(p(bg, 5) + (p(hex, 5) - p(bg, 5)) * alpha);
+      return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+    }
 
-    // Filter chain builder
-    const p = [];
-    let ni = 0;
-    const cv = () => `q${ni}`;
-    const nv = () => `q${++ni}`;
-
-    const box = (x, y, w, h, col) => p.push(`[${cv()}]drawbox=x=${x}:y=${y}:w=${w}:h=${h}:color=${col}:t=fill[${nv()}]`);
-    const boxE = (xE, y, w, h, col) => p.push(`[${cv()}]drawbox=x='${xE}':y=${y}:w=${w}:h=${h}:color=${col}:t=fill[${nv()}]`);
-    const txt = (t, sz, col, x, y, f) => {
-      if (!useText) return;
-      p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=${x}:y=${y}:fontfile=${f || FN}[${nv()}]`);
+    // ═══════════════════════════════════════════════════
+    // STEP 1: Generate detailed DAW image with ImageMagick
+    // ═══════════════════════════════════════════════════
+    const im = ['-size', `${W}x${H}`, 'xc:#121218'];
+    const rect = (fill, x1, y1, x2, y2) => { im.push('-fill', fill, '-draw', `rectangle ${x1},${y1} ${x2},${y2}`); };
+    const circ = (fill, cx, cy, r) => { im.push('-fill', fill, '-draw', `circle ${cx},${cy} ${cx},${cy + r}`); };
+    const poly = (fill, pts) => { im.push('-fill', fill, '-draw', `polygon ${pts}`); };
+    const txt = (fill, size, x, y, str, bold) => {
+      if (!hasFont) return;
+      im.push('-font', bold ? FB : FN, '-fill', fill, '-pointsize', String(size), '-draw', `text ${x},${y} '${(str||'').replace(/'/g, "\\'")}'`);
     };
-    const txtC = (t, sz, col, y, f) => {
-      if (!useText) return;
-      p.push(`[${cv()}]drawtext=text='${esc(t)}':fontsize=${sz}:fontcolor=${col}:x=(w-text_w)/2:y=${y}:fontfile=${f || FN}[${nv()}]`);
-    };
 
-    // ── BASE (use 15fps to reduce memory on free-tier hosting) ──
-    const FPS = 15;
-    p.push(`color=c=#0c0c12:s=${W}x${H}:d=${dur}:r=${FPS}[${cv()}]`);
-    if (HAS_SHOWWAVES) {
-      p.push(`[0:a]showwaves=s=${W - 16}x${WH}:mode=p2p:rate=${FPS}:colors=#c9a22755:scale=sqrt[wv]`);
-      p.push(`[${cv()}][wv]overlay=8:${WY}:shortest=1[${nv()}]`);
-    } else {
-      // Fallback: static waveform area with colored bar
-      box(8, WY, W - 16, WH, '#0e0e16');
-      box(8, WY + Math.floor(WH/2) - 1, W - 16, 2, '#c9a22733');
-    }
+    // ── TOOLBAR ──
+    rect('#1a1a2e', 0, 0, W, TB_H);
+    rect('#252540', 0, TB_H - 1, W, TB_H);
 
-    // ── SECTION BACKGROUNDS ──
-    box(0, 0, W, TLH, '#08080e');
-    box(0, AY, W, AH, '#0e0e16');
-    box(0, AY, LW - 2, AH, '#0a0a12');
-    box(0, MY, W, MH, '#08080e');
-    box(0, MB - 28, W, 28, '#060610');
+    // Transport: Play (green triangle in circle)
+    circ('#2a2a40', 26, TB_H / 2, 14);
+    poly('#58d45c', `22,${TB_H/2 - 7} 22,${TB_H/2 + 7} 33,${TB_H/2}`);
+    // Stop
+    circ('#2a2a40', 58, TB_H / 2, 14);
+    rect('#888899', 52, TB_H / 2 - 5, 64, TB_H / 2 + 5);
+    // Record
+    circ('#2a2a40', 90, TB_H / 2, 14);
+    circ('#ff4444', 90, TB_H / 2, 6);
 
-    // ── TRACK LANES ──
-    for (let i = 0; i < tracks.length; i++) box(GX, AY + 3 + i * (TH + TG), GW, TH, '#141420');
+    // BPM display box
+    rect('#0c0c16', 115, 8, 210, TB_H - 8);
+    rect('#1a1a2a', 115, 8, 210, 9);
+    txt('#c9a227', 15, 125, TB_H / 2 + 5, `${realBpm} BPM`, true);
 
-    // ── GRID LINES (BPM-aligned, every 4 bars only to save filter ops) ──
-    const gridEvery = 4;
-    for (let b = gridEvery; b < totalBars; b += gridEvery) {
-      const gx = GX + Math.round(b * barFrac * GW);
-      if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#1a1a28');
-    }
-    // Skip per-bar sub-grid to reduce filter chain complexity
-    for (let b = gridEvery * 2; b < totalBars; b += gridEvery * 2) {
-      const gx = GX + Math.round((b - gridEvery/2) * barFrac * GW);
-      if (gx > GX && gx < GX + GW) box(gx, AY, 1, AH, '#12121a');
-    }
+    // Time signature
+    rect('#0c0c16', 218, 8, 270, TB_H - 8);
+    txt('#888899', 12, 230, TB_H / 2 + 4, '4/4', false);
 
-    // ── ARRANGEMENT BLOCKS (BPM-aligned) ──
+    // Song position display
+    rect('#0c0c16', 278, 8, 420, TB_H - 8);
+    txt('#55cc55', 12, 288, TB_H / 2 + 4, '001 : 01 : 000', false);
+
+    // Snap/grid selector
+    rect('#0c0c16', 428, 8, 520, TB_H - 8);
+    txt('#666680', 10, 438, TB_H / 2 + 3, 'Snap: Beat', false);
+
+    // Song mode indicator
+    rect('#c9a227', 536, 12, 600, TB_H - 12);
+    txt('#121218', 10, 544, TB_H / 2 + 3, 'SONG', true);
+
+    // ── TRACK HEADERS ──
     for (let i = 0; i < tracks.length; i++) {
-      const y = AY + 3 + i * (TH + TG);
-      for (const [s, e] of makeBlocks(i)) {
-        const bx = GX + Math.round(s * GW) + 1;
-        const bw = Math.max(4, Math.round((e - s) * GW) - 2);
-        box(bx, y + 3, bw, TH - 6, tracks[i].c + '35');
-        box(bx, y + 3, bw, 2, tracks[i].c + 'aa');
+      const y = ARR_Y + i * (TH + TG);
+      // Header bg
+      rect('#161622', 0, y, HDR_W - 2, y + TH);
+      // Bottom border
+      rect('#0a0a14', 0, y + TH, HDR_W - 2, y + TH + TG);
+      // Color indicator bar (left edge)
+      rect(tracks[i].color, 0, y, 4, y + TH);
+      // Track number
+      txt('#444455', 9, 10, y + TH / 2 + 3, `${i + 1}`, false);
+      // Track name
+      txt('#aaaacc', 11, 24, y + TH / 2 + 4, tracks[i].name, true);
+      // Mute button
+      rect('#222238', HDR_W - 42, y + 8, HDR_W - 24, y + TH - 8);
+      txt('#666680', 8, HDR_W - 38, y + TH / 2 + 3, 'M', true);
+      // Solo button
+      rect('#222238', HDR_W - 20, y + 8, HDR_W - 4, y + TH - 8);
+      txt('#666680', 8, HDR_W - 16, y + TH / 2 + 3, 'S', true);
+    }
+
+    // ── ARRANGEMENT GRID ──
+    rect('#0e0e18', ARR_X, ARR_Y, ARR_X + ARR_W, ARR_Y + ARR_H);
+
+    // Track lane dividers
+    for (let i = 0; i <= tracks.length; i++) {
+      const y = ARR_Y + i * (TH + TG);
+      rect('#1c1c2c', ARR_X, y, ARR_X + ARR_W, y + 1);
+    }
+
+    // Bar grid lines + bar numbers
+    for (let b = 0; b <= totalBars; b++) {
+      const x = ARR_X + Math.round(b * barFrac * ARR_W);
+      const isMajor = b % 4 === 0;
+      rect(isMajor ? '#2a2a3a' : '#181828', x, ARR_Y, x + 1, ARR_Y + ARR_H);
+      if (isMajor && b < totalBars) txt('#555566', 8, x + 3, ARR_Y + 10, `${b + 1}`, false);
+    }
+
+    // Beat sub-grid lines (every beat within bars)
+    for (let b = 0; b < totalBars * 4; b++) {
+      if (b % 4 === 0) continue; // skip bar lines already drawn
+      const x = ARR_X + Math.round(b / (totalBars * 4) * ARR_W);
+      rect('#141422', x, ARR_Y, x + 1, ARR_Y + ARR_H);
+    }
+
+    // ── ARRANGEMENT BLOCKS (with mini-note detail inside) ──
+    for (let i = 0; i < tracks.length; i++) {
+      const y = ARR_Y + i * (TH + TG);
+      const tBlocks = makeBlocks(i);
+      for (const [s, e] of tBlocks) {
+        const bx = ARR_X + Math.round(s * ARR_W);
+        const bw = Math.max(6, Math.round((e - s) * ARR_W));
+        // Block body (blended color to simulate transparency)
+        rect(blend(tracks[i].color, 0.25), bx + 1, y + 3, bx + bw - 1, y + TH - 3);
+        // Top accent bar
+        rect(blend(tracks[i].color, 0.65), bx + 1, y + 3, bx + bw - 1, y + 5);
+        // Left edge highlight
+        rect(blend(tracks[i].color, 0.4), bx + 1, y + 3, bx + 3, y + TH - 3);
+        // Mini "MIDI notes" / waveform preview inside block
+        const noteCount = Math.max(3, Math.floor(bw / 10));
+        for (let n = 0; n < Math.min(noteCount, 15); n++) {
+          const nx = bx + 4 + Math.round(n * (bw - 8) / noteCount);
+          const ny = y + 8 + Math.round(Math.sin(n * 1.7 + i * 2.3) * 8 + 10);
+          const nw = Math.max(2, Math.round((bw - 8) / noteCount) - 2);
+          rect(blend(tracks[i].color, 0.55), nx, ny, nx + nw, ny + 2);
+        }
       }
     }
 
-    // ── MIXER ──
-    for (let i = 1; i < mCh.length; i++) box(8 + i * mW, MY + 4, 1, MH - 36, '#1a1a28');
-    const fPos = [.35, .42, .38, .28, .50, .55, .20];
-    for (let i = 0; i < mCh.length; i++) {
-      const cx = 8 + i * mW + Math.floor(mW / 2);
-      box(cx - 1, MY + 16, 3, MH - 50, '#1c1c2c');
-      box(cx - 10, MY + 20 + Math.round((fPos[i] || .4) * (MH - 80)), 20, 5, '#778899');
+    // ── WAVEFORM AREA ──
+    rect('#0a0a14', 4, WAVE_Y, W - 4, WAVE_Y + WAVE_H);
+    rect('#1a1a2a', 4, WAVE_Y, W - 4, WAVE_Y + 1);
+    // Static waveform hint (center line)
+    rect(blend('#c9a227', 0.15), 8, WAVE_Y + WAVE_H / 2, W - 8, WAVE_Y + WAVE_H / 2 + 1);
+    // "Waveform" label
+    txt('#333344', 9, 12, WAVE_Y + 14, 'Waveform', false);
+
+    // ── MIXER SECTION ──
+    rect('#0e0e16', 0, MIX_Y, W, MIX_B);
+    rect('#252540', 0, MIX_Y, W, MIX_Y + 1);
+    // "Mixer" label
+    txt('#444455', 9, 8, MIX_Y + 14, 'MIXER', true);
+
+    const mixCh = ['DRM', 'HH', '808', 'MEL', 'PAD', 'FX', 'MST'];
+    const chW = Math.floor((W - 20) / mixCh.length);
+    const faderTop = MIX_Y + 56;
+    const faderBot = MIX_B - 32;
+    const faderPositions = [0.32, 0.38, 0.35, 0.28, 0.42, 0.48, 0.22];
+    const meterLevels = [0.7, 0.55, 0.75, 0.5, 0.6, 0.45, 0.8];
+
+    for (let i = 0; i < mixCh.length; i++) {
+      const cx = 10 + i * chW;
+      const isMaster = i === mixCh.length - 1;
+      const tColor = i < tracks.length ? tracks[i].color : '#c9a227';
+
+      // Channel strip background
+      rect(isMaster ? '#1a1a2e' : '#141420', cx, MIX_Y + 20, cx + chW - 6, MIX_B - 4);
+      // Channel separator
+      rect('#222238', cx + chW - 6, MIX_Y + 20, cx + chW - 5, MIX_B - 4);
+      // Color indicator at top of channel
+      rect(tColor, cx, MIX_Y + 20, cx + chW - 6, MIX_Y + 23);
+
+      // EQ knob
+      circ('#2a2a3e', cx + Math.floor(chW / 2) - 3, MIX_Y + 34, 7);
+      circ('#555566', cx + Math.floor(chW / 2) - 3, MIX_Y + 34, 2);
+
+      // Pan knob
+      circ('#2a2a3e', cx + Math.floor(chW / 2) - 3, MIX_Y + 50, 5);
+      circ('#c9a227', cx + Math.floor(chW / 2) - 3, MIX_Y + 50, 2);
+
+      // Fader track
+      const fX = cx + Math.floor(chW / 2) - 3;
+      rect('#1a1a2a', fX - 1, faderTop, fX + 1, faderBot);
+      // Fader center ticks
+      for (let t = 0; t < 5; t++) {
+        const ty = faderTop + Math.round(t * (faderBot - faderTop) / 5);
+        rect('#222238', fX - 6, ty, fX + 6, ty + 1);
+      }
+      // Fader knob
+      const fY = faderTop + Math.round(faderPositions[i] * (faderBot - faderTop));
+      rect('#444466', fX - 9, fY - 2, fX + 9, fY + 3);
+      rect('#778899', fX - 8, fY - 1, fX + 8, fY + 2);
+      rect('#99aabb', fX - 6, fY, fX + 6, fY + 1);
+
+      // Level meter (dual bar, L+R)
+      const mX = cx + chW - 22;
+      const mH = faderBot - faderTop;
+      const level = meterLevels[i];
+      // Meter background
+      rect('#0a0a14', mX, faderTop, mX + 4, faderBot);
+      rect('#0a0a14', mX + 6, faderTop, mX + 10, faderBot);
+      // Green (bottom portion)
+      const greenH = Math.round(mH * Math.min(level, 0.6));
+      if (greenH > 0) {
+        rect('#22cc44', mX + 1, faderBot - greenH, mX + 3, faderBot);
+        rect('#22cc44', mX + 7, faderBot - greenH + 4, mX + 9, faderBot);
+      }
+      // Yellow (mid portion)
+      if (level > 0.6) {
+        const yH = Math.round(mH * Math.min(level - 0.6, 0.2));
+        rect('#cccc22', mX + 1, faderBot - greenH - yH, mX + 3, faderBot - greenH);
+        rect('#cccc22', mX + 7, faderBot - greenH - yH + 2, mX + 9, faderBot - greenH + 4);
+      }
+      // Red (top portion)
+      if (level > 0.8) {
+        const rH = Math.round(mH * (level - 0.8));
+        const yH = Math.round(mH * 0.2);
+        rect('#ff4444', mX + 1, faderBot - greenH - yH - rH, mX + 3, faderBot - greenH - yH);
+      }
+
+      // dB label
+      const db = Math.round((1 - faderPositions[i]) * -30);
+      txt('#555566', 7, cx + 2, MIX_B - 16, `${db}dB`, false);
+      // Channel name
+      txt(isMaster ? '#c9a227' : '#888899', 9, cx + 4, MIX_B - 6, mixCh[i], true);
     }
 
-    // ── MOVING PLAYHEAD ──
-    boxE(`${GX}+(t/${dur})*${GW}`, AY, 2, AH, '#ffffffd9');
-    boxE(`${GX}+(t/${dur})*${GW}-3`, AY - 3, 8, 3, '#ffffffee');
+    // ── INFO SECTION ──
+    const titleLen = (title || 'Untitled').length;
+    txt('#ffffff', 30, Math.max(8, Math.round((W - titleLen * 16) / 2)), INFO_Y + 32, title || 'Untitled', true);
+    const artistLen = (artist || 'Producer').length;
+    txt('#888899', 18, Math.max(8, Math.round((W - artistLen * 10) / 2)), INFO_Y + 58, artist || 'Producer', false);
+    const infoStr = [bpm ? `${bpm} BPM` : '', key || '', genre || ''].filter(Boolean).join('  ·  ');
+    if (infoStr) txt('#555566', 13, Math.max(8, Math.round((W - infoStr.length * 7) / 2)), INFO_Y + 80, infoStr, false);
+    txt('#333344', 12, Math.round((W - 65) / 2), H - 36, 'link in bio', false);
 
-    // ── TEXT (only if drawtext is available) ──
-    for (let b = 0; b < totalBars; b += gridEvery) {
-      const mx = GX + Math.round(b * barFrac * GW) + 2;
-      if (mx < GX + GW - 20) txt(String(b + 1), 9, '#444455', mx, 9, FM);
-    }
-    for (let i = 0; i < tracks.length; i++) txt(tracks[i].name, 9, '#666680', 5, AY + 3 + i * (TH + TG) + 14, FB);
-    for (let i = 0; i < mCh.length; i++) {
-      txt(mCh[i], 9, '#555566', 8 + i * mW + Math.floor(mW / 2) - mCh[i].length * 3, MB - 18, FB);
-    }
-    txtC(title || 'Untitled', 36, 'white', IY, FB);
-    txtC(artist || 'Producer', 22, '#888899', IY + 48, FN);
-    const infoStr = [bpm ? `${bpm} BPM` : '', key || '', genre || ''].filter(Boolean).join('  ');
-    if (infoStr) txtC(infoStr, 15, '#555566', IY + 82, FN);
-    txtC('link in bio', 13, '#333344', H - 50, FN);
+    // ── RENDER IMAGE ──
+    im.push(bgPath);
+    console.log(`🎹 Rendering DAW image (${im.length} ImageMagick args)...`);
+    execFileSync(MAGICK_BIN || 'convert', im, { timeout: 30000, stdio: 'pipe' });
+    console.log(`🎹 DAW image rendered: ${(fs.statSync(bgPath).size / 1024).toFixed(0)}KB`);
 
-    // ── BUILD VIDEO ──
-    const filterComplex = p.join(';');
-    const lastLabel = `q${ni}`;
-    console.log(`🎹 Filter chain: ${p.length} operations, ${filterComplex.length} chars, last=[${lastLabel}]`);
+    // ═══════════════════════════════════════════════════
+    // STEP 2: Animate with FFmpeg — patterns drop in one by one
+    // ═══════════════════════════════════════════════════
+    const appearTimes = [0.5, 2.5, 4.5, 6.5, 9.0, 11.5]; // When each track's pattern appears
+    const fc = [];
+    let li = 0;
+    const nl = () => `v${++li}`;
+
+    // Start from looped image input [0:v]
+    let last = '0:v';
+
+    // Hide each track's arrangement area until its appear time (dark cover)
+    for (let i = 0; i < tracks.length; i++) {
+      const y = ARR_Y + i * (TH + TG) + 1;
+      const label = nl();
+      fc.push(`[${last}]drawbox=x=${ARR_X}:y=${y}:w=${ARR_W}:h=${TH}:color=#0e0e18:t=fill:enable='lt(t,${appearTimes[i]})'[${label}]`);
+      last = label;
+    }
+
+    // Flash highlight when each track drops in
+    for (let i = 0; i < tracks.length; i++) {
+      const y = ARR_Y + i * (TH + TG) + 1;
+      const label = nl();
+      const flashColor = blend(tracks[i].color, 0.2, '#0e0e18');
+      fc.push(`[${last}]drawbox=x=${ARR_X}:y=${y}:w=${ARR_W}:h=${TH}:color=${flashColor}:t=fill:enable='between(t,${appearTimes[i]},${appearTimes[i] + 0.25})'[${label}]`);
+      last = label;
+    }
+
+    // Track header highlight when pattern appears (brief color flash on header)
+    for (let i = 0; i < tracks.length; i++) {
+      const y = ARR_Y + i * (TH + TG);
+      const label = nl();
+      const hdrFlash = blend(tracks[i].color, 0.15, '#161622');
+      fc.push(`[${last}]drawbox=x=0:y=${y}:w=${HDR_W - 2}:h=${TH}:color=${hdrFlash}:t=fill:enable='between(t,${appearTimes[i]},${appearTimes[i] + 0.4})'[${label}]`);
+      last = label;
+    }
+
+    // Moving playhead (white vertical line across arrangement)
+    let phLabel = nl();
+    fc.push(`[${last}]drawbox=x='${ARR_X}+(t/${dur})*${ARR_W}':y=${ARR_Y}:w=2:h=${ARR_H}:color=#ffffffdd:t=fill[${phLabel}]`);
+    last = phLabel;
+    // Playhead top marker (triangle indicator)
+    phLabel = nl();
+    fc.push(`[${last}]drawbox=x='${ARR_X}+(t/${dur})*${ARR_W}-4':y=${ARR_Y - 4}:w=10:h=5:color=#ffffffee:t=fill[${phLabel}]`);
+    last = phLabel;
+
+    // Showwaves overlay in waveform area
+    if (HAS_SHOWWAVES) {
+      fc.push(`[1:a]showwaves=s=${W - 16}x${WAVE_H - 16}:mode=p2p:rate=${FPS}:colors=#c9a22744:scale=sqrt[wv]`);
+      const wvLabel = nl();
+      fc.push(`[${last}][wv]overlay=8:${WAVE_Y + 8}:shortest=1[${wvLabel}]`);
+      last = wvLabel;
+    }
+
+    const filterComplex = fc.join(';');
+    console.log(`🎹 FFmpeg filter: ${fc.length} operations, ${filterComplex.length} chars`);
 
     const ffArgs = [
-      '-y', '-threads', '1', '-ss', String(seek), '-i', audioFilePath,
+      '-y', '-threads', '1',
+      '-loop', '1', '-framerate', String(FPS), '-i', bgPath,
+      '-ss', String(seek), '-i', audioFilePath,
       '-filter_complex', filterComplex,
-      '-map', `[${lastLabel}]`, '-map', '0:a',
+      '-map', `[${last}]`, '-map', '1:a',
       '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '26',
       '-c:a', 'aac', '-b:a', '128k',
-      '-r', String(FPS), '-t', String(dur), '-pix_fmt', 'yuv420p',
+      '-t', String(dur), '-pix_fmt', 'yuv420p',
       '-movflags', '+faststart', '-shortest',
       outputPath
     ];
 
     console.log('🎹 Starting FFmpeg render...');
     await ffmpegRun(ffArgs, 300000);
+
+    // Clean up temp image
+    fs.unlink(bgPath, () => {});
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
       const mb = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
